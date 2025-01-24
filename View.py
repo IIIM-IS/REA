@@ -236,6 +236,10 @@ class ReaDataView(QMainWindow):
             salary_start_label = QLabel("Start Date (YYYY-MM-DD):")
             salary_start_input = QLineEdit()
             salary_start_input.setPlaceholderText("Enter start date")
+
+            # NEW: Default to the user-specified start date
+            salary_start_input.setText(self.start_date_input.text())
+
             #salary_amount_input.setText(self.start_date_input.toString("yyyy-MM-dd"))
             salary_level_layout.addWidget(salary_start_label)
             salary_level_layout.addWidget(salary_start_input)
@@ -244,6 +248,10 @@ class ReaDataView(QMainWindow):
             salary_end_input = QLineEdit()
             salary_end_input.setPlaceholderText("Enter end date")
             #salary_end_input.setText(self.end_date_input.toString("yyyy-MM-dd"))
+
+            # NEW: Default to the user-specified end date
+            salary_end_input.setText(self.end_date_input.text())
+
             salary_level_layout.addWidget(salary_end_label)
             salary_level_layout.addWidget(salary_end_input)
 
