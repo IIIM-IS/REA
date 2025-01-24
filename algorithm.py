@@ -123,15 +123,17 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         for emp_i in range(num_employees):
             for day_i in range(num_days):
                 for p_name, topic_indices in project_topics.items():
-                    # Compare cost vs. target
-                    cost_now = project_costs_dict[p_name]
-                    target = target_costs[p_name]
-                    deficit = max(0, target - cost_now)
-
-                    # Adjust research topics
                     for t_idx in topic_indices:
-                        optimized_hours[emp_i, day_i, t_idx] += learning_rate * salaries[
-                            emp_i * num_days + day_i] * deficit
+                        # Convert t_idx back to a topic name
+                        topic_name = all_topics[t_idx]
+                        # Check if the employee actually has this topic for this day
+                        d_str = date_list[day_i]
+                        if topic_name in employees[emp_i].research_topics[d_str]:
+                            # If yes, do the cost-based logic for this topic
+                            cost_now = project_costs_dict[p_name]
+                            target = target_costs[p_name]
+                            deficit = max(0, target - cost_now)
+                            optimized_hours[emp_i, day_i, t_idx] += (learning_rate * salaries[emp_i * num_days + day_i] * deficit)
 
                     # Adjust management hours
                     if cost_now > target:
