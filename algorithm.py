@@ -136,17 +136,22 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                             optimized_hours[emp_i, day_i, t_idx] += (learning_rate * salaries[emp_i * num_days + day_i] * deficit)
 
                     # Adjust management hours
-                    if cost_now > target:
-                        diff = cost_now - target
-                        new_mgmt = optimized_hours[emp_i, day_i, -1] - penalty_factor * diff * salaries[
-                            emp_i * num_days + day_i]
-                        optimized_hours[emp_i, day_i, -1] = max(0, new_mgmt)
-                    elif cost_now < target:
-                        diff = target - cost_now
-                        optimized_hours[emp_i, day_i, -1] += learning_rate * diff
+                    total_research = np.sum(optimized_hours[emp_i, day_i, :num_topics])
+                    ### Only allocate management if total_research > 0
+                    if total_research > 0:
+                        if cost_now > target:
+                            diff = cost_now - target
+                            new_mgmt = optimized_hours[emp_i, day_i, -1] - penalty_factor * diff * salaries[
+                                emp_i * num_days + day_i]
+                            optimized_hours[emp_i, day_i, -1] = max(0, new_mgmt)
+                        elif cost_now < target:
+                            diff = target - cost_now
+                            optimized_hours[emp_i, day_i, -1] += learning_rate * diff
+                    else:
+                        # If there's no research, no management hours
+                        optimized_hours[emp_i, day_i, -1] = 0.0
 
                 # Ensure management ≤ 25% of total research
-                total_research = np.sum(optimized_hours[emp_i, day_i, :num_topics])
                 max_mgmt = 0.25 * total_research
                 if optimized_hours[emp_i, day_i, -1] > max_mgmt:
                     optimized_hours[emp_i, day_i, -1] = max_mgmt
