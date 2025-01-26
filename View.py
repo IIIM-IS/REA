@@ -428,8 +428,10 @@ class ReaDataView(QMainWindow):
         self.main_tab_layout.removeWidget(self.projects_section_container)
         self.main_tab_layout.removeWidget(self.add_project_button)
         self.main_tab_layout.removeWidget(self.toggle_project_button)
+        self.main_tab_layout.removeWidget(self.generate_output_button)
 
         # Add the projects section and button at the end
         self.main_tab_layout.addWidget(self.projects_section_container)
         self.main_tab_layout.addWidget(self.add_project_button)
         self.main_tab_layout.addWidget(self.toggle_project_button)
+        self.main_tab_layout.addWidget(self.generate_output_button)
