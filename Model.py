@@ -289,7 +289,7 @@ class EmployeeModel:
         # Day-specific data for activities
         self.research_hours = defaultdict(float)  # { "2025-01-01": 5.0, "2025-01-02": 4.0 }
         self.meeting_hours = defaultdict(float)  # { "2025-01-01": 2.0, "2025-01-02": 3.0 }
-        self.management_hours = defaultdict(float)  # { "2025-01-01": 1.0 }
+        self.nonRnD_hours = defaultdict(float)  # { "2025-01-01": 1.0 }
 
         # Research topics with hours per day
         self.research_topics = defaultdict(lambda: defaultdict(float))
@@ -307,9 +307,9 @@ class EmployeeModel:
         """Add meeting hours for a specific day."""
         self.meeting_hours[date] += hours
 
-    def add_daily_management_hours(self, date, hours):
-        """Add management hours for a specific day."""
-        self.management_hours[date] += hours
+    def add_daily_nonRnD_hours(self, date, hours):
+        """Add nonRnD hours for a specific day."""
+        self.nonRnD_hours[date] += hours
 
     def add_daily_research_topic_hours(self, date, topic, hours):
         """Add hours for a specific research topic on a specific day."""
@@ -324,7 +324,7 @@ class EmployeeModel:
         return {
             "research_hours": self.research_hours[date],
             "meeting_hours": self.meeting_hours[date],
-            "management_hours": self.management_hours[date],
+            "nonRnD_hours": self.nonRnD_hours[date],
             "research_topics": dict(self.research_topics[date]),
             "salary_level": self.salary_levels.get(date, {}),
         }
@@ -334,7 +334,7 @@ class EmployeeModel:
         return (f"EmployeeModel(name={self.employee_name}, "
                 f"research_hours={dict(self.research_hours)}, "
                 f"meeting_hours={dict(self.meeting_hours)}, "
-                f"management_hours={dict(self.management_hours)}, "
+                f"nonRnD_hours={dict(self.nonRnD_hours)}, "
                 f"research_topics={dict(self.research_topics)}, "
                 f"salary_levels={dict(self.salary_levels)})")
 

@@ -125,22 +125,22 @@ class Controller:
             print(f"Employee: {emp_name}")
             daily_allocations = emp_data["daily_allocations"]
             for date_str, day_data in daily_allocations.items():
-                # day_data is a dict of topic->hours plus 'management'
-                # Separate management from topics
-                management_hours = day_data['management']
+                # day_data is a dict of topic->hours plus 'nonRnD'
+                # Separate nonRnD from topics
+                nonRnD_hours = day_data['nonRnD']
                 # Filter non-zero topics
                 non_zero_topics = {
                     topic: hours
                     for topic, hours in day_data.items()
-                    if topic != "management" and hours > 0.0
+                    if topic != "nonRnD" and hours > 0.0
                 }
                 # Build a string for the non-zero topics
                 topics_str = ", ".join(f"{t}={val:.2f}" for t, val in non_zero_topics.items())
 
                 # Print line
-                # You can hide management if it's zero as well,
+                # You can hide nonRnD if it's zero as well,
                 # but here we show it no matter what.
-                print(f"  Date {date_str}: {topics_str}, Management={management_hours:.2f}")
+                print(f"  Date {date_str}: {topics_str}, nonRnD={nonRnD_hours:.2f}")
 
 
     def read_timesheets(self):

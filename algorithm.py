@@ -47,7 +47,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     num_employees = len(employees)
 
     # Build a map of all topics -> index, so we can store them in a matrix
-    #    (We also add 1 slot for management hours at the end.)
+    #    (We also add 1 slot for nonRnD hours at the end.)
     topic_to_index = {topic: i for i, topic in enumerate(all_topics)}
     num_topics = len(all_topics)
 
@@ -89,7 +89,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
             research_hours_array[emp_i, d_i] = emp.research_hours[d_str]
 
     # Initialize the “optimized_hours” structure
-    #    shape: (num_employees, num_days, num_topics+1)  # +1 for management hours
+    #    shape: (num_employees, num_days, num_topics+1)  # +1 for nonRnD hours
     optimized_hours = np.zeros((num_employees, num_days, num_topics + 1), dtype=float)
 
     # ------------------------------
@@ -104,7 +104,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                     for t_idx in topic_indices:
                         costs[p_name] += hours[emp_i, day_i, t_idx] * salaries[emp_i * num_days + day_i]
 
-                    # Add management hours
+                    # Add nonRnD hours
                     costs[p_name] += hours[emp_i, day_i, -1] * salaries[emp_i * num_days + day_i]
         return costs
 
@@ -135,9 +135,9 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                             deficit = max(0, target - cost_now)
                             optimized_hours[emp_i, day_i, t_idx] += (learning_rate * salaries[emp_i * num_days + day_i] * deficit)
 
-                    # Adjust management hours
+                    # Adjust nonRnD hours
                     total_research = np.sum(optimized_hours[emp_i, day_i, :num_topics])
-                    ### Only allocate management if total_research > 0
+                    ### Only allocate nonRnD if total_research > 0
                     if total_research > 0:
                         if cost_now > target:
                             diff = cost_now - target
@@ -148,10 +148,10 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                             diff = target - cost_now
                             optimized_hours[emp_i, day_i, -1] += learning_rate * diff
                     else:
-                        # If there's no research, no management hours
+                        # If there's no research, no nonRnD hours
                         optimized_hours[emp_i, day_i, -1] = 0.0
 
-                # Ensure management ≤ 25% of total research
+                # Ensure nonRnD ≤ 25% of total research
                 max_mgmt = 0.25 * total_research
                 if optimized_hours[emp_i, day_i, -1] > max_mgmt:
                     optimized_hours[emp_i, day_i, -1] = max_mgmt
@@ -179,7 +179,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         for d_i, d_str in enumerate(date_list):
             # Overwrite or store in a new structure. Let's store in a new field: emp.optimized_hours[date_str][topic]
             if not hasattr(emp, "optimized_hours"):
-                emp.optimized_hours = {}  # { date_str: { topic_name: hours, ..., 'management': x } }
+                emp.optimized_hours = {}  # { date_str: { topic_name: hours, ..., 'nonRnD': x } }
 
             if d_str not in emp.optimized_hours:
                 emp.optimized_hours[d_str] = {}
@@ -188,11 +188,11 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
             for t_idx, t_name in enumerate(all_topics):
                 emp.optimized_hours[d_str][t_name] = optimized_hours[emp_i, d_i, t_idx]
 
-            # Also store management hours
-            emp.optimized_hours[d_str]['management'] = optimized_hours[emp_i, d_i, -1]
+            # Also store nonRnD hours
+            emp.optimized_hours[d_str]['nonRnD'] = optimized_hours[emp_i, d_i, -1]
 
     # Build a results structure for direct return
-    # Example: per-employee, per-day breakdown of each topic + management
+    # Example: per-employee, per-day breakdown of each topic + nonRnD
     allocations = {}
     for emp_i, emp in enumerate(employees):
         emp_alloc = {
@@ -203,7 +203,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
             day_dict = {}
             for t_idx, t_name in enumerate(all_topics):
                 day_dict[t_name] = optimized_hours[emp_i, d_i, t_idx]
-            day_dict["management"] = optimized_hours[emp_i, d_i, -1]
+            day_dict["nonRnD"] = optimized_hours[emp_i, d_i, -1]
 
             emp_alloc["daily_allocations"][d_str] = day_dict
 
