@@ -152,7 +152,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                         optimized_hours[emp_i, day_i, -1] = 0.0
 
                 # Ensure nonRnD ≤ 25% of total research
-                max_mgmt = 0.25 * total_research
+                max_mgmt = 0.25 * research_hours_array[emp_i, day_i]
                 if optimized_hours[emp_i, day_i, -1] > max_mgmt:
                     optimized_hours[emp_i, day_i, -1] = max_mgmt
 
