@@ -16,7 +16,6 @@
 # from the authors.
 # -----------------------------------------------------------------------------
 
-
 import pandas as pd
 import os
 from collections import defaultdict
@@ -42,9 +41,8 @@ class ReaDataModel:
             "Hardware / Robot Hardware",
             "Modeling / Simulation",
         ]
-        self.employees = [] # List to store EmployeeModel objects
-        self.projects = []  # List to hold project objects
-
+        self.employees = []  # List to store EmployeeModel objects
+        self.projects = []   # List to hold project objects
 
         self.names = []
         self.employee_names = []
@@ -52,8 +50,7 @@ class ReaDataModel:
         self.total_research_hours_list = []
         self.total_meeting_hours_list = []
         self.topics_hours = []
-        self.non_zero_topics_with_hours = [] # The list will contain disctionaries for research topics and hours of all employees
-
+        self.non_zero_topics_with_hours = []  # The list will contain dictionaries for research topics and hours of all employees
 
     def extract_data_from_csv(self, directory, date_ranges):
         # Identify all CSV files
@@ -122,7 +119,6 @@ class ReaDataModel:
             employees_list.append(employee)
 
         return employees_list
-
 
     def extract_names(self, df):
         # Get the value at C3 (row index 2, column index 2)

@@ -16,17 +16,17 @@
 # from the authors.
 # -----------------------------------------------------------------------------
 
-
-from PyQt5.QtWidgets import QApplication,  QFileDialog, QMainWindow, QVBoxLayout, QCalendarWidget, QLineEdit, QLabel, QPushButton, QWidget, QListWidget, QTabWidget, QScrollArea, QFrame, QSpacerItem, QSizePolicy
+from PyQt5.QtCore import QCoreApplication
+from PyQt5.QtWidgets import QApplication
 import sys
 from Model import ReaDataModel
 from View import ReaDataView
 from Control import Controller
 
-
-
-
 def main():
+    QCoreApplication.setOrganizationName("IIIM")
+    QCoreApplication.setApplicationName("REAApp")
+    
     app = QApplication(sys.argv)
     model = ReaDataModel()
     view = ReaDataView()
@@ -34,6 +34,6 @@ def main():
     view.show()
     sys.exit(app.exec_())
 
-
 if __name__ == "__main__":
     main()
+

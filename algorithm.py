@@ -1,39 +1,44 @@
 # -----------------------------------------------------------------------------
-# Authors: Arash Sheikhlar and Kristinn Thorisson
+# Authors: Arash Sheikhlar and Kristinn Thorisson (Further Improved QP version)
 # Project: Research Expenditure Allocation (REA)
 # -----------------------------------------------------------------------------
-# Copyright (c) 2025, Arash Sheikhlar and Kristinn Thorisson. All rights reserved.
+# This software is provided "as is", without warranty of any kind.
+# In no event shall the authors be liable for any claim, damages, or
+# other liability.
 #
-# This software is provided "as is", without warranty of any kind, express or
-# implied, including but not limited to the warranties of merchantability,
-# fitness for a particular purpose, and noninfringement. In no event shall
-# the authors be liable for any claim, damages, or other liability, whether
-# in an action of contract, tort, or otherwise, arising from, out of, or in
-# connection with the software or the use or other dealings in the software.
-#
-# Unauthorized copying, distribution, or modification of this code, via any
-# medium, is strictly prohibited unless prior written permission is obtained
-# from the authors.
+# Unauthorized copying, distribution, or modification of this code is strictly
+# prohibited unless prior written permission is obtained from the authors.
 # -----------------------------------------------------------------------------
 
+import cvxpy as cp
 import numpy as np
 from datetime import datetime, timedelta
 
-
 def run_allocation_algorithm(employees, projects, start_date, end_date, all_topics):
     """
-    Runs the iterative adjustment algorithm to determine how many hours per topic per day
-    each employee should allocate, so that target project costs are met.
-
-    :param employees: List[EmployeeModel]
-    :param projects: List[ProjectModel]
-    :param start_date: str, e.g. "2025-01-01"
-    :param end_date: str, e.g. "2025-01-10"
-    :param all_topics: list of all known topic names (e.g. from ReaDataModel)
-    :return: A data structure (e.g., dict) with the optimized hours results
+    Optimizes the allocation of research hours (per topic and nonRnD) across employees and days,
+    so that for each project the salary-weighted cost is as close as possible to the project's target.
+    
+    This version reformulates the allocation as a quadratic program and uses CVXPY with enhanced,
+    vectorized constraints, regularization, and solver options.
+    
+    Parameters:
+      employees: List of EmployeeModel objects.
+      projects: List of ProjectModel objects.
+      start_date: string in "YYYY-MM-DD" format.
+      end_date: string in "YYYY-MM-DD" format.
+      all_topics: List of all recognized research topics.
+      
+    Returns:
+      A dictionary with:
+         - solver_status: CVXPY problem status.
+         - final_objective: The final objective value.
+         - final_costs: A dict of computed project costs.
+         - allocations: A nested dictionary with allocations per employee per day.
     """
-
-    # Parse the date range
+    # -------------------------------------------------------------------------
+    # 1. Build Date Range and Dimensions
+    # -------------------------------------------------------------------------
     dt_start = datetime.strptime(start_date, "%Y-%m-%d")
     dt_end = datetime.strptime(end_date, "%Y-%m-%d")
     date_list = []
@@ -42,207 +47,134 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         date_list.append(current.strftime("%Y-%m-%d"))
         current += timedelta(days=1)
     num_days = len(date_list)
-
-    # Gather employees data
     num_employees = len(employees)
-
-    # Build a map of all topics -> index, so we can store them in a matrix
-    #    (We also add 1 slot for nonRnD hours at the end.)
+    
+    # -------------------------------------------------------------------------
+    # 2. Build Topic Mapping and Salary Matrix
+    # -------------------------------------------------------------------------
     topic_to_index = {topic: i for i, topic in enumerate(all_topics)}
     num_topics = len(all_topics)
-
-    # Build a matrix of daily salaries for each employee
-    #    We'll flatten them as [emp0_day0, emp0_day1, ..., emp1_day0, emp1_day1, ...]
-    salaries = []
-    for emp_i, emp in enumerate(employees):
+    
+    # Build the salary matrix (num_employees x num_days).
+    salary_list = []
+    for emp in employees:
         for day_str in date_list:
-            # If you stored daily salary in employee.salary_levels[day_str], parse it
-            # or default to some value
             day_salary_info = emp.salary_levels.get(day_str, {})
-            day_salary_amount = day_salary_info.get("amount", 0.0)
-            salaries.append(day_salary_amount)
-
-    salaries = np.array(salaries)  # shape: (num_employees * num_days,)
-
-    # Build project -> contractual target map
+            salary_list.append(float(day_salary_info.get("amount", 0.0)))
+    salaries = np.array(salary_list)
+    salary_matrix = salaries.reshape((num_employees, num_days))
+    
+    # -------------------------------------------------------------------------
+    # 3. Build Project Targets and Project-Topic Mapping
+    # -------------------------------------------------------------------------
     target_costs = {}
-    # We only consider projects that fall (at least partially) in the date range.
-    for proj in projects:
-        proj_name = proj.name if proj.name else "Unnamed"
-        target_costs[proj_name] = float(proj.grant_contractual)
-
-    # Build project -> topic indices (based on project.research_topics)
     project_topics = {}
     for proj in projects:
         proj_name = proj.name if proj.name else "Unnamed"
-        topics_index_list = []
-        for t_name in proj.research_topics:
-            if t_name in topic_to_index:  # recognized topic
-                topics_index_list.append(topic_to_index[t_name])
-        project_topics[proj_name] = topics_index_list
-
-    # Build the research_hours matrix [num_employees, num_days]
-    #    The user’s daily research hours for each day are in employee.research_hours[day_str].
+        target_costs[proj_name] = float(proj.grant_contractual)
+        topic_indices = [topic_to_index[t] for t in proj.research_topics if t in topic_to_index]
+        project_topics[proj_name] = topic_indices
+    
+    # -------------------------------------------------------------------------
+    # 4. Build Daily Research Hours Array
+    # -------------------------------------------------------------------------
     research_hours_array = np.zeros((num_employees, num_days), dtype=float)
-    for emp_i, emp in enumerate(employees):
-        for d_i, d_str in enumerate(date_list):
-            research_hours_array[emp_i, d_i] = emp.research_hours[d_str]
+    for i, emp in enumerate(employees):
+        for j, d_str in enumerate(date_list):
+            research_hours_array[i, j] = emp.research_hours[d_str]
+    
+    # -------------------------------------------------------------------------
+    # 5. Define Optimization Variables
+    # -------------------------------------------------------------------------
+    # X: allocated hours per employee, day, and topic (shape: num_employees x num_days x num_topics)
+    X = cp.Variable((num_employees, num_days, num_topics), nonneg=True)
+    # Y: allocated nonRnD hours per employee, day (shape: num_employees x num_days)
+    Y = cp.Variable((num_employees, num_days), nonneg=True)
+    
+    # -------------------------------------------------------------------------
+    # 6. Define Constraints (Vectorized)
+    # -------------------------------------------------------------------------
+    constraints = []
+    # Total research hours allocated (across topics) must equal reported research hours.
+    constraints.append(cp.sum(X, axis=2) == research_hours_array)
+    # NonRnD hours are capped at 25% of research hours.
+    constraints.append(Y <= 0.25 * research_hours_array)
+    
+    # -------------------------------------------------------------------------
+    # 7. Build Project Cost Expressions and Objective Function
+    # -------------------------------------------------------------------------
+    # For each project, the cost is the salary-weighted sum of:
+    #   (a) allocated hours for topics relevant to the project, plus
+    #   (b) the nonRnD hours (which contribute to every project).
+    project_cost_exprs = {}
+    for proj_name, topic_indices in project_topics.items():
+        if topic_indices:
+            # Sum allocations over the relevant topics.
+            topic_expr = cp.sum(X[:, :, topic_indices], axis=2)
+        else:
+            topic_expr = 0
+        cost_expr = cp.sum(cp.multiply(salary_matrix, (topic_expr + Y)))
+        project_cost_exprs[proj_name] = cost_expr
 
-    # Initialize the “optimized_hours” structure
-    #    shape: (num_employees, num_days, num_topics+1)  # +1 for nonRnD hours
-    optimized_hours = np.zeros((num_employees, num_days, num_topics + 1), dtype=float)
-
-    # ------------------------------
-    # Helper function to compute project costs
-    # ------------------------------
-    def compute_project_costs(hours):
-        costs = {p_name: 0.0 for p_name in project_topics}
-        for p_name, topic_indices in project_topics.items():
-            for day_i in range(num_days):
-                for emp_i in range(num_employees):
-                    # Sum contributions for topics
-                    for t_idx in topic_indices:
-                        costs[p_name] += hours[emp_i, day_i, t_idx] * salaries[emp_i * num_days + day_i]
-
-                    # Add nonRnD hours
-                    costs[p_name] += hours[emp_i, day_i, -1] * salaries[emp_i * num_days + day_i]
-        return costs
-
-    # Parameters
-    hour_limits = np.array([8] * num_employees * num_days)  # 8-hour daily limit. Is this affecting anything?
-    learning_rate = 0.000001
-    penalty_factor = 0.001
-    max_iterations = 5000
-
-    # ------------------------------
-    # Iterative adjustment
-    # ------------------------------
-    for iteration in range(max_iterations):
-        project_costs_dict = compute_project_costs(optimized_hours)
-
-        for emp_i in range(num_employees):
-            for day_i in range(num_days):
-                for p_name, topic_indices in project_topics.items():
-                    # Re-check cost each time we handle a project in this day
-                    cost_now = project_costs_dict[p_name]
-                    target = target_costs[p_name]
-                    deficit = max(0, target - cost_now)
-
-                    for t_idx in topic_indices:
-                        # Convert t_idx back to a topic name
-                        topic_name = all_topics[t_idx]
-                        # Check if the employee actually has this topic for this day
-                        d_str = date_list[day_i]
-                        if topic_name in employees[emp_i].research_topics[d_str]:
-                            #### We scale the learning rate inversely with salary
-                            #     so high-salary employees adjust more slowly.
-                            base_lr = learning_rate
-                            emp_salary = salaries[emp_i * num_days + day_i]
-
-                            ### "scaled_lr" is smaller for big salaries
-                            scaled_lr = base_lr / (1.0 + (emp_salary / 1500.0))
-
-                            # If there's a deficit, add hours
-                            if deficit > 0:
-                                optimized_hours[emp_i, day_i, t_idx] += (
-                                    scaled_lr * emp_salary * deficit
-                                )
-                    ####: After adjusting topics for this project, re-compute costs
-                    project_costs_dict = compute_project_costs(optimized_hours)
-                    new_cost = project_costs_dict[p_name]
-                    if new_cost > target:
-                        # 3) Over-target logic: reduce hours with a penalty factor
-                        over_diff = new_cost - target
-                        # We'll scale down the employee's allocated hours for this project
-                        for t_idx in topic_indices:
-                            current_h = optimized_hours[emp_i, day_i, t_idx]
-                            if current_h > 0:
-                                # reduce proportionally by some fraction of over_diff
-                                reduce_amount = penalty_factor * over_diff
-                                # we won't reduce below zero
-                                new_val = max(0, current_h - reduce_amount)
-                                optimized_hours[emp_i, day_i, t_idx] = new_val
-
-                        # Recompute again after we reduce
-                        project_costs_dict = compute_project_costs(optimized_hours)
-
-                    # Adjust nonRnD hours
-                    total_research = np.sum(optimized_hours[emp_i, day_i, :num_topics])
-                    cost_now = project_costs_dict[p_name]  # after any over-target fix
-                    ### Only allocate nonRnD if total_research > 0
-                    if total_research > 0:
-                        if cost_now > target:
-                            diff = cost_now - target
-                            new_mgmt = optimized_hours[emp_i, day_i, -1] - penalty_factor * diff * salaries[
-                                emp_i * num_days + day_i]
-                            optimized_hours[emp_i, day_i, -1] = max(0, new_mgmt)
-                        elif cost_now < target:
-                            diff = target - cost_now
-                            optimized_hours[emp_i, day_i, -1] += learning_rate * diff
-                    else:
-                        # If there's no research, no nonRnD hours
-                        optimized_hours[emp_i, day_i, -1] = 0.0
-
-                # Ensure nonRnD ≤ 25% of total research
-                max_mgmt = 0.25 * research_hours_array[emp_i, day_i]
-                if optimized_hours[emp_i, day_i, -1] > max_mgmt:
-                    optimized_hours[emp_i, day_i, -1] = max_mgmt
-
-                # Adjust to match the user’s total research hours exactly
-                if not np.isclose(total_research, research_hours_array[emp_i, day_i]):
-                    diff = research_hours_array[emp_i, day_i] - total_research
-                    if total_research > 0:
-                        # Scale proportionally
-                        optimized_hours[emp_i, day_i, :num_topics] += (diff / total_research) * optimized_hours[emp_i,
-                                                                                                day_i, :num_topics]
-                    else:
-                        # Evenly distribute if no research yet
-                        optimized_hours[emp_i, day_i, :num_topics] += diff / num_topics
-
-        # Recompute costs after the adjustments
-        project_costs_dict = compute_project_costs(optimized_hours)
-        # Check if all targets are met
-        if all(project_costs_dict[p_name] >= target_costs[p_name] for p_name in project_topics):
-            break
-
-    #    Save the results back into the EmployeeModel objects
-    #    For each employee/day/topic, store the final optimized hours
-    for emp_i, emp in enumerate(employees):
-        for d_i, d_str in enumerate(date_list):
-            # Overwrite or store in a new structure. Let's store in a new field: emp.optimized_hours[date_str][topic]
-            if not hasattr(emp, "optimized_hours"):
-                emp.optimized_hours = {}  # { date_str: { topic_name: hours, ..., 'nonRnD': x } }
-
-            if d_str not in emp.optimized_hours:
-                emp.optimized_hours[d_str] = {}
-
-            # Fill in the final topic hours
-            for t_idx, t_name in enumerate(all_topics):
-                emp.optimized_hours[d_str][t_name] = optimized_hours[emp_i, d_i, t_idx]
-
-            # Also store nonRnD hours
-            emp.optimized_hours[d_str]['nonRnD'] = optimized_hours[emp_i, d_i, -1]
-
-    # Build a results structure for direct return
-    # Example: per-employee, per-day breakdown of each topic + nonRnD
+    # Define the objective as the sum of squared differences between cost and target
+    # plus a small regularization on X and Y to improve numerical conditioning.
+    reg_lambda = 1e-6
+    objective_terms = []
+    for proj_name in project_topics.keys():
+        diff_expr = project_cost_exprs[proj_name] - target_costs[proj_name]
+        objective_terms.append(cp.square(diff_expr))
+    regularization = reg_lambda * (cp.sum_squares(X) + cp.sum_squares(Y))
+    objective = cp.Minimize(cp.sum(objective_terms) + regularization)
+    
+    # -------------------------------------------------------------------------
+    # 8. Solve the QP Problem with Solver Options and (optional) Warm Start
+    # -------------------------------------------------------------------------
+    solver_options = {
+        "eps_abs": 1e-4,
+        "eps_rel": 1e-4,
+        # Additional options can be specified here.
+    }
+    problem = cp.Problem(objective, constraints)
+    problem.solve(solver=cp.OSQP, **solver_options)
+    
+    if problem.status not in ["optimal", "optimal_inaccurate"]:
+        print("Warning: Solver did not reach an optimal solution. Status:", problem.status)
+    
+    # -------------------------------------------------------------------------
+    # 9. Retrieve the Optimized Values and Build the Output
+    # -------------------------------------------------------------------------
+    X_val = X.value  # Allocated research topic hours
+    Y_val = Y.value  # Allocated nonRnD hours
+    
+    # Build a nested allocations dictionary: per employee, per day.
     allocations = {}
-    for emp_i, emp in enumerate(employees):
-        emp_alloc = {
-            "name": emp.employee_name,
-            "daily_allocations": {}
-        }
-        for d_i, d_str in enumerate(date_list):
-            day_dict = {}
+    for i, emp in enumerate(employees):
+        emp_alloc = {"name": emp.employee_name, "daily_allocations": {}}
+        for j, d_str in enumerate(date_list):
+            day_alloc = {}
             for t_idx, t_name in enumerate(all_topics):
-                day_dict[t_name] = optimized_hours[emp_i, d_i, t_idx]
-            day_dict["nonRnD"] = optimized_hours[emp_i, d_i, -1]
-
-            emp_alloc["daily_allocations"][d_str] = day_dict
-
+                day_alloc[t_name] = float(X_val[i, j, t_idx])
+            day_alloc["nonRnD"] = float(Y_val[i, j])
+            emp_alloc["daily_allocations"][d_str] = day_alloc
+            # Also save into EmployeeModel
+            if not hasattr(emp, "optimized_hours"):
+                emp.optimized_hours = {}
+            emp.optimized_hours[d_str] = day_alloc.copy()
         allocations[emp.employee_name] = emp_alloc
-
+    
+    # Compute final costs for reporting.
+    final_costs = {}
+    for proj_name, topic_indices in project_topics.items():
+        if topic_indices:
+            topic_alloc = np.sum(X_val[:, :, topic_indices], axis=2)
+        else:
+            topic_alloc = 0
+        cost = float(np.sum(salary_matrix * (topic_alloc + Y_val)))
+        final_costs[proj_name] = cost
+    
     return {
-        'iteration': iteration,
-        'final_costs': project_costs_dict,
-        'allocations': allocations
+        "solver_status": problem.status,
+        "final_objective": problem.value,
+        "final_costs": final_costs,
+        "allocations": allocations
     }
