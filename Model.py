@@ -200,12 +200,14 @@ class ReaDataModel:
 
             # Extract IIIM meeting hours from row 14
             raw_val_meeting_iiim = df.iloc[14, col_index]
-            if pd.isna(raw_val_meeting_iiim) or raw_val_meeting_iiim == '':
+            # Convert to string, strip whitespace, then compare to empty
+            if pd.isna(raw_val_meeting_iiim) or (isinstance(raw_val_meeting_iiim, str) and raw_val_meeting_iiim.strip() == ''):
                 raw_val_meeting_iiim = 0.0
 
             # Extract meeting hours with other companies from row 15
             raw_val_meeting_other = df.iloc[15, col_index]
-            if pd.isna(raw_val_meeting_other) or raw_val_meeting_other == '':
+            # Convert to string, strip whitespace, then compare to empty
+            if pd.isna(raw_val_meeting_other) or (isinstance(raw_val_meeting_other, str) and raw_val_meeting_other.strip() == ''):
                 raw_val_meeting_other = 0.0
 
             # Sum meeting hours for both meeting types
