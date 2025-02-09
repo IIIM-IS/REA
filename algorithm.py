@@ -112,7 +112,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     hour_limits = np.array([8] * num_employees * num_days)  # 8-hour daily limit. Is this affecting anything?
     learning_rate = 0.000001
     penalty_factor = 0.001
-    max_iterations = 5000
+    max_iterations = 50
 
     # ------------------------------
     # Iterative adjustment
@@ -142,33 +142,13 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                             ### "scaled_lr" is smaller for big salaries
                             scaled_lr = base_lr / (1.0 + (emp_salary / 1500.0))
 
-                            # If there's a deficit, add hours
-                            if deficit > 0:
-                                optimized_hours[emp_i, day_i, t_idx] += (
-                                    scaled_lr * emp_salary * deficit
-                                )
+                            optimized_hours[emp_i, day_i, t_idx] += (scaled_lr * emp_salary * deficit)
+
                     ####: After adjusting topics for this project, re-compute costs
                     project_costs_dict = compute_project_costs(optimized_hours)
-                    new_cost = project_costs_dict[p_name]
-                    if new_cost > target:
-                        # 3) Over-target logic: reduce hours with a penalty factor
-                        over_diff = new_cost - target
-                        # We'll scale down the employee's allocated hours for this project
-                        for t_idx in topic_indices:
-                            current_h = optimized_hours[emp_i, day_i, t_idx]
-                            if current_h > 0:
-                                # reduce proportionally by some fraction of over_diff
-                                reduce_amount = penalty_factor * over_diff
-                                # we won't reduce below zero
-                                new_val = max(0, current_h - reduce_amount)
-                                optimized_hours[emp_i, day_i, t_idx] = new_val
-
-                        # Recompute again after we reduce
-                        project_costs_dict = compute_project_costs(optimized_hours)
 
                     # Adjust nonRnD hours
                     total_research = np.sum(optimized_hours[emp_i, day_i, :num_topics])
-                    cost_now = project_costs_dict[p_name]  # after any over-target fix
                     ### Only allocate nonRnD if total_research > 0
                     if total_research > 0:
                         if cost_now > target:
