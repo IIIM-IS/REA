@@ -150,6 +150,8 @@ class ReaDataView(QMainWindow):
         self.toggle_employee_button.clicked.connect(toggle_employee_section)
 
     def create_employee_overview_subsection(self, employee, layout):
+        from datetime import datetime, timedelta
+        # --- Basic Employee Information ---
         name_label = QLabel("Name")
         name_field = QLineEdit()
         name_field.setText(employee.employee_name)
@@ -168,6 +170,7 @@ class ReaDataView(QMainWindow):
         layout.addWidget(mh_label)
         layout.addWidget(mh_field)
 
+        # --- Research Topics Section ---
         research_topics_label = QLabel("Research Topics")
         layout.addWidget(research_topics_label)
 
@@ -182,34 +185,57 @@ class ReaDataView(QMainWindow):
                 topic_label = QLabel(f"- {topic}")
                 layout.addWidget(topic_label)
 
-        salary_levels_container = QVBoxLayout()
-        layout.addLayout(salary_levels_container)
+        # --- Salary Levels Section with Add/Remove Functionality ---
+        # Create a container widget for salary level rows so they can be individually removed.
+        salary_levels_container_widget = QWidget()
+        salary_levels_container = QVBoxLayout(salary_levels_container_widget)
+        layout.addWidget(salary_levels_container_widget)
 
         salary_level_count = 0
         def add_salary_level():
             nonlocal salary_level_count
             salary_level_count += 1
-            salary_level_layout = QHBoxLayout()
-            salary_amount = QLabel(f"Salary {salary_level_count}")
+            current_level_label = f"Salary Level {salary_level_count}"
+            # Wrap each salary level row in its own widget.
+            salary_level_widget = QWidget()
+            salary_level_layout = QHBoxLayout(salary_level_widget)
+
+            # Salary Level Label
+            salary_label = QLabel(current_level_label)
+            salary_level_layout.addWidget(salary_label)
+
+            # Salary Amount Input
             salary_amount_input = QLineEdit()
             salary_amount_input.setPlaceholderText("Enter the salary amount")
-            salary_level_layout.addWidget(salary_amount)
             salary_level_layout.addWidget(salary_amount_input)
+
+            # Start Date Input
             salary_start_label = QLabel("Start Date (YYYY-MM-DD):")
+            salary_level_layout.addWidget(salary_start_label)
             salary_start_input = QLineEdit()
             salary_start_input.setPlaceholderText("Enter start date")
             salary_start_input.setText(self.start_date_input.text())
-            salary_level_layout.addWidget(salary_start_label)
             salary_level_layout.addWidget(salary_start_input)
+
+            # End Date Input
             salary_end_label = QLabel("End Date (YYYY-MM-DD):")
+            salary_level_layout.addWidget(salary_end_label)
             salary_end_input = QLineEdit()
             salary_end_input.setPlaceholderText("Enter end date")
             salary_end_input.setText(self.end_date_input.text())
-            salary_level_layout.addWidget(salary_end_label)
             salary_level_layout.addWidget(salary_end_input)
-            salary_levels_container.addLayout(salary_level_layout)
+
+            # Apply Button
             apply_button = QPushButton("Apply Salary for Range")
             salary_level_layout.addWidget(apply_button)
+
+            # Remove Button
+            remove_button = QPushButton("Remove Salary Level")
+            salary_level_layout.addWidget(remove_button)
+
+            # Add this salary level widget to the container.
+            salary_levels_container.addWidget(salary_level_widget)
+
             def apply_salary_for_range():
                 start_text = salary_start_input.text().strip()
                 end_text = salary_end_input.text().strip()
@@ -227,11 +253,34 @@ class ReaDataView(QMainWindow):
                 current_date = start_date
                 while current_date <= end_date:
                     day_str = current_date.strftime("%Y-%m-%d")
-                    level_label = f"Salary Level {salary_level_count}"
-                    employee.set_salary_level_for_date(day_str, level_label, amount_val)
+                    employee.set_salary_level_for_date(day_str, current_level_label, amount_val)
                     current_date += timedelta(days=1)
-                print(f"Applied salary of {amount_val} from {start_text} to {end_text} for {employee.employee_name}.")
+                print(f"Applied salary of {amount_val} from {start_text} to {end_text} for {employee.employee_name} under {current_level_label}.")
             apply_button.clicked.connect(apply_salary_for_range)
+
+            def remove_salary_level():
+                start_text = salary_start_input.text().strip()
+                end_text = salary_end_input.text().strip()
+                if not start_text or not end_text:
+                    print("Cannot remove salary level: missing start or end date.")
+                    return
+                try:
+                    start_date = datetime.strptime(start_text, "%Y-%m-%d")
+                    end_date = datetime.strptime(end_text, "%Y-%m-%d")
+                except Exception as e:
+                    print("Error parsing salary dates for removal:", e)
+                    return
+                current_date = start_date
+                while current_date <= end_date:
+                    day_str = current_date.strftime("%Y-%m-%d")
+                    if day_str in employee.salary_levels and employee.salary_levels[day_str].get("level") == current_level_label:
+                        del employee.salary_levels[day_str]
+                    current_date += timedelta(days=1)
+                salary_levels_container.removeWidget(salary_level_widget)
+                salary_level_widget.deleteLater()
+                print(f"Removed {current_level_label} for {employee.employee_name}.")
+            remove_button.clicked.connect(remove_salary_level)
+
         add_salary_level()
         add_salary_button = QPushButton("Add Salary Level")
         layout.addWidget(add_salary_button)

@@ -16,165 +16,222 @@ from datetime import datetime, timedelta
 
 def run_allocation_algorithm(employees, projects, start_date, end_date, all_topics):
     """
-    Optimizes the allocation of research hours (per topic and nonRnD) across employees and days,
-    so that for each project the salary-weighted cost is as close as possible to the project's target.
-    
-    This version reformulates the allocation as a quadratic program and uses CVXPY with enhanced,
-    vectorized constraints, regularization, and solver options.
-    
-    Parameters:
-      employees: List of EmployeeModel objects.
-      projects: List of ProjectModel objects.
-      start_date: string in "YYYY-MM-DD" format.
-      end_date: string in "YYYY-MM-DD" format.
-      all_topics: List of all recognized research topics.
-      
-    Returns:
-      A dictionary with:
-         - solver_status: CVXPY problem status.
-         - final_objective: The final objective value.
-         - final_costs: A dict of computed project costs.
-         - allocations: A nested dictionary with allocations per employee per day.
+    Allocates each employee's daily research hours (plus some portion as nonR&D)
+    to one or more projects/topics, without ever exceeding the timesheet hours
+    and preventing "double-billing" of the same hour to multiple projects.
+
+    We enforce:
+      1) sum of hours across all projects/topics == timesheet hours for each (employee, day).
+      2) NonR&D <= 25% of that day's research hours.
+      3) Minimizing sum of squared (ProjectCost - ProjectTarget).
+
+    Parameters
+    ----------
+    employees : list of EmployeeModel
+        Each employee has research_hours[date], meeting_hours[date], etc.
+        Must also have 'salary_levels[date]' that includes {'amount': some_value}.
+    projects : list of ProjectModel
+        Each project has 'research_topics' plus a 'grant_contractual' for target cost.
+    start_date : str (YYYY-MM-DD)
+    end_date   : str (YYYY-MM-DD)
+    all_topics : list of all recognized topics
+
+    Returns
+    -------
+    dict with keys:
+        solver_status
+        final_objective
+        final_costs       (dict of {project_name: cost_value})
+        allocations       (nested dict with allocated hours per (employee, date, project))
     """
+
     # -------------------------------------------------------------------------
-    # 1. Build Date Range and Dimensions
+    # 1. Build the date range
     # -------------------------------------------------------------------------
     dt_start = datetime.strptime(start_date, "%Y-%m-%d")
-    dt_end = datetime.strptime(end_date, "%Y-%m-%d")
+    dt_end   = datetime.strptime(end_date,   "%Y-%m-%d")
     date_list = []
     current = dt_start
     while current <= dt_end:
         date_list.append(current.strftime("%Y-%m-%d"))
         current += timedelta(days=1)
-    num_days = len(date_list)
+
+    num_days      = len(date_list)
     num_employees = len(employees)
-    
+    num_projects  = len(projects)
+    num_topics    = len(all_topics)
+
     # -------------------------------------------------------------------------
-    # 2. Build Topic Mapping and Salary Matrix
+    # 2. Mappings: topic -> index, project -> index
     # -------------------------------------------------------------------------
-    topic_to_index = {topic: i for i, topic in enumerate(all_topics)}
-    num_topics = len(all_topics)
-    
-    # Build the salary matrix (num_employees x num_days).
-    salary_list = []
+    topic_to_idx = {topic: i for i, topic in enumerate(all_topics)}
+    # We'll just use the project list index for 'p'
+    # p_idx = index of that project in 'projects'.
+
+    # -------------------------------------------------------------------------
+    # 3. Salary Matrix (num_employees x num_days)
+    #    from employees' salary_levels
+    # -------------------------------------------------------------------------
+    salaries = []
     for emp in employees:
-        for day_str in date_list:
-            day_salary_info = emp.salary_levels.get(day_str, {})
-            salary_list.append(float(day_salary_info.get("amount", 0.0)))
-    salaries = np.array(salary_list)
-    salary_matrix = salaries.reshape((num_employees, num_days))
-    
+        for d_str in date_list:
+            day_info = emp.salary_levels.get(d_str, {})
+            # day_info might have {"level": "Senior", "amount": 120.0}
+            amt = float(day_info.get("amount", 0.0))
+            salaries.append(amt)
+    salary_array = np.array(salaries, dtype=float)
+    salary_matrix = salary_array.reshape((num_employees, num_days))
+
     # -------------------------------------------------------------------------
-    # 3. Build Project Targets and Project-Topic Mapping
-    # -------------------------------------------------------------------------
-    target_costs = {}
-    project_topics = {}
-    for proj in projects:
-        proj_name = proj.name if proj.name else "Unnamed"
-        target_costs[proj_name] = float(proj.grant_contractual)
-        topic_indices = [topic_to_index[t] for t in proj.research_topics if t in topic_to_index]
-        project_topics[proj_name] = topic_indices
-    
-    # -------------------------------------------------------------------------
-    # 4. Build Daily Research Hours Array
+    # 4. Daily research hours from timesheets
     # -------------------------------------------------------------------------
     research_hours_array = np.zeros((num_employees, num_days), dtype=float)
     for i, emp in enumerate(employees):
         for j, d_str in enumerate(date_list):
             research_hours_array[i, j] = emp.research_hours[d_str]
-    
-    # -------------------------------------------------------------------------
-    # 5. Define Optimization Variables
-    # -------------------------------------------------------------------------
-    # X: allocated hours per employee, day, and topic (shape: num_employees x num_days x num_topics)
-    X = cp.Variable((num_employees, num_days, num_topics), nonneg=True)
-    # Y: allocated nonRnD hours per employee, day (shape: num_employees x num_days)
-    Y = cp.Variable((num_employees, num_days), nonneg=True)
-    
-    # -------------------------------------------------------------------------
-    # 6. Define Constraints (Vectorized)
-    # -------------------------------------------------------------------------
-    constraints = []
-    # Total research hours allocated (across topics) must equal reported research hours.
-    constraints.append(cp.sum(X, axis=2) == research_hours_array)
-    # NonRnD hours are capped at 25% of research hours.
-    constraints.append(Y <= 0.25 * research_hours_array)
-    
-    # -------------------------------------------------------------------------
-    # 7. Build Project Cost Expressions and Objective Function
-    # -------------------------------------------------------------------------
-    # For each project, the cost is the salary-weighted sum of:
-    #   (a) allocated hours for topics relevant to the project, plus
-    #   (b) the nonRnD hours (which contribute to every project).
-    project_cost_exprs = {}
-    for proj_name, topic_indices in project_topics.items():
-        if topic_indices:
-            # Sum allocations over the relevant topics.
-            topic_expr = cp.sum(X[:, :, topic_indices], axis=2)
-        else:
-            topic_expr = 0
-        cost_expr = cp.sum(cp.multiply(salary_matrix, (topic_expr + Y)))
-        project_cost_exprs[proj_name] = cost_expr
 
-    # Define the objective as the sum of squared differences between cost and target
-    # plus a small regularization on X and Y to improve numerical conditioning.
+    # -------------------------------------------------------------------------
+    # 5. Define 4D variable X for research (i, j, p, k),
+    #    and 3D variable Y for nonR&D (i, j, p).
+    #
+    #    X[i,j,p,k] = hours of topic k, day j, by employee i, allocated to project p
+    #    Y[i,j,p]   = nonR&D hours (day j, employee i) billed to project p
+    #
+    # We use "nonneg=True" to ensure they're >= 0
+    # -------------------------------------------------------------------------
+    X = cp.Variable((num_employees, num_days, num_projects, num_topics), nonneg=True)
+    Y = cp.Variable((num_employees, num_days, num_projects), nonneg=True)
+
+    # -------------------------------------------------------------------------
+    # 6. Constraints
+    # -------------------------------------------------------------------------
+
+    constraints = []
+
+    # 6a) Exactly match the timesheet's daily research hours:
+    #     sum_{p,k} X[i,j,p,k] + sum_{p} Y[i,j,p] = research_hours_array[i,j].
+    #     That means we allocate ALL hours (no more, no less).
+    #
+    constraints.append(
+        cp.sum(X, axis=(2,3)) + cp.sum(Y, axis=2) == research_hours_array
+    )
+
+    # 6b) NonR&D <= 25% of daily research hours
+    #
+    constraints.append(
+        cp.sum(Y, axis=2) <= 0.25 * research_hours_array
+    )
+
+    # 6c) If a project does *not* have topic k, force X=0 for that topic
+    #     to avoid allocating hours to that project/topic combo
+    #
+    for p_idx, proj in enumerate(projects):
+        allowed_topic_indices = [
+            topic_to_idx[t]
+            for t in proj.research_topics
+            if t in topic_to_idx
+        ]
+        for k in range(num_topics):
+            if k not in allowed_topic_indices:
+                # Force no hours on that topic for project p_idx
+                constraints.append(
+                    X[:, :, p_idx, k] == 0
+                )
+
+    # -------------------------------------------------------------------------
+    # 7. Objective: Minimize sum of (cost_p - target_p)^2 + small reg
+    #    cost_p = sum_{i,j} salary[i,j] * ( sum_{k} X[i,j,p,k] + Y[i,j,p] )
+    # -------------------------------------------------------------------------
+    # Build cost expression per project
+    project_cost_exprs = {}
+    target_costs = {}
+
+    for p_idx, proj in enumerate(projects):
+        pname = proj.name if proj.name else f"Project_{p_idx}"
+        try:
+            t_val = float(proj.grant_contractual)
+        except:
+            t_val = 0.0
+        target_costs[pname] = t_val
+
+        # sum_{i,j} salary_matrix[i,j] * [ sum_{k} X[i,j,p_idx,k] + Y[i,j,p_idx] ]
+        #   shape of X[:, :, p_idx, :] => (num_employees, num_days, num_topics)
+        #   sum over topics => shape (num_employees, num_days)
+        sum_topics = cp.sum(X[:, :, p_idx, :], axis=3)
+        sum_nonrnd = Y[:, :, p_idx]
+        combined   = sum_topics + sum_nonrnd  # shape (num_employees, num_days)
+
+        cost_expr  = cp.sum(cp.multiply(salary_matrix, combined))
+        project_cost_exprs[pname] = cost_expr
+
+    # Build sum of squared differences: sum_p (cost_p - target_p)^2
+    diffs = []
+    for p_idx, proj in enumerate(projects):
+        pname = proj.name if proj.name else f"Project_{p_idx}"
+        diff_expr = project_cost_exprs[pname] - target_costs[pname]
+        diffs.append(cp.square(diff_expr))
+
+    # tiny regularization
     reg_lambda = 1e-6
-    objective_terms = []
-    for proj_name in project_topics.keys():
-        diff_expr = project_cost_exprs[proj_name] - target_costs[proj_name]
-        objective_terms.append(cp.square(diff_expr))
-    regularization = reg_lambda * (cp.sum_squares(X) + cp.sum_squares(Y))
-    objective = cp.Minimize(cp.sum(objective_terms) + regularization)
-    
+    reg_expr = reg_lambda * (cp.sum_squares(X) + cp.sum_squares(Y))
+
+    objective = cp.Minimize(cp.sum(diffs) + reg_expr)
+
     # -------------------------------------------------------------------------
-    # 8. Solve the QP Problem with Solver Options and (optional) Warm Start
+    # 8. Solve
     # -------------------------------------------------------------------------
-    solver_options = {
-        "eps_abs": 1e-4,
-        "eps_rel": 1e-4,
-        # Additional options can be specified here.
-    }
     problem = cp.Problem(objective, constraints)
-    problem.solve(solver=cp.OSQP, **solver_options)
-    
+    solver_opts = {
+        "eps_abs": 1e-7,
+        "eps_rel": 1e-7,
+        "max_iter": 100000
+    }
+    problem.solve(solver=cp.OSQP, **solver_opts)
+
     if problem.status not in ["optimal", "optimal_inaccurate"]:
-        print("Warning: Solver did not reach an optimal solution. Status:", problem.status)
-    
+        print("Warning: Solver ended with status:", problem.status)
+
     # -------------------------------------------------------------------------
-    # 9. Retrieve the Optimized Values and Build the Output
+    # 9. Extract results
     # -------------------------------------------------------------------------
-    X_val = X.value  # Allocated research topic hours
-    Y_val = Y.value  # Allocated nonRnD hours
-    
-    # Build a nested allocations dictionary: per employee, per day.
+    X_val = X.value  # shape (num_employees, num_days, num_projects, num_topics)
+    Y_val = Y.value  # shape (num_employees, num_days, num_projects)
+
+    final_costs = {}
+    for p_idx, proj in enumerate(projects):
+        pname = proj.name if proj.name else f"Project_{p_idx}"
+        final_costs[pname] = float(project_cost_exprs[pname].value)
+
+    # Build nested allocation dictionary:
+    # allocations[employee_name][date_str][project_name] = { 'topics': {...}, 'nonRnD': float }
     allocations = {}
     for i, emp in enumerate(employees):
-        emp_alloc = {"name": emp.employee_name, "daily_allocations": {}}
+        emp_name = emp.employee_name
+        allocations[emp_name] = {}
+
         for j, d_str in enumerate(date_list):
-            day_alloc = {}
-            for t_idx, t_name in enumerate(all_topics):
-                day_alloc[t_name] = float(X_val[i, j, t_idx])
-            day_alloc["nonRnD"] = float(Y_val[i, j])
-            emp_alloc["daily_allocations"][d_str] = day_alloc
-            # Also save into EmployeeModel
-            if not hasattr(emp, "optimized_hours"):
-                emp.optimized_hours = {}
-            emp.optimized_hours[d_str] = day_alloc.copy()
-        allocations[emp.employee_name] = emp_alloc
-    
-    # Compute final costs for reporting.
-    final_costs = {}
-    for proj_name, topic_indices in project_topics.items():
-        if topic_indices:
-            topic_alloc = np.sum(X_val[:, :, topic_indices], axis=2)
-        else:
-            topic_alloc = 0
-        cost = float(np.sum(salary_matrix * (topic_alloc + Y_val)))
-        final_costs[proj_name] = cost
-    
+            allocations[emp_name][d_str] = {}
+
+            for p_idx, proj in enumerate(projects):
+                pname = proj.name if proj.name else f"Project_{p_idx}"
+                # gather topic hours
+                topic_allocs = {}
+                for k_idx, topic_name in enumerate(all_topics):
+                    hours_val = X_val[i, j, p_idx, k_idx]
+                    if hours_val > 1e-10:
+                        topic_allocs[topic_name] = float(hours_val)
+
+                nonrnd_val = float(Y_val[i, j, p_idx])
+                # store only if there's something
+                if topic_allocs or nonrnd_val > 1e-10:
+                    allocations[emp_name][d_str][pname] = {
+                        'topics': topic_allocs,
+                        'nonRnD': nonrnd_val
+                    }
+
     return {
-        "solver_status": problem.status,
-        "final_objective": problem.value,
-        "final_costs": final_costs,
-        "allocations": allocations
+        'solver_status'   : problem.status,
+        'final_objective' : problem.value,
+        'final_costs'     : final_costs,
+        'allocations'     : allocations
     }

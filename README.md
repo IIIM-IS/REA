@@ -33,6 +33,8 @@ See requirements.txt for all dependencies and pinned versions.
 This project is licensed under the MIT License
 
 
-
-
-   
+# TODO
+1. Program needs to load ALL data fields from file, as well as after closure - if you close the program and you had written things on the fields, those things should just be there from before
+2. Test the Algorithm using the unit tests -> change wtv needs to be changed to make it work
+3. Add for debugging - Did we spend more hours than we had? Yes/No : (equation = result) the number of hours available from the sheets minus the number of hours spent | ways in which the program fucked up or did something that we do not want it to do - experiments to test these hypothesis. 
+4. Reading files is a problem atm

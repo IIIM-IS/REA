@@ -15,228 +15,267 @@
 # medium, is strictly prohibited unless prior written permission is obtained
 # from the authors.
 # -----------------------------------------------------------------------------
-
-from PyQt5.QtWidgets import QFileDialog
-from PyQt5.QtCore import QSettings
+import cvxpy as cp
+import numpy as np
 from datetime import datetime, timedelta
-from algorithm import run_allocation_algorithm
-from Model import ReaDataModel, EmployeeModel, ProjectModel
 
-class Controller:
-    def __init__(self, model, view):
-        self.model = model
-        self.view = view
+def run_allocation_algorithm(employees, projects, start_date, end_date, all_topics):
+    """
+    Allocates each employee's daily research hours (plus some portion as nonR&D)
+    to one or more projects/topics, without ever exceeding the timesheet hours
+    and preventing "double-billing" of the same hour to multiple projects.
 
-        # Create a QSettings instance for auto-saving user inputs.
-        self.settings = QSettings("IIIM", "REAApp")
-        self.load_settings()
+    We enforce:
+      1) sum of hours across all projects/topics == timesheet hours for each (employee, day).
+      2) NonR&D <= 25% of that day's research hours.
+      3) Minimizing sum of squared (ProjectCost - ProjectTarget).
 
-        # List to store date ranges
-        self.date_ranges = []
-        self.setting_start_date = True
+    Debug/Insight prints at the end:
+      - Solver status, final objective
+      - Per-project cost vs. target, difference
+      - Per-day constraints check for each employee (including any mismatch)
+      - Aggregate checks: total hours allocated, total hours from timesheets, etc.
 
-        # Connect signals for date inputs so they are auto-saved.
-        self.view.start_date_input.editingFinished.connect(
-            lambda: self.settings.setValue("start_date", self.view.start_date_input.text())
-        )
-        self.view.end_date_input.editingFinished.connect(
-            lambda: self.settings.setValue("end_date", self.view.end_date_input.text())
-        )
+    Parameters
+    ----------
+    employees : list of EmployeeModel
+        Each employee has research_hours[date], meeting_hours[date], etc.
+        Must also have 'salary_levels[date]' that includes {'amount': some_value}.
+    projects : list of ProjectModel
+        Each project has 'research_topics' plus a 'grant_contractual' for target cost.
+    start_date : str (YYYY-MM-DD)
+    end_date   : str (YYYY-MM-DD)
+    all_topics : list of all recognized topics
 
-        # Connect buttons from the view.
-        self.view.apply_dates_button.clicked.connect(self.add_dates)
-        self.view.timesheet_button.clicked.connect(self.read_timesheets)
-        self.view.open_calendar_button.clicked.connect(self.toggle_calendar)
-        self.view.calendar.clicked.connect(self.set_date)
-        self.view.add_project_button.clicked.connect(self.view.create_project_subsection)
-        self.view.toggle_project_button.clicked.connect(self.view.toggle_project_section)
-        self.view.generate_output_button.clicked.connect(self.generate_output)
-        self.view.save_state_button.clicked.connect(self.save_state)
-        self.view.load_state_button.clicked.connect(self.load_state)
+    Returns
+    -------
+    dict with keys:
+        solver_status
+        final_objective
+        final_costs       (dict of {project_name: cost_value})
+        allocations       (nested dict with allocated hours per (employee, date, project))
+    """
 
-        self.employees = []
-        self.projects = []
+    # -------------------------------------------------------------------------
+    # 1. Build the date range
+    # -------------------------------------------------------------------------
+    dt_start = datetime.strptime(start_date, "%Y-%m-%d")
+    dt_end   = datetime.strptime(end_date,   "%Y-%m-%d")
+    date_list = []
+    current = dt_start
+    while current <= dt_end:
+        date_list.append(current.strftime("%Y-%m-%d"))
+        current += timedelta(days=1)
 
-    def load_settings(self):
-        start_date = self.settings.value("start_date", "")
-        end_date = self.settings.value("end_date", "")
-        print("Loaded start_date:", start_date)
-        print("Loaded end_date:", end_date) 
-        self.view.start_date_input.setText(start_date)
-        self.view.end_date_input.setText(end_date)
+    num_days      = len(date_list)
+    num_employees = len(employees)
+    num_projects  = len(projects)
+    num_topics    = len(all_topics)
 
-    def toggle_calendar(self):
-        self.view.calendar.setVisible(not self.view.calendar.isVisible())
+    # -------------------------------------------------------------------------
+    # 2. Mappings: topic -> index
+    # -------------------------------------------------------------------------
+    topic_to_idx = {topic: i for i, topic in enumerate(all_topics)}
 
-    def set_date(self, q_date):
-        selected_date = q_date.toString("yyyy-MM-dd")
-        if self.setting_start_date:
-            self.view.start_date_input.setText(selected_date)
-            self.setting_start_date = False
-        else:
-            self.view.end_date_input.setText(selected_date)
-            self.setting_start_date = True
+    # -------------------------------------------------------------------------
+    # 3. Salary Matrix (num_employees x num_days)
+    # -------------------------------------------------------------------------
+    salaries = []
+    for emp in employees:
+        for d_str in date_list:
+            day_info = emp.salary_levels.get(d_str, {})
+            amt = float(day_info.get("amount", 0.0))
+            salaries.append(amt)
+    salary_array = np.array(salaries, dtype=float)
+    salary_matrix = salary_array.reshape((num_employees, num_days))
 
-    def add_dates(self):
-        start_date = self.view.start_date_input.text().strip()
-        end_date = self.view.end_date_input.text().strip()
-        self.date_ranges.append((start_date, end_date))
-        print(f"Date ranges: {self.date_ranges}")
+    # -------------------------------------------------------------------------
+    # 4. Daily research hours from timesheets
+    # -------------------------------------------------------------------------
+    research_hours_array = np.zeros((num_employees, num_days), dtype=float)
+    for i, emp in enumerate(employees):
+        for j, d_str in enumerate(date_list):
+            research_hours_array[i, j] = emp.research_hours[d_str]
 
-    def generate_output(self):
-        if not self.date_ranges:
-            print("No date range specified.")
-            return
-        start_date, end_date = self.date_ranges[-1]
-        self.projects = self.view.projects
-        all_topics = self.model.research_topics
-        result = run_allocation_algorithm(
-            employees=self.employees,
-            projects=self.projects,
-            start_date=start_date,
-            end_date=end_date,
-            all_topics=all_topics
-        )
-        print("Algorithm finished.")
-        print(f"Iterations used: {result['iteration']}")
-        print("\nProject Costs (Actual vs. Target):")
-        final_costs = result['final_costs']
-        for proj in self.projects:
-            proj_name = proj.name if proj.name else "Unnamed"
-            actual_cost = final_costs.get(proj_name, 0.0)
-            target_cost = proj.grant_contractual
-            print(f"  Project '{proj_name}': Actual={actual_cost:.2f}, Target={float(target_cost):.2f}")
-        print("\nOptimized Hours Allocation:")
-        allocations = result['allocations']
-        for emp_name, emp_data in allocations.items():
-            print(f"Employee: {emp_name}")
-            daily_allocations = emp_data["daily_allocations"]
-            for date_str, day_data in daily_allocations.items():
-                nonRnD_hours = day_data['nonRnD']
-                non_zero_topics = {topic: hours for topic, hours in day_data.items() if topic != "nonRnD" and hours > 0.0}
-                topics_str = ", ".join(f"{t}={val:.2f}" for t, val in non_zero_topics.items())
-                print(f"  Date {date_str}: {topics_str}, nonRnD={nonRnD_hours:.2f}")
+    # -------------------------------------------------------------------------
+    # 5. Define 4D variable X and 3D variable Y
+    # -------------------------------------------------------------------------
+    #  X[i,j,p,k] = hours employee i, day j, project p, topic k
+    #  Y[i,j,p]   = nonR&D hours employee i, day j, billed to project p
+    # -------------------------------------------------------------------------
+    X = cp.Variable((num_employees, num_days, num_projects, num_topics), nonneg=True)
+    Y = cp.Variable((num_employees, num_days, num_projects), nonneg=True)
 
-    def read_timesheets(self):
-        directory = QFileDialog.getExistingDirectory(self.view, "Select Directory")
-        self.view.directory_label.setText(f"Selected Directory: {directory}")
-        self.employees = self.model.extract_data_from_csv(directory, self.date_ranges)
-        self.view.create_employee_overview_section(self.employees)
-        for emp in self.employees:
-            print(f"Employee: {emp.employee_name}")
-            for date_str in sorted(emp.research_hours.keys()):
-                daily_summary = emp.get_daily_summary(date_str)
-                print(f"  Date: {date_str}, Summary: {daily_summary}")
+    # -------------------------------------------------------------------------
+    # 6. Constraints
+    # -------------------------------------------------------------------------
+    constraints = []
 
-    # --- Explicit Save/Load Methods ---
-    def gather_state(self):
-        state = {}
-        state["date_ranges"] = self.date_ranges
-        state["start_date"] = self.view.start_date_input.text()
-        state["end_date"] = self.view.end_date_input.text()
-        state["projects"] = [self.project_to_dict(proj) for proj in self.view.projects]
-        state["employees"] = [self.employee_to_dict(emp) for emp in self.employees]
-        return state
+    # 6a) Sum of allocated hours == daily timesheet hours
+    constraints.append(
+        cp.sum(X, axis=(2,3)) + cp.sum(Y, axis=2) == research_hours_array
+    )
 
-    def project_to_dict(self, proj):
-        return {
-            "name": proj.name,
-            "funding_agency": proj.funding_agency,
-            "grant_min": proj.grant_min,
-            "grant_max": proj.grant_max,
-            "grant_contractual": proj.grant_contractual,
-            "funding_start": proj.funding_start,
-            "funding_end": proj.funding_end,
-            "currency": proj.currency,
-            "exchange_rate": proj.exchange_rate,
-            "report_type": proj.report_type,
-            "matching_fund_type": proj.matching_fund_type,
-            "matching_fund_value": proj.matching_fund_value,
-            "operational_overhead": proj.operational_overhead,
-            "travel_cost": proj.travel_cost,
-            "equipment_cost": proj.equipment_cost,
-            "other_cost": proj.other_cost,
-            "research_topics": proj.research_topics,
-        }
+    # 6b) NonR&D <= 25% of daily research hours
+    constraints.append(
+        cp.sum(Y, axis=2) <= 0.25 * research_hours_array
+    )
 
-    def employee_to_dict(self, emp):
-        return {
-            "employee_name": emp.employee_name,
-            "research_hours": dict(emp.research_hours),
-            "meeting_hours": dict(emp.meeting_hours),
-            "nonRnD_hours": dict(emp.nonRnD_hours),
-            "research_topics": {k: dict(v) for k, v in emp.research_topics.items()},
-            "salary_levels": dict(emp.salary_levels),
-        }
+    # 6c) If project doesn't have a topic, set X=0 for that project/topic
+    for p_idx, proj in enumerate(projects):
+        allowed_topic_indices = [
+            topic_to_idx[t]
+            for t in proj.research_topics
+            if t in topic_to_idx
+        ]
+        for k in range(num_topics):
+            if k not in allowed_topic_indices:
+                constraints.append(
+                    X[:, :, p_idx, k] == 0
+                )
 
-    def save_state(self):
-        import json
-        state = self.gather_state()
-        filename, _ = QFileDialog.getSaveFileName(self.view, "Save State", "", "JSON Files (*.json)")
-        if filename:
-            try:
-                with open(filename, "w") as f:
-                    json.dump(state, f, indent=2)
-                print("State saved to", filename)
-            except Exception as e:
-                print("Error saving state:", e)
+    # -------------------------------------------------------------------------
+    # 7. Objective: Minimizing sum of squares (cost_p - target_p) + tiny reg
+    # -------------------------------------------------------------------------
+    project_cost_exprs = {}
+    target_costs = {}
 
-    def load_state(self):
-        import json
-        filename, _ = QFileDialog.getOpenFileName(self.view, "Load State", "", "JSON Files (*.json)")
-        if filename:
-            try:
-                with open(filename, "r") as f:
-                    state = json.load(f)
-                self.apply_state(state)
-                print("State loaded from", filename)
-            except Exception as e:
-                print("Error loading state:", e)
+    for p_idx, proj in enumerate(projects):
+        pname = proj.name if proj.name else f"Project_{p_idx}"
+        try:
+            t_val = float(proj.grant_contractual)
+        except:
+            t_val = 0.0
+        target_costs[pname] = t_val
 
-    def apply_state(self, state):
-        self.date_ranges = state.get("date_ranges", [])
-        self.view.start_date_input.setText(state.get("start_date", ""))
-        self.view.end_date_input.setText(state.get("end_date", ""))
-        projects_data = state.get("projects", [])
-        self.view.projects.clear()
-        self.view.projects = []
-        for proj_dict in projects_data:
-            proj = self.dict_to_project(proj_dict)
-            self.view.projects.append(proj)
-            self.view.create_project_subsection_from_project(proj)
-        employees_data = state.get("employees", [])
-        self.employees.clear()
-        for emp_dict in employees_data:
-            emp = self.dict_to_employee(emp_dict)
-            self.employees.append(emp)
+        # cost_p = sum over i,j of salary[i,j]* (sum_{k} X[i,j,p,k] + Y[i,j,p])
+        sum_topics = cp.sum(X[:, :, p_idx, :], axis=3)
+        sum_nonrnd = Y[:, :, p_idx]
+        combined   = sum_topics + sum_nonrnd
+        cost_expr  = cp.sum(cp.multiply(salary_matrix, combined))
+        project_cost_exprs[pname] = cost_expr
 
-    def dict_to_project(self, d):
-        proj = ProjectModel(
-            name=d.get("name", ""),
-            funding_agency=d.get("funding_agency", ""),
-            grant_min=d.get("grant_min", 0),
-            grant_max=d.get("grant_max", 0),
-            grant_contractual=d.get("grant_contractual", 0),
-            funding_start=d.get("funding_start", ""),
-            funding_end=d.get("funding_end", ""),
-            currency=d.get("currency", "Euros"),
-            exchange_rate=d.get("exchange_rate", 0),
-            report_type=d.get("report_type", "Annual"),
-            matching_fund_type=d.get("matching_fund_type", "Percentage"),
-            matching_fund_value=d.get("matching_fund_value", 0),
-            operational_overhead=d.get("operational_overhead", 0),
-            travel_cost=d.get("travel_cost", 0),
-            equipment_cost=d.get("equipment_cost", 0),
-            other_cost=d.get("other_cost", 0)
-        )
-        proj.research_topics = d.get("research_topics", [])
-        return proj
+    diffs = []
+    for p_idx, proj in enumerate(projects):
+        pname = proj.name if proj.name else f"Project_{p_idx}"
+        diff_expr = project_cost_exprs[pname] - target_costs[pname]
+        diffs.append(cp.square(diff_expr))
 
-    def dict_to_employee(self, d):
-        emp = EmployeeModel(d.get("employee_name", ""))
-        emp.research_hours = d.get("research_hours", {})
-        emp.meeting_hours = d.get("meeting_hours", {})
-        emp.nonRnD_hours = d.get("nonRnD_hours", {})
-        emp.research_topics = {k: v for k, v in d.get("research_topics", {}).items()}
-        emp.salary_levels = d.get("salary_levels", {})
-        return emp
+    reg_lambda = 1e-6
+    reg_expr = reg_lambda * (cp.sum_squares(X) + cp.sum_squares(Y))
+    objective = cp.Minimize(cp.sum(diffs) + reg_expr)
+
+    # -------------------------------------------------------------------------
+    # 8. Solve
+    # -------------------------------------------------------------------------
+    problem = cp.Problem(objective, constraints)
+    solver_opts = {
+        "eps_abs": 1e-7,
+        "eps_rel": 1e-7,
+        "max_iter": 100000
+    }
+    problem.solve(solver=cp.OSQP, **solver_opts)
+
+    # -------------------------------------------------------------------------
+    # 9. Extract results & debugging info
+    # -------------------------------------------------------------------------
+    X_val = X.value
+    Y_val = Y.value
+
+    final_costs = {}
+    for p_idx, proj in enumerate(projects):
+        pname = proj.name if proj.name else f"Project_{p_idx}"
+        final_costs[pname] = float(project_cost_exprs[pname].value)
+
+    # Build nested allocations dictionary
+    allocations = {}
+    for i, emp in enumerate(employees):
+        emp_name = emp.employee_name
+        allocations[emp_name] = {}
+        for j, d_str in enumerate(date_list):
+            allocations[emp_name][d_str] = {}
+            for p_idx, proj in enumerate(projects):
+                pname = proj.name if proj.name else f"Project_{p_idx}"
+                topic_allocs = {}
+                for k_idx, topic_name in enumerate(all_topics):
+                    hours_val = X_val[i, j, p_idx, k_idx]
+                    if hours_val > 1e-10:
+                        topic_allocs[topic_name] = float(hours_val)
+
+                nonrnd_val = float(Y_val[i, j, p_idx])
+                if topic_allocs or nonrnd_val > 1e-10:
+                    allocations[emp_name][d_str][pname] = {
+                        'topics': topic_allocs,
+                        'nonRnD': nonrnd_val
+                    }
+
+    results = {
+        'solver_status': problem.status,
+        'final_objective': problem.value,
+        'final_costs': final_costs,
+        'allocations': allocations
+    }
+
+    # -------------------------------------------------------------------------
+    # 10. Print/Debug/Insight Info
+    # -------------------------------------------------------------------------
+    print("==== DEBUG / INSIGHTS ====")
+    print(f"Solver status: {problem.status}")
+    print(f"Final objective value: {problem.value:.4f}")
+
+    # Per-project costs vs. targets
+    print("\nProject Costs vs. Targets:")
+    for p_idx, proj in enumerate(projects):
+        pname = proj.name if proj.name else f"Project_{p_idx}"
+        cost = final_costs[pname]
+        target = target_costs[pname]
+        diff  = cost - target
+        print(f"  {pname}: cost={cost:.2f}, target={target:.2f}, diff={diff:.2f}")
+
+    # Check daily constraints: sum_{p,k} X_val + sum_{p} Y_val
+    # We'll measure the max absolute difference from timesheet hours
+    max_abs_diff = 0.0
+    total_allocated = 0.0
+    total_timesheet = 0.0
+    for i in range(num_employees):
+        emp_name = employees[i].employee_name
+        for j, d_str in enumerate(date_list):
+            allocated_day = 0.0
+            # sum over all p, k
+            allocated_day += np.sum(X_val[i, j, :, :])
+            allocated_day += np.sum(Y_val[i, j, :])
+
+            timesheet_day = research_hours_array[i, j]
+            diff = allocated_day - timesheet_day
+            total_allocated += allocated_day
+            total_timesheet += timesheet_day
+
+            if abs(diff) > max_abs_diff:
+                max_abs_diff = abs(diff)
+
+    print(f"\nTotal timesheet hours: {total_timesheet:.2f}")
+    print(f"Total allocated hours: {total_allocated:.2f}")
+    print(f"Max absolute difference in day constraints: {max_abs_diff:.4e}")
+    if max_abs_diff > 1e-5:
+        print("WARNING: Some day constraints are off by more than 1e-5 (check solver tolerance).")
+    else:
+        print("Day constraints satisfied within tolerance.")
+
+    # Check how close we are to the 25% nonR&D limit
+    # We'll just do a quick check for each day & employee
+    # sum_{p} Y[i,j,p] <= 0.25 * research_hours_array[i,j]
+    max_nond_rd_ratio = 0.0
+    for i in range(num_employees):
+        for j in range(num_days):
+            total_nond = np.sum(Y_val[i, j, :])
+            rhours = research_hours_array[i, j]
+            if rhours > 0:
+                ratio = total_nond / rhours
+                if ratio > max_nond_rd_ratio:
+                    max_nond_rd_ratio = ratio
+
+    print(f"Max NonR&D fraction (across all employees/days): {max_nond_rd_ratio*100:.2f}% (limit=25%)\n")
+
+    print("==== END DEBUG ====")
+
+    return results
