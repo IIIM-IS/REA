@@ -65,8 +65,6 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     # 2. Mappings: topic -> index
     # -------------------------------------------------------------------------
     topic_to_idx = {topic: i for i, topic in enumerate(all_topics)}
-    # We'll just use the project list index for 'p'
-    # p_idx = index of that project in 'projects'.
 
     # -------------------------------------------------------------------------
     # 3. Salary Matrix (num_employees x num_days)
@@ -81,7 +79,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     salary_matrix = salary_array.reshape((num_employees, num_days))
 
     # -------------------------------------------------------------------------
-    # 4. Daily research hours from timesheets
+    # 4. Daily research hours from timesheets (num_employees x num_days)
     # -------------------------------------------------------------------------
     research_hours_array = np.zeros((num_employees, num_days), dtype=float)
     for i, emp in enumerate(employees):
@@ -89,11 +87,28 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
             research_hours_array[i, j] = emp.research_hours[d_str]
 
     # -------------------------------------------------------------------------
-    # 5. Define 4D variable X for research (i, j, p, k),
-    #    and 3D variable Y for nonR&D (i, j, p).
-    #
-    #    X[i,j,p,k] = hours of topic k, day j, by employee i, allocated to project p
-    #    Y[i,j,p]   = nonR&D hours (day j, employee i) billed to project p
+    # === Debug: Print Per-Employee Totals (Hours & Money) ===
+    # -------------------------------------------------------------------------
+    print("\n================= DEBUG INFO: HOURS & SALARY =================")
+    grand_total_hours = 0.0
+    grand_total_salary = 0.0
+
+    for i, emp in enumerate(employees):
+        emp_name = emp.employee_name
+        emp_hours = float(np.sum(research_hours_array[i, :]))
+        daily_costs = salary_matrix[i, :] * research_hours_array[i, :]
+        emp_cost = float(np.sum(daily_costs))
+
+        grand_total_hours += emp_hours
+        grand_total_salary += emp_cost
+
+        print(f"Employee '{emp_name}': total hours = {emp_hours:.2f}, total salary = {emp_cost:.2f}")
+
+    print(f"\nALL EMPLOYEES COMBINED: total hours = {grand_total_hours:.2f}, total salary = {grand_total_salary:.2f}")
+    print("==============================================================\n")
+
+    # -------------------------------------------------------------------------
+    # 5. Define CVXPY Variables
     # -------------------------------------------------------------------------
     X = cp.Variable((num_employees, num_days, num_projects, num_topics), nonneg=True)
     Y = cp.Variable((num_employees, num_days, num_projects), nonneg=True)
@@ -103,7 +118,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     # -------------------------------------------------------------------------
     constraints = []
 
-    # 6a) sum_{p,k} X[i,j,p,k] + sum_{p} Y[i,j,p] == research_hours_array[i,j].
+    # 6a) sum_{p,k} X[i,j,p,k] + sum_{p} Y[i,j,p] = daily hours
     constraints.append(
         cp.sum(X, axis=(2,3)) + cp.sum(Y, axis=2) == research_hours_array
     )
@@ -113,21 +128,17 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         cp.sum(Y, axis=2) <= 0.25 * research_hours_array
     )
 
-    # 6c) If a project does *not* have topic k, force X=0 for that topic
+    # 6c) If a project does not include a topic, force X=0 for that topic
     for p_idx, proj in enumerate(projects):
         allowed_topic_indices = [
-            topic_to_idx[t]
-            for t in proj.research_topics
-            if t in topic_to_idx
+            topic_to_idx[t] for t in proj.research_topics if t in topic_to_idx
         ]
         for k in range(num_topics):
             if k not in allowed_topic_indices:
-                constraints.append(
-                    X[:, :, p_idx, k] == 0
-                )
+                constraints.append(X[:, :, p_idx, k] == 0)
 
     # -------------------------------------------------------------------------
-    # 7. Objective: Minimize sum of (cost_p - target_p)^2 + small reg
+    # 7. Objective: Minimize sum of squared differences from targets + small reg
     # -------------------------------------------------------------------------
     project_cost_exprs = {}
     target_costs = {}
@@ -140,49 +151,19 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
             t_val = 0.0
         target_costs[pname] = t_val
 
-        # DEBUG: check shapes for this project
-        # salary_matrix is (num_employees, num_days)
-        # We want cost_p = sum_{i,j} salary[i,j] * ( sum_{k} X[i,j,p_idx,k] + Y[i,j,p_idx] )
-
-        # sum_topics over axis=3 => shape: (num_employees, num_days, num_projects)
-        # But we are slicing p_idx, so first do X[:, :, p_idx, :]
-        #
-        # *Important fix:* sum over axis=2 if shape is (num_employees, num_days, num_topics)
-        # after slicing.
-
-        # Let's do a debug print to confirm the slice shape:
-        print("\n[DEBUG] For project:", pname, "(p_idx =", p_idx, ")")
-        print("X.shape =", X.shape)  # Expect (num_employees, num_days, num_projects, num_topics)
-        print("Slicing X[:, :, p_idx, :].shape =>", X[:, :, p_idx, :].shape)
-
-        # Now sum over topics dimension, which is axis=2 in the slice (since shape is (E, D, T)):
-        sum_topics = cp.sum(X[:, :, p_idx, :], axis=2)
-
-        # Also debug the result shape:
-        print("sum_topics.shape after sum(axis=2) =>", sum_topics.shape)
-
-        # Then Y[:, :, p_idx] has shape (num_employees, num_days).
-        sum_nonrnd = Y[:, :, p_idx]
-        print("sum_nonrnd.shape =>", sum_nonrnd.shape)
-
-        # Now they should match shapes => (num_employees, num_days)
+        sum_topics = cp.sum(X[:, :, p_idx, :], axis=2)  # shape (E, D)
+        sum_nonrnd = Y[:, :, p_idx]                     # shape (E, D)
         combined = sum_topics + sum_nonrnd
-        print("combined.shape =>", combined.shape)
 
         cost_expr = cp.sum(cp.multiply(salary_matrix, combined))
         project_cost_exprs[pname] = cost_expr
 
-    # Build sum of squared differences: sum_p (cost_p - target_p)^2
     diffs = []
-    for p_idx, proj in enumerate(projects):
-        pname = proj.name if proj.name else f"Project_{p_idx}"
-        diff_expr = project_cost_exprs[pname] - target_costs[pname]
-        diffs.append(cp.square(diff_expr))
+    for pname, cost_expr in project_cost_exprs.items():
+        diffs.append(cp.square(cost_expr - target_costs[pname]))
 
-    # tiny regularization
     reg_lambda = 1e-6
     reg_expr = reg_lambda * (cp.sum_squares(X) + cp.sum_squares(Y))
-
     objective = cp.Minimize(cp.sum(diffs) + reg_expr)
 
     # -------------------------------------------------------------------------
@@ -202,28 +183,23 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     # -------------------------------------------------------------------------
     # 9. Extract results
     # -------------------------------------------------------------------------
-    X_val = X.value  # shape (num_employees, num_days, num_projects, num_topics)
-    Y_val = Y.value  # shape (num_employees, num_days, num_projects)
+    X_val = X.value
+    Y_val = Y.value
 
     final_costs = {}
-    for p_idx, proj in enumerate(projects):
-        pname = proj.name if proj.name else f"Project_{p_idx}"
-        final_costs[pname] = float(project_cost_exprs[pname].value)
+    for pname, expr in project_cost_exprs.items():
+        final_costs[pname] = float(expr.value)
 
-    # Build nested allocation dictionary:
-    # allocations[employee_name][date_str][project_name] = { 'topics': {...}, 'nonRnD': float }
+    # Build nested allocation dictionary
     allocations = {}
     for i, emp in enumerate(employees):
         emp_name = emp.employee_name
         allocations[emp_name] = {}
-
         for j, d_str in enumerate(date_list):
             allocations[emp_name][d_str] = {}
-
             for p_idx, proj in enumerate(projects):
                 pname = proj.name if proj.name else f"Project_{p_idx}"
 
-                # gather topic hours
                 topic_allocs = {}
                 for k_idx, topic_name in enumerate(all_topics):
                     hours_val = X_val[i, j, p_idx, k_idx]
@@ -231,16 +207,41 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                         topic_allocs[topic_name] = float(hours_val)
 
                 nonrnd_val = float(Y_val[i, j, p_idx])
-                # store only if there's something
                 if topic_allocs or nonrnd_val > 1e-10:
                     allocations[emp_name][d_str][pname] = {
-                        'topics': topic_allocs,
-                        'nonRnD': nonrnd_val
+                        "topics": topic_allocs,
+                        "nonRnD": nonrnd_val
                     }
 
+    # -------------------------------------------------------------------------
+    # 10. Diagnostics: Convert to int for the check
+    # -------------------------------------------------------------------------
+    print("\n================= DIAGNOSTIC: ALLOCATION CHECK (INTEGERS) =================")
+    for i, emp in enumerate(employees):
+        emp_name = emp.employee_name
+        for j, d_str in enumerate(date_list):
+            allocated_total = 0.0
+            for pname, alloc_data in allocations[emp_name][d_str].items():
+                allocated_total += alloc_data.get("nonRnD", 0.0)
+                allocated_total += sum(alloc_data.get("topics", {}).values())
+
+            available_total = emp.research_hours.get(d_str, 0.0)
+
+            # Convert both to integers using round() then int():
+            alloc_int = int(round(allocated_total))
+            avail_int = int(round(available_total))
+
+            if alloc_int > avail_int:
+                print(f"WARNING: Over-allocation for {emp_name} on {d_str} "
+                      f"(allocated={alloc_int}, available={avail_int})")
+            elif alloc_int < avail_int:
+                print(f"WARNING: Under-allocation for {emp_name} on {d_str} "
+                      f"(allocated={alloc_int}, available={avail_int})")
+    print("================================================================\n")
+
     return {
-        'solver_status'   : problem.status,
-        'final_objective' : problem.value,
-        'final_costs'     : final_costs,
-        'allocations'     : allocations
+        "solver_status": problem.status,
+        "final_objective": problem.value,
+        "final_costs": final_costs,
+        "allocations": allocations
     }

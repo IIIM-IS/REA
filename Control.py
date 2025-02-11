@@ -134,7 +134,8 @@ class Controller:
         all_topics = self.model.research_topics
 
         # Debug print
-        print(f"[DEBUG] Running algorithm from {start_date} to {end_date} with {len(self.employees)} employees and {len(self.projects)} projects.")
+        print(f"[DEBUG] Running algorithm from {start_date} to {end_date} "
+            f"with {len(self.employees)} employees and {len(self.projects)} projects.")
 
         # Run the allocation algorithm
         result = run_allocation_algorithm(
@@ -164,8 +165,6 @@ class Controller:
                 print(f"    WARNING: '{proj_name}' actual cost ({actual_cost:.2f}) exceeds target ({target_cost_float:.2f}).")
 
         # 2) Print final allocations
-        # The allocation dictionary returned is structured as:
-        #   allocations[employee_name][date_str][project_name] = { 'topics': {topic: hours, ...}, 'nonRnD': float }
         print("\nOptimized Hours Allocation:")
         allocations = result['allocations']
         for emp_name, date_dict in allocations.items():
@@ -175,15 +174,8 @@ class Controller:
                 for proj_name, proj_info in project_dict.items():
                     nonrnd_val = proj_info.get("nonRnD", 0.0)
                     topics_sum = sum(proj_info.get("topics", {}).values())
-                    daily_total += nonrnd_val + topics_sum
+                    daily_total += (nonrnd_val + topics_sum)
                 print(f"  Date {date_str}: allocated {daily_total:.2f} hours total")
-                # Uncomment the following block if you want a detailed breakdown per project:
-                # for proj_name, proj_info in project_dict.items():
-                #     nonrnd_val = proj_info.get("nonRnD", 0.0)
-                #     topics_map = proj_info.get("topics", {})
-                #     topic_str = ", ".join(f"{t}={h:.2f}" for t, h in topics_map.items())
-                #     proj_alloc = nonrnd_val + sum(topics_map.values())
-                #     print(f"    Project '{proj_name}': total={proj_alloc:.2f}, nonRnD={nonrnd_val:.2f}, topics=({topic_str})")
 
         # 3) Diagnostics
         diagnostics = []
@@ -196,27 +188,54 @@ class Controller:
             available_total = sum(employee.research_hours.values())
             total_available_all += available_total
 
+            # Sum all allocated hours for this employee across all days
             allocated_total = 0.0
             if emp_name in allocations:
                 for date_str, proj_dict in allocations[emp_name].items():
                     for proj_info in proj_dict.values():
-                        allocated_total += proj_info.get("nonRnD", 0.0) + sum(proj_info.get("topics", {}).values())
+                        allocated_total += proj_info.get("nonRnD", 0.0)
+                        allocated_total += sum(proj_info.get("topics", {}).values())
+
             total_allocated_all += allocated_total
 
-            diagnostics.append(f" - {emp_name}: Available={available_total:.2f}, Allocated={allocated_total:.2f}")
-            if allocated_total > available_total:
-                diagnostics.append(f"    WARNING: Over-allocation for {emp_name} ( {allocated_total:.2f} > {available_total:.2f} ).")
+            # --- Convert both to integers for the check
+            alloc_int = int(round(allocated_total))
+            avail_int = int(round(available_total))
 
-            for date, available in employee.research_hours.items():
+            diagnostics.append(
+                f" - {emp_name}: Available={available_total:.2f}, Allocated={allocated_total:.2f}"
+            )
+            if alloc_int > avail_int:
+                diagnostics.append(
+                    f"    WARNING: Over-allocation for {emp_name} "
+                    f"({alloc_int} > {avail_int})."
+                )
+
+            # day-by-day check
+            for date_str, available in employee.research_hours.items():
                 allocated_day = 0.0
-                if emp_name in allocations and date in allocations[emp_name]:
-                    for proj_info in allocations[emp_name][date].values():
-                        allocated_day += proj_info.get("nonRnD", 0.0) + sum(proj_info.get("topics", {}).values())
-                if allocated_day > available:
-                    diagnostics.append(f"    WARNING: {emp_name} on {date} => allocated={allocated_day:.2f} vs. available={available:.2f}")
+                if emp_name in allocations and date_str in allocations[emp_name]:
+                    for proj_info in allocations[emp_name][date_str].values():
+                        allocated_day += proj_info.get("nonRnD", 0.0)
+                        allocated_day += sum(proj_info.get("topics", {}).values())
 
-        diagnostics.append(f"\nOverall: Total available={total_available_all:.2f}, allocated={total_allocated_all:.2f}")
-        if total_allocated_all > total_available_all:
+                # Convert to int as well
+                alloc_day_int = int(round(allocated_day))
+                avail_day_int = int(round(available))
+
+                if alloc_day_int > avail_day_int:
+                    diagnostics.append(
+                        f"    WARNING: {emp_name} on {date_str} => "
+                        f"allocated={alloc_day_int} vs. available={avail_day_int}"
+                    )
+
+        diagnostics.append(
+            f"\nOverall: Total available={total_available_all:.2f}, "
+            f"allocated={total_allocated_all:.2f}"
+        )
+
+        # Also compare integers at the overall level
+        if int(round(total_allocated_all)) > int(round(total_available_all)):
             diagnostics.append("WARNING: Overall allocated hours exceed total available hours!")
 
         diag_text = "\n".join(diagnostics)
@@ -231,7 +250,6 @@ class Controller:
             print("[INFO] Diagnostics written to output_diagnostics.txt")
         except Exception as e:
             print("[ERROR] Writing diagnostics file:", e)
-
     # -------------------------------------------------------------------------
     # Save / Load State
     # -------------------------------------------------------------------------
