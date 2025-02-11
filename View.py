@@ -179,7 +179,6 @@ class ReaDataView(QMainWindow):
             all_topics.update(daily_topics.keys())
 
         if all_topics:
-            research_topics_label = QLabel("Research Topics (without hours):")
             layout.addWidget(research_topics_label)
             for topic in sorted(all_topics):
                 topic_label = QLabel(f"- {topic}")
@@ -287,22 +286,31 @@ class ReaDataView(QMainWindow):
         add_salary_button.clicked.connect(add_salary_level)
 
     def create_project_subsection(self):
+        # Create a new ProjectModel and immediately append it to self.projects
         project = ProjectModel()
         self.projects.append(project)
+
         project_subsection = QWidget()
         project_layout = QVBoxLayout(project_subsection)
+
+        # Project Name
         name_label = QLabel("Project Name:")
         name_input = QLineEdit()
         name_input.setPlaceholderText("Enter project name")
+        # As the user types, update the ProjectModel automatically
         name_input.textChanged.connect(lambda text: setattr(project, 'name', text))
         project_layout.addWidget(name_label)
         project_layout.addWidget(name_input)
+
+        # Funding Agency
         funding_label = QLabel("Funding Agency Name:")
         funding_input = QLineEdit()
         funding_input.setPlaceholderText("Enter funding agency name")
         funding_input.textChanged.connect(lambda text: setattr(project, 'funding_agency', text))
         project_layout.addWidget(funding_label)
         project_layout.addWidget(funding_input)
+
+        # Grant Amounts
         grant_label = QLabel("Grant Amounts:")
         grant_layout = QHBoxLayout()
         min_label = QLabel("Min:")
@@ -324,6 +332,8 @@ class ReaDataView(QMainWindow):
         grant_layout.addWidget(contractual_label)
         grant_layout.addWidget(contractual_input)
         project_layout.addLayout(grant_layout)
+
+        # Funding Period
         funding_period_label = QLabel("Funding Period:")
         funding_period_layout = QHBoxLayout()
         start_label = QLabel("Start Date:")
@@ -339,6 +349,8 @@ class ReaDataView(QMainWindow):
         funding_period_layout.addWidget(end_label)
         funding_period_layout.addWidget(end_input)
         project_layout.addLayout(funding_period_layout)
+
+        # Topic Selection
         topics_label = QLabel("Select Research Topics:")
         project_layout.addWidget(topics_label)
         topic_checkboxes = []
@@ -346,6 +358,7 @@ class ReaDataView(QMainWindow):
             checkbox = QCheckBox(topic)
             project_layout.addWidget(checkbox)
             topic_checkboxes.append(checkbox)
+
         apply_topics_button = QPushButton("Apply Topics")
         def apply_topics():
             project.research_topics.clear()
@@ -355,11 +368,34 @@ class ReaDataView(QMainWindow):
             print(f"Project '{project.name}' Topics Updated:", project.research_topics)
         apply_topics_button.clicked.connect(apply_topics)
         project_layout.addWidget(apply_topics_button)
+
+        # ------------------------------
+        # NEW: "Save Project" button
+        # ------------------------------
+        save_project_button = QPushButton("Save Project")
+        def save_project():
+            """
+            This function can do any final checks on the project object, or simply confirm it's stored.
+            In reality, your code already updates 'project' automatically as the user types.
+            So this might just print debug info or do validation.
+            """
+            print("\n[INFO] Finalizing project data:")
+            print(f"Name: {project.name}")
+            print(f"Funding Agency: {project.funding_agency}")
+            print(f"Grant (Min / Max / Contractual): {project.grant_min}, {project.grant_max}, {project.grant_contractual}")
+            print(f"Funding Period: {project.funding_start} to {project.funding_end}")
+            print(f"Research Topics: {project.research_topics}")
+            print("Project is stored in self.projects list.")
+        save_project_button.clicked.connect(save_project)
+        project_layout.addWidget(save_project_button)
+
+        # Add this project subsection to the layout
         self.projects_section_layout.addWidget(project_subsection)
         separator_project = QLabel("-------------------------------------------------")
         separator_project.setAlignment(Qt.AlignCenter)
         self.projects_section_layout.addWidget(separator_project)
         self.refresh_section_positions()
+
 
     def create_project_subsection_from_project(self, project):
         project_subsection = QWidget()
