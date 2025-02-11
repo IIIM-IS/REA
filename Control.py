@@ -65,7 +65,7 @@ class Controller:
         self.view.calendar.setVisible(not self.view.calendar.isVisible())
 
     def set_date(self, q_date):
-        selected_date = q_date.toString("yyyy-MM-dd")
+        selected_date = q_date.toString("MM-dd-yyyy")
         if self.setting_start_date:
             self.view.start_date_input.setText(selected_date)
             self.setting_start_date = False
@@ -124,7 +124,7 @@ class Controller:
         self.projects = self.view.projects
         print(f"[DEBUG] generate_output() sees {len(self.projects)} project(s) in self.view.projects.")
 
-        # Check if actually have projects
+        # Check if there are any projects defined
         if not self.projects:
             print("No projects have been defined. Please add at least one project before generating output.")
             return
@@ -136,7 +136,7 @@ class Controller:
         # Debug print
         print(f"[DEBUG] Running algorithm from {start_date} to {end_date} with {len(self.employees)} employees and {len(self.projects)} projects.")
 
-        # Actually run the QP
+        # Run the allocation algorithm
         result = run_allocation_algorithm(
             employees=self.employees,
             projects=self.projects,
@@ -164,20 +164,26 @@ class Controller:
                 print(f"    WARNING: '{proj_name}' actual cost ({actual_cost:.2f}) exceeds target ({target_cost_float:.2f}).")
 
         # 2) Print final allocations
+        # The allocation dictionary returned is structured as:
+        #   allocations[employee_name][date_str][project_name] = { 'topics': {topic: hours, ...}, 'nonRnD': float }
         print("\nOptimized Hours Allocation:")
         allocations = result['allocations']
-        for emp_name, emp_data in allocations.items():
+        for emp_name, date_dict in allocations.items():
             print(f"Employee: {emp_name}")
-            daily_allocations = emp_data["daily_allocations"]
-            for date_str, day_data in daily_allocations.items():
-                nonRnD_hours = day_data.get('nonRnD', 0.0)
-                topics_sum = sum(hours for topic, hours in day_data.items() if topic != "nonRnD")
-                total_allocated = nonRnD_hours + topics_sum
-                topics_str = ", ".join(
-                    f"{t}={val:.2f}" for t,val in day_data.items()
-                    if t != "nonRnD" and val > 0
-                )
-                print(f"  Date {date_str}: {topics_str}, nonRnD={nonRnD_hours:.2f}, Total={total_allocated:.2f}")
+            for date_str, project_dict in date_dict.items():
+                daily_total = 0.0
+                for proj_name, proj_info in project_dict.items():
+                    nonrnd_val = proj_info.get("nonRnD", 0.0)
+                    topics_sum = sum(proj_info.get("topics", {}).values())
+                    daily_total += nonrnd_val + topics_sum
+                print(f"  Date {date_str}: allocated {daily_total:.2f} hours total")
+                # Uncomment the following block if you want a detailed breakdown per project:
+                # for proj_name, proj_info in project_dict.items():
+                #     nonrnd_val = proj_info.get("nonRnD", 0.0)
+                #     topics_map = proj_info.get("topics", {})
+                #     topic_str = ", ".join(f"{t}={h:.2f}" for t, h in topics_map.items())
+                #     proj_alloc = nonrnd_val + sum(topics_map.values())
+                #     print(f"    Project '{proj_name}': total={proj_alloc:.2f}, nonRnD={nonrnd_val:.2f}, topics=({topic_str})")
 
         # 3) Diagnostics
         diagnostics = []
@@ -192,24 +198,20 @@ class Controller:
 
             allocated_total = 0.0
             if emp_name in allocations:
-                for day_data in allocations[emp_name]["daily_allocations"].values():
-                    allocated_total += day_data.get("nonRnD", 0.0) + sum(
-                        hours for t, hours in day_data.items() if t != "nonRnD"
-                    )
+                for date_str, proj_dict in allocations[emp_name].items():
+                    for proj_info in proj_dict.values():
+                        allocated_total += proj_info.get("nonRnD", 0.0) + sum(proj_info.get("topics", {}).values())
             total_allocated_all += allocated_total
 
             diagnostics.append(f" - {emp_name}: Available={available_total:.2f}, Allocated={allocated_total:.2f}")
             if allocated_total > available_total:
                 diagnostics.append(f"    WARNING: Over-allocation for {emp_name} ( {allocated_total:.2f} > {available_total:.2f} ).")
 
-            # day-by-day
             for date, available in employee.research_hours.items():
                 allocated_day = 0.0
-                if emp_name in allocations and date in allocations[emp_name]["daily_allocations"]:
-                    day_data = allocations[emp_name]["daily_allocations"][date]
-                    allocated_day = day_data.get("nonRnD", 0.0) + sum(
-                        hours for t, hours in day_data.items() if t != "nonRnD"
-                    )
+                if emp_name in allocations and date in allocations[emp_name]:
+                    for proj_info in allocations[emp_name][date].values():
+                        allocated_day += proj_info.get("nonRnD", 0.0) + sum(proj_info.get("topics", {}).values())
                 if allocated_day > available:
                     diagnostics.append(f"    WARNING: {emp_name} on {date} => allocated={allocated_day:.2f} vs. available={available:.2f}")
 
@@ -217,12 +219,10 @@ class Controller:
         if total_allocated_all > total_available_all:
             diagnostics.append("WARNING: Overall allocated hours exceed total available hours!")
 
-        # Print final diagnostics
         diag_text = "\n".join(diagnostics)
         print("\nDiagnostics:")
         print(diag_text)
 
-        # Write to output_diagnostics.txt
         try:
             with open("output_diagnostics.txt", "w") as diag_file:
                 diag_file.write("Allocation Diagnostics\n")
@@ -259,17 +259,12 @@ class Controller:
                 "meeting_hours": dict(emp.meeting_hours),
                 "nonRnD_hours": dict(emp.nonRnD_hours),
                 "salary_levels": dict(emp.salary_levels),
-                "research_topics": {
-                    d: dict(tmap) for d,tmap in emp.research_topics.items()
-                },
+                "research_topics": { d: dict(tmap) for d, tmap in emp.research_topics.items() },
             }
             employees_list.append(emp_dict)
         state_data["employees"] = employees_list
 
         # 3) Projects
-        # Make sure we copy from view.projects in case the user just created them
-        # but we haven't assigned self.projects yet.
-        # Usually self.projects = self.view.projects, but let's be sure:
         all_projects = self.view.projects
         projects_list = []
         for proj in all_projects:
@@ -295,7 +290,6 @@ class Controller:
             projects_list.append(proj_dict)
         state_data["projects"] = projects_list
 
-        # Debug
         print(f"[DEBUG] Saving {len(all_projects)} project(s).")
 
         try:
@@ -359,15 +353,11 @@ class Controller:
                 proj.other_cost = proj_dict.get("other_cost", 0)
                 proj.research_topics = proj_dict.get("research_topics", [])
 
-                # Append to both
                 self.projects.append(proj)
                 self.view.projects.append(proj)
 
-            # Re-draw employees
             self.view.create_employee_overview_section(self.employees)
 
-            # Re-draw all loaded projects
-            # (We do a separate loop so each loaded project gets its own UI)
             for p in self.projects:
                 self.view.create_project_subsection_from_project(p)
 

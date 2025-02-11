@@ -32,8 +32,8 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         Must also have 'salary_levels[date]' that includes {'amount': some_value}.
     projects : list of ProjectModel
         Each project has 'research_topics' plus a 'grant_contractual' for target cost.
-    start_date : str (YYYY-MM-DD)
-    end_date   : str (YYYY-MM-DD)
+    start_date : str (MM-DD-YYYY)
+    end_date   : str (MM-DD-YYYY)
     all_topics : list of all recognized topics
 
     Returns
@@ -48,12 +48,12 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     # -------------------------------------------------------------------------
     # 1. Build the date range
     # -------------------------------------------------------------------------
-    dt_start = datetime.strptime(start_date, "%Y-%m-%d")
-    dt_end   = datetime.strptime(end_date,   "%Y-%m-%d")
+    dt_start = datetime.strptime(start_date, "%m-%d-%Y")
+    dt_end   = datetime.strptime(end_date,   "%m-%d-%Y")
     date_list = []
     current = dt_start
     while current <= dt_end:
-        date_list.append(current.strftime("%Y-%m-%d"))
+        date_list.append(current.strftime("%m-%d-%Y"))
         current += timedelta(days=1)
 
     num_days      = len(date_list)
@@ -62,7 +62,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     num_topics    = len(all_topics)
 
     # -------------------------------------------------------------------------
-    # 2. Mappings: topic -> index, project -> index
+    # 2. Mappings: topic -> index
     # -------------------------------------------------------------------------
     topic_to_idx = {topic: i for i, topic in enumerate(all_topics)}
     # We'll just use the project list index for 'p'
@@ -70,13 +70,11 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
 
     # -------------------------------------------------------------------------
     # 3. Salary Matrix (num_employees x num_days)
-    #    from employees' salary_levels
     # -------------------------------------------------------------------------
     salaries = []
     for emp in employees:
         for d_str in date_list:
             day_info = emp.salary_levels.get(d_str, {})
-            # day_info might have {"level": "Senior", "amount": 120.0}
             amt = float(day_info.get("amount", 0.0))
             salaries.append(amt)
     salary_array = np.array(salaries, dtype=float)
@@ -96,8 +94,6 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     #
     #    X[i,j,p,k] = hours of topic k, day j, by employee i, allocated to project p
     #    Y[i,j,p]   = nonR&D hours (day j, employee i) billed to project p
-    #
-    # We use "nonneg=True" to ensure they're >= 0
     # -------------------------------------------------------------------------
     X = cp.Variable((num_employees, num_days, num_projects, num_topics), nonneg=True)
     Y = cp.Variable((num_employees, num_days, num_projects), nonneg=True)
@@ -105,26 +101,19 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     # -------------------------------------------------------------------------
     # 6. Constraints
     # -------------------------------------------------------------------------
-
     constraints = []
 
-    # 6a) Exactly match the timesheet's daily research hours:
-    #     sum_{p,k} X[i,j,p,k] + sum_{p} Y[i,j,p] = research_hours_array[i,j].
-    #     That means we allocate ALL hours (no more, no less).
-    #
+    # 6a) sum_{p,k} X[i,j,p,k] + sum_{p} Y[i,j,p] == research_hours_array[i,j].
     constraints.append(
         cp.sum(X, axis=(2,3)) + cp.sum(Y, axis=2) == research_hours_array
     )
 
     # 6b) NonR&D <= 25% of daily research hours
-    #
     constraints.append(
         cp.sum(Y, axis=2) <= 0.25 * research_hours_array
     )
 
     # 6c) If a project does *not* have topic k, force X=0 for that topic
-    #     to avoid allocating hours to that project/topic combo
-    #
     for p_idx, proj in enumerate(projects):
         allowed_topic_indices = [
             topic_to_idx[t]
@@ -133,16 +122,13 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         ]
         for k in range(num_topics):
             if k not in allowed_topic_indices:
-                # Force no hours on that topic for project p_idx
                 constraints.append(
                     X[:, :, p_idx, k] == 0
                 )
 
     # -------------------------------------------------------------------------
     # 7. Objective: Minimize sum of (cost_p - target_p)^2 + small reg
-    #    cost_p = sum_{i,j} salary[i,j] * ( sum_{k} X[i,j,p,k] + Y[i,j,p] )
     # -------------------------------------------------------------------------
-    # Build cost expression per project
     project_cost_exprs = {}
     target_costs = {}
 
@@ -154,14 +140,36 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
             t_val = 0.0
         target_costs[pname] = t_val
 
-        # sum_{i,j} salary_matrix[i,j] * [ sum_{k} X[i,j,p_idx,k] + Y[i,j,p_idx] ]
-        #   shape of X[:, :, p_idx, :] => (num_employees, num_days, num_topics)
-        #   sum over topics => shape (num_employees, num_days)
-        sum_topics = cp.sum(X[:, :, p_idx, :], axis=3)
-        sum_nonrnd = Y[:, :, p_idx]
-        combined   = sum_topics + sum_nonrnd  # shape (num_employees, num_days)
+        # DEBUG: check shapes for this project
+        # salary_matrix is (num_employees, num_days)
+        # We want cost_p = sum_{i,j} salary[i,j] * ( sum_{k} X[i,j,p_idx,k] + Y[i,j,p_idx] )
 
-        cost_expr  = cp.sum(cp.multiply(salary_matrix, combined))
+        # sum_topics over axis=3 => shape: (num_employees, num_days, num_projects)
+        # But we are slicing p_idx, so first do X[:, :, p_idx, :]
+        #
+        # *Important fix:* sum over axis=2 if shape is (num_employees, num_days, num_topics)
+        # after slicing.
+
+        # Let's do a debug print to confirm the slice shape:
+        print("\n[DEBUG] For project:", pname, "(p_idx =", p_idx, ")")
+        print("X.shape =", X.shape)  # Expect (num_employees, num_days, num_projects, num_topics)
+        print("Slicing X[:, :, p_idx, :].shape =>", X[:, :, p_idx, :].shape)
+
+        # Now sum over topics dimension, which is axis=2 in the slice (since shape is (E, D, T)):
+        sum_topics = cp.sum(X[:, :, p_idx, :], axis=2)
+
+        # Also debug the result shape:
+        print("sum_topics.shape after sum(axis=2) =>", sum_topics.shape)
+
+        # Then Y[:, :, p_idx] has shape (num_employees, num_days).
+        sum_nonrnd = Y[:, :, p_idx]
+        print("sum_nonrnd.shape =>", sum_nonrnd.shape)
+
+        # Now they should match shapes => (num_employees, num_days)
+        combined = sum_topics + sum_nonrnd
+        print("combined.shape =>", combined.shape)
+
+        cost_expr = cp.sum(cp.multiply(salary_matrix, combined))
         project_cost_exprs[pname] = cost_expr
 
     # Build sum of squared differences: sum_p (cost_p - target_p)^2
@@ -214,6 +222,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
 
             for p_idx, proj in enumerate(projects):
                 pname = proj.name if proj.name else f"Project_{p_idx}"
+
                 # gather topic hours
                 topic_allocs = {}
                 for k_idx, topic_name in enumerate(all_topics):

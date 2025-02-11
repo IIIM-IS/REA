@@ -183,7 +183,7 @@ class ReaDataModel:
                 if pd.isna(date_parsed):
                     # If we cannot parse the date or it's NaN, skip this column
                     continue
-                date_str = date_parsed.strftime("%Y-%m-%d")
+                date_str = date_parsed.strftime("%m-%d-%Y")
             except:
                 # If there's an error parsing the date, skip this column
                 continue
@@ -239,7 +239,7 @@ class ReaDataModel:
                 date_parsed = pd.to_datetime(date_val, errors='coerce')
                 if pd.isna(date_parsed):
                     continue  # Skip columns that don't parse to a valid date
-                date_str = date_parsed.strftime("%Y-%m-%d")
+                date_str = date_parsed.strftime("%m-%d-%Y")
             except:
                 continue
 

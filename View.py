@@ -77,12 +77,12 @@ class ReaDataView(QMainWindow):
         self.open_calendar_button = QPushButton("Open/Close Calendar")
         self.main_tab_layout.addWidget(self.open_calendar_button)
 
-        self.start_label = QLabel("Start Date (YYYY-MM-DD):")
+        self.start_label = QLabel("Start Date (MM-DD-YYYY):")
         self.main_tab_layout.addWidget(self.start_label)
         self.start_date_input = QLineEdit()
         self.main_tab_layout.addWidget(self.start_date_input)
 
-        self.end_label = QLabel("End Date (YYYY-MM-DD):")
+        self.end_label = QLabel("End Date (MM-DD-YYYY):")
         self.main_tab_layout.addWidget(self.end_label)
         self.end_date_input = QLineEdit()
         self.main_tab_layout.addWidget(self.end_date_input)
@@ -209,7 +209,7 @@ class ReaDataView(QMainWindow):
             salary_level_layout.addWidget(salary_amount_input)
 
             # Start Date Input
-            salary_start_label = QLabel("Start Date (YYYY-MM-DD):")
+            salary_start_label = QLabel("Start Date (MM-DD-YYYY):")
             salary_level_layout.addWidget(salary_start_label)
             salary_start_input = QLineEdit()
             salary_start_input.setPlaceholderText("Enter start date")
@@ -217,7 +217,7 @@ class ReaDataView(QMainWindow):
             salary_level_layout.addWidget(salary_start_input)
 
             # End Date Input
-            salary_end_label = QLabel("End Date (YYYY-MM-DD):")
+            salary_end_label = QLabel("End Date (MM-DD-YYYY):")
             salary_level_layout.addWidget(salary_end_label)
             salary_end_input = QLineEdit()
             salary_end_input.setPlaceholderText("Enter end date")
@@ -243,15 +243,15 @@ class ReaDataView(QMainWindow):
                     print("Please fill in salary, start date, and end date.")
                     return
                 try:
-                    start_date = datetime.strptime(start_text, "%Y-%m-%d")
-                    end_date = datetime.strptime(end_text, "%Y-%m-%d")
+                    start_date = datetime.strptime(start_text, "%m-%d-%Y")
+                    end_date = datetime.strptime(end_text, "%m-%d-%Y")
                     amount_val = float(amount_text)
                 except Exception as e:
                     print("Error parsing salary info:", e)
                     return
                 current_date = start_date
                 while current_date <= end_date:
-                    day_str = current_date.strftime("%Y-%m-%d")
+                    day_str = current_date.strftime("%m-%d-%Y")
                     employee.set_salary_level_for_date(day_str, current_level_label, amount_val)
                     current_date += timedelta(days=1)
                 print(f"Applied salary of {amount_val} from {start_text} to {end_text} for {employee.employee_name} under {current_level_label}.")
@@ -264,14 +264,14 @@ class ReaDataView(QMainWindow):
                     print("Cannot remove salary level: missing start or end date.")
                     return
                 try:
-                    start_date = datetime.strptime(start_text, "%Y-%m-%d")
-                    end_date = datetime.strptime(end_text, "%Y-%m-%d")
+                    start_date = datetime.strptime(start_text, "%m-%d-%Y")
+                    end_date = datetime.strptime(end_text, "%m-%d-%Y")
                 except Exception as e:
                     print("Error parsing salary dates for removal:", e)
                     return
                 current_date = start_date
                 while current_date <= end_date:
-                    day_str = current_date.strftime("%Y-%m-%d")
+                    day_str = current_date.strftime("%m-%d-%Y")
                     if day_str in employee.salary_levels and employee.salary_levels[day_str].get("level") == current_level_label:
                         del employee.salary_levels[day_str]
                     current_date += timedelta(days=1)
