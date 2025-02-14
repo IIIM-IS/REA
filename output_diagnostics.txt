@@ -2,9 +2,14 @@ Allocation Diagnostics
 ======================
 
 Per-Employee Allocation Diagnostics:
- - Tangrui Li: Available=23.00, Allocated=23.00
+ - Arash Sheikhlar: Available=62.00, Allocated=62.00
+ - Marta Abad Torrent: Available=872.00, Allocated=872.00
+ - Sander Kaatee: Available=196.00, Allocated=196.00
+ - Bridget Burger: Available=16.00, Allocated=16.00
  - Jeff Thompson: Available=422.00, Allocated=422.00
  - Goncalo: Available=2106.00, Allocated=2106.00
- - Mário Jorge Silva Correia: Available=60.00, Allocated=60.00
+ - Tangrui Li: Available=23.00, Allocated=23.00
+ - Mário Jorge Silva Correia: Available=244.00, Allocated=244.00
+ - Kris: Available=688.00, Allocated=688.00
 
-Overall: Total available=2611.00, allocated=2611.00
+Overall: Total available=4629.00, allocated=4629.00

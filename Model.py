@@ -56,69 +56,39 @@ class ReaDataModel:
         # Identify all CSV files
         csv_files = [f for f in os.listdir(directory) if f.endswith('.csv')]
 
-        # We'll store each employee in a list
-        employees_list = []
+        # Use a dictionary to merge employees by name
+        employees_dict = {}
 
         for file_name in csv_files:
             file_path = os.path.join(directory, file_name)
-
-            # Read the CSV into a DataFrame
             df = pd.read_csv(file_path, header=None)
 
             # Extract employee name from the CSV
-            # Note: extract_names appends to self.names;
-            employee_name = self.extract_names(df)[-1]  # last appended name
+            employee_name = self.extract_names(df)[-1]  # or however you extract the name
 
-            # Get columns in range based on the last date range in date_ranges
+            # Get in-range columns based on date_ranges
             in_range_columns = self.extract_in_range_columns(df, date_ranges)
-
-            # Extract daily research/meeting hours
             daily_hours_dict = self.extract_research_meeting_hours(df, in_range_columns)
-            # Example structure:
-            # {
-            #   '2025-01-01': {
-            #       'research_hours': 4.0,
-            #       'meeting_hours': 2.5
-            #   },
-            #   '2025-01-02': {
-            #       'research_hours': 5.0,
-            #       'meeting_hours': 1.0
-            #   },
-            #   ...
-            # }
-
-            # Extract daily topics
             daily_topics_dict = self.extract_research_topics(df, in_range_columns)
-            # Example structure:
-            # {
-            #   '2025-01-01': {
-            #       "Data Processing / Data Mgmt": 2.0,
-            #       "Reasoning / Planning": 1.5,
-            #   },
-            #   '2025-01-02': {
-            #       "Visualization / UX": 3.0
-            #   },
-            #   ...
-            # }
 
-            # Create an EmployeeModel for this CSV/employee
-            employee = EmployeeModel(employee_name)
+            # If this employee already exists, reuse it
+            if employee_name in employees_dict:
+                employee = employees_dict[employee_name]
+            else:
+                employee = EmployeeModel(employee_name)
+                employees_dict[employee_name] = employee
 
-            # Fill the employee with per-day data
+            # Update the employee with new daily data
             for date_str, hours_data in daily_hours_dict.items():
-                # Example: hours_data might be {"research_hours": 4.0, "meeting_hours": 2.5}
                 employee.add_daily_research_hours(date_str, hours_data["research_hours"])
                 employee.add_daily_meeting_hours(date_str, hours_data["meeting_hours"])
+                employee.add_daily_nonRnD_hours(date_str, hours_data["nonRnD_hours"])
 
-            # Next, populate daily research topics
             for date_str, topics_map in daily_topics_dict.items():
                 for topic, hrs in topics_map.items():
                     employee.add_daily_research_topic_hours(date_str, topic, hrs)
 
-            # Add the populated EmployeeModel to the list
-            employees_list.append(employee)
-
-        return employees_list
+        return list(employees_dict.values())
 
     def extract_names(self, df):
         # Get the value at C3 (row index 2, column index 2)
@@ -204,13 +174,20 @@ class ReaDataModel:
             if pd.isna(raw_val_meeting_other) or raw_val_meeting_other == '':
                 raw_val_meeting_other = 0.0
 
+            # Extract Management (nonRnD) hours with other companies from row 42
+            raw_nonRnD_hours = df.iloc[42, col_index]
+            if pd.isna(raw_nonRnD_hours) or raw_nonRnD_hours == '':
+                raw_nonRnD_hours = 0.0
+            nonRnD_hours = float(raw_nonRnD_hours)
+
             # Sum meeting hours for both meeting types
             total_meeting_hours = float(raw_val_meeting_iiim) + float(raw_val_meeting_other)
 
             # Store the results in our dictionary
             daily_hours[date_str] = {
                 'research_hours': research_hours,
-                'meeting_hours': total_meeting_hours
+                'meeting_hours': total_meeting_hours,
+                'nonRnD_hours': nonRnD_hours
             }
 
         return daily_hours
@@ -339,7 +316,8 @@ class ProjectModel:
     def __init__(self, name="", funding_agency="", grant_min=0, grant_max=0, grant_contractual=0,
                  funding_start="", funding_end="", currency="Euros", exchange_rate=0,
                  report_type="Annual", matching_fund_type="Percentage", matching_fund_value=0,
-                 operational_overhead=0, travel_cost=0, equipment_cost=0, other_cost=0):
+                 operational_overhead=0, travel_cost=0, equipment_cost=0, other_cost=0, max_nonrnd_percentage=0):
+        self.id = None
         self.name = name
         self.funding_agency = funding_agency
         self.grant_min = grant_min
@@ -356,6 +334,7 @@ class ProjectModel:
         self.travel_cost = travel_cost
         self.equipment_cost = equipment_cost
         self.other_cost = other_cost
+        self.max_nonrnd_percentage = max_nonrnd_percentage
 
         # A list of research topics. Initially empty.
         self.research_topics = []

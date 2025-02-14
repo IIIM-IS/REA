@@ -111,7 +111,7 @@ class Controller:
         except Exception as e:
             print(f"Unexpected error while processing timesheets: {e}")
 
-    # -------------------------------------------------------------------------
+        # -------------------------------------------------------------------------
     # Generating Output (Run the Algorithm)
     # -------------------------------------------------------------------------
     def generate_output(self):
@@ -135,7 +135,7 @@ class Controller:
 
         # Debug print
         print(f"[DEBUG] Running algorithm from {start_date} to {end_date} "
-            f"with {len(self.employees)} employees and {len(self.projects)} projects.")
+              f"with {len(self.employees)} employees and {len(self.projects)} projects.")
 
         # Run the allocation algorithm
         result = run_allocation_algorithm(
@@ -149,7 +149,7 @@ class Controller:
         print("Algorithm finished.")
         print(f"Iterations used (if any): {result.get('iteration','N/A')}")
 
-        # 1) Project Costs
+        # 1) Project Costs (Basic)
         print("\nProject Costs (Actual vs. Target):")
         final_costs = result['final_costs']
         for proj in self.projects:
@@ -177,7 +177,7 @@ class Controller:
                     daily_total += (nonrnd_val + topics_sum)
                 print(f"  Date {date_str}: allocated {daily_total:.2f} hours total")
 
-        # 3) Diagnostics
+        # 3) Diagnostics (Existing)
         diagnostics = []
         total_available_all = 0.0
         total_allocated_all = 0.0
@@ -195,53 +195,29 @@ class Controller:
                     for proj_info in proj_dict.values():
                         allocated_total += proj_info.get("nonRnD", 0.0)
                         allocated_total += sum(proj_info.get("topics", {}).values())
-
             total_allocated_all += allocated_total
 
-            # --- Convert both to integers for the check
             alloc_int = int(round(allocated_total))
             avail_int = int(round(available_total))
-
-            diagnostics.append(
-                f" - {emp_name}: Available={available_total:.2f}, Allocated={allocated_total:.2f}"
-            )
+            diagnostics.append(f" - {emp_name}: Available={available_total:.2f}, Allocated={allocated_total:.2f}")
             if alloc_int > avail_int:
-                diagnostics.append(
-                    f"    WARNING: Over-allocation for {emp_name} "
-                    f"({alloc_int} > {avail_int})."
-                )
-
-            # day-by-day check
+                diagnostics.append(f"    WARNING: Over-allocation for {emp_name} ({alloc_int} > {avail_int}).")
             for date_str, available in employee.research_hours.items():
                 allocated_day = 0.0
                 if emp_name in allocations and date_str in allocations[emp_name]:
                     for proj_info in allocations[emp_name][date_str].values():
                         allocated_day += proj_info.get("nonRnD", 0.0)
                         allocated_day += sum(proj_info.get("topics", {}).values())
-
-                # Convert to int as well
                 alloc_day_int = int(round(allocated_day))
                 avail_day_int = int(round(available))
-
-                if alloc_day_int > avail_day_int:
-                    diagnostics.append(
-                        f"    WARNING: {emp_name} on {date_str} => "
-                        f"allocated={alloc_day_int} vs. available={avail_day_int}"
-                    )
-
-        diagnostics.append(
-            f"\nOverall: Total available={total_available_all:.2f}, "
-            f"allocated={total_allocated_all:.2f}"
-        )
-
-        # Also compare integers at the overall level
+                if alloc_day_int != avail_day_int:
+                    diagnostics.append(f"    WARNING: {emp_name} on {date_str}: allocated={alloc_day_int}, available={avail_day_int}")
+        diagnostics.append(f"\nOverall: Total available={total_available_all:.2f}, allocated={total_allocated_all:.2f}")
         if int(round(total_allocated_all)) > int(round(total_available_all)):
             diagnostics.append("WARNING: Overall allocated hours exceed total available hours!")
-
         diag_text = "\n".join(diagnostics)
         print("\nDiagnostics:")
         print(diag_text)
-
         try:
             with open("output_diagnostics.txt", "w") as diag_file:
                 diag_file.write("Allocation Diagnostics\n")
@@ -250,6 +226,55 @@ class Controller:
             print("[INFO] Diagnostics written to output_diagnostics.txt")
         except Exception as e:
             print("[ERROR] Writing diagnostics file:", e)
+
+        # 4) Detailed Project Cost Breakdown
+        print("\nDetailed Project Cost Breakdown:")
+        # For each project, compute:
+        # - Total R&D hours and direct R&D cost
+        # - Total non-R&D hours and direct non-R&D cost
+        # - Overhead cost (using project overhead rate)
+        # - Computed total cost (direct cost + overhead)
+        # - Matching fund threshold and relative deviation
+        for proj in self.projects:
+            proj_name = proj.name if proj.name else "Unnamed"
+            total_rnd_hours = 0.0
+            total_nonrnd_hours = 0.0
+            total_direct_cost = 0.0
+            # Loop over each employee and each date (based on employee research_hours)
+            for emp in self.employees:
+                emp_name = emp.employee_name
+                for date_str, available in emp.research_hours.items():
+                    if emp_name in allocations and date_str in allocations[emp_name]:
+                        proj_alloc = allocations[emp_name][date_str].get(proj_name, {})
+                        rnd_hours = sum(proj_alloc.get("topics", {}).values())
+                        nonrnd_hours = proj_alloc.get("nonRnD", 0.0)
+                        total_rnd_hours += rnd_hours
+                        total_nonrnd_hours += nonrnd_hours
+                        sal = float(emp.salary_levels.get(date_str, {}).get("amount", 0.0))
+                        total_direct_cost += (rnd_hours + nonrnd_hours) * sal
+            overhead_cost = proj.operational_overhead * total_direct_cost if proj.operational_overhead is not None else 0.0
+            computed_cost = total_direct_cost + overhead_cost
+            matching_threshold = None
+            if proj.matching_fund_type.lower() == "percentage":
+                m_frac = proj.matching_fund_value / 100.0
+                if m_frac < 1.0:
+                    matching_threshold = float(proj.grant_contractual) / (1.0 - m_frac)
+            elif proj.matching_fund_type.lower() == "absolute":
+                matching_threshold = float(proj.grant_contractual) + proj.matching_fund_value
+            rel_dev = (computed_cost / float(proj.grant_contractual) - 1) if float(proj.grant_contractual) > 0 else None
+            print(f"Project '{proj_name}':")
+            print(f"  Total R&D Hours: {total_rnd_hours:.2f}")
+            print(f"  Total Non-R&D Hours: {total_nonrnd_hours:.2f}")
+            print(f"  Direct Cost (R&D + Non-R&D): {total_direct_cost:.2f}")
+            print(f"  Overhead Cost (Rate {proj.operational_overhead:.2f}): {overhead_cost:.2f}")
+            print(f"  Computed Total Cost: {computed_cost:.2f} | Target Cost: {proj.grant_contractual}")
+            if matching_threshold is not None:
+                print(f"  Matching Fund Threshold: {matching_threshold:.2f}")
+            if rel_dev is not None:
+                print(f"  Relative Cost Deviation: {rel_dev:.2f}")
+            print("-------------------------------------------------------------")
+        print("================================================================\n")
+
     # -------------------------------------------------------------------------
     # Save / Load State
     # -------------------------------------------------------------------------
