@@ -19,6 +19,7 @@
 import pandas as pd
 import os
 from collections import defaultdict
+from datetime import datetime, timedelta
 
 class ReaDataModel:
     def __init__(self):
@@ -175,7 +176,7 @@ class ReaDataModel:
                 raw_val_meeting_other = 0.0
 
             # Extract Management (nonRnD) hours with other companies from row 42
-            raw_nonRnD_hours = df.iloc[42, col_index]
+            raw_nonRnD_hours = df.iloc[43, col_index]
             if pd.isna(raw_nonRnD_hours) or raw_nonRnD_hours == '':
                 raw_nonRnD_hours = 0.0
             nonRnD_hours = float(raw_nonRnD_hours)
@@ -311,6 +312,79 @@ class EmployeeModel:
                 f"research_topics={dict(self.research_topics)}, "
                 f"salary_levels={dict(self.salary_levels)})")
 
+
+    def get_salary_intervals(self):
+        """
+        Returns a list of tuples (start_date, end_date, level, amount),
+        merging consecutive days that have the same salary level & amount.
+        Example:
+          [
+            ("01-01-2025", "01-31-2025", "Senior", 120.0),
+            ("02-01-2025", "02-15-2025", "Junior", 90.0)
+          ]
+        """
+
+        # Sort all known dates in ascending order
+        sorted_dates = sorted(self.salary_levels.keys(),
+                              key=lambda d: datetime.strptime(d, "%m-%d-%Y"))
+        if not sorted_dates:
+            return []
+
+        intervals = []
+        # Initialize the first interval
+        current_start = sorted_dates[0]
+        current_info = self.salary_levels[current_start]
+        current_level = current_info.get("level")
+        current_amount = current_info.get("amount")
+
+        def is_consecutive(day1, day2):
+            """Return True if day2 is exactly one day after day1."""
+            d1 = datetime.strptime(day1, "%m-%d-%Y")
+            d2 = datetime.strptime(day2, "%m-%d-%Y")
+            return (d2 - d1).days == 1
+
+        previous_day = current_start
+
+        # Traverse through dates to merge consecutive, identical salary data
+        for i in range(1, len(sorted_dates)):
+            d_str = sorted_dates[i]
+            day_info = self.salary_levels[d_str]
+            day_level = day_info.get("level")
+            day_amount = day_info.get("amount")
+
+            # If this day is NOT consecutive or doesn't match (level/amount),
+            # we close the current interval and start a new one
+            if (not is_consecutive(previous_day, d_str)
+                    or day_level != current_level
+                    or day_amount != current_amount):
+                # Close out the interval up to previous_day
+                intervals.append((current_start, previous_day,
+                                  current_level, current_amount))
+                # Start a new interval
+                current_start = d_str
+                current_level = day_level
+                current_amount = day_amount
+
+            previous_day = d_str
+
+        # Close the last interval
+        intervals.append((current_start, previous_day, current_level, current_amount))
+        return intervals
+
+    def remove_salary_interval(self, start_date, end_date):
+        """
+        Removes salary levels for all dates between start_date and end_date (inclusive).
+        Dates must be in "MM-DD-YYYY" format.
+        """
+        from datetime import datetime, timedelta
+        dt_start = datetime.strptime(start_date, "%m-%d-%Y")
+        dt_end = datetime.strptime(end_date, "%m-%d-%Y")
+        current_dt = dt_start
+        while current_dt <= dt_end:
+            day_str = current_dt.strftime("%m-%d-%Y")
+            if day_str in self.salary_levels:
+                del self.salary_levels[day_str]
+            current_dt += timedelta(days=1)
 
 class ProjectModel:
     def __init__(self, name="", funding_agency="", grant_min=0, grant_max=0, grant_contractual=0,
