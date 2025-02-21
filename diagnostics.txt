@@ -1,0 +1,432 @@
+[INFO] Loaded 9 employees, 5 projects.
+[INFO] State restoration complete.
+[DEBUG] Running algorithm from 01-01-2024 to 12-31-2024 with 9 employees and 5 projects.
+
+================= DEBUG INFO: HOURS & SALARY =================
+Employee 'Arash Sheikhlar': total hours = 62.00, total salary = 387500.00
+Employee 'Marta Abad Torrent': total hours = 873.00, total salary = 3205546.88
+Employee 'Sander Kaatee': total hours = 196.00, total salary = 719687.50
+Employee 'Bridget Burger': total hours = 16.00, total salary = 163750.00
+Employee 'Jeff Thompson': total hours = 422.00, total salary = 3791670.00
+Employee 'Goncalo': total hours = 2162.00, total salary = 13512500.00
+Employee 'Tangrui Li': total hours = 23.00, total salary = 102421.88
+Employee 'Mário Jorge Silva Correia': total hours = 244.00, total salary = 1086562.50
+Employee 'Kris': total hours = 688.00, total salary = 5052500.00
+
+ALL EMPLOYEES COMBINED: total hours = 4686.00, total salary = 28022138.75
+==============================================================
+
+/home/potatosalad/.local/share/virtualenvs/IIIM-qQKT6_V5/lib/python3.10/site-packages/cvxpy/reductions/solvers/solving_chain.py:418: UserWarning: The problem has an expression with dimension greater than 2. Defaulting to the SCIPY backend for canonicalization.
+  warnings.warn(UserWarning(
+/home/potatosalad/.local/share/virtualenvs/IIIM-qQKT6_V5/lib/python3.10/site-packages/cvxpy/problems/problem.py:1481: UserWarning: Solution may be inaccurate. Try another solver, adjusting the solver settings, or solve with verbose=True for more information.
+  warnings.warn(
+
+================= DIAGNOSTIC: ALLOCATION CONSISTENCY CHECK =================
+All allocations are consistent.
+==========================================================================
+
+
+================= DIAGNOSTIC: DETAILED DAILY ALLOCATIONS =================
+
+Employee: Arash Sheikhlar
+
+Employee: Marta Abad Torrent
+
+Employee: Sander Kaatee
+
+Employee: Bridget Burger
+
+Employee: Jeff Thompson
+
+Employee: Goncalo
+
+Employee: Tangrui Li
+
+Employee: Mário Jorge Silva Correia
+
+Employee: Kris
+==========================================================================
+
+
+================= DIAGNOSTIC: SUMMARY ALLOCATIONS PER EMPLOYEE =================
+Employee: Arash Sheikhlar
+  Total Available R&D Hours:    62.00 hrs
+  Total Allocated R&D:          62.00 hrs
+----------------------------------------------------------------
+  Total R&D Remainder:          -0.00 hrs
+----------------------------------------------------------------
+----------------------------------------------------------------
+  Total Available Non-R&D:      26.00 hrs
+  Total Allocated Non-R&D:       0.02 hrs
+----------------------------------------------------------------
+  Total Non-R&D Remainder:      25.98 hrs
+Employee: Marta Abad Torrent
+  Total Available R&D Hours:   873.00 hrs
+  Total Allocated R&D:         873.00 hrs
+----------------------------------------------------------------
+  Total R&D Remainder:          -0.00 hrs
+----------------------------------------------------------------
+----------------------------------------------------------------
+  Total Available Non-R&D:      50.00 hrs
+  Total Allocated Non-R&D:       0.03 hrs
+----------------------------------------------------------------
+  Total Non-R&D Remainder:      49.97 hrs
+Employee: Sander Kaatee
+  Total Available R&D Hours:   196.00 hrs
+  Total Allocated R&D:         196.00 hrs
+----------------------------------------------------------------
+  Total R&D Remainder:          -0.00 hrs
+----------------------------------------------------------------
+----------------------------------------------------------------
+  Total Available Non-R&D:       0.00 hrs
+  Total Allocated Non-R&D:       0.00 hrs
+----------------------------------------------------------------
+  Total Non-R&D Remainder:      -0.00 hrs
+Employee: Bridget Burger
+  Total Available R&D Hours:    16.00 hrs
+  Total Allocated R&D:          16.00 hrs
+----------------------------------------------------------------
+  Total R&D Remainder:          -0.00 hrs
+----------------------------------------------------------------
+----------------------------------------------------------------
+  Total Available Non-R&D:     400.00 hrs
+  Total Allocated Non-R&D:       6.65 hrs
+----------------------------------------------------------------
+  Total Non-R&D Remainder:     393.35 hrs
+Employee: Jeff Thompson
+  Total Available R&D Hours:   422.00 hrs
+  Total Allocated R&D:         422.00 hrs
+----------------------------------------------------------------
+  Total R&D Remainder:          -0.00 hrs
+----------------------------------------------------------------
+----------------------------------------------------------------
+  Total Available Non-R&D:       1.00 hrs
+  Total Allocated Non-R&D:       0.04 hrs
+----------------------------------------------------------------
+  Total Non-R&D Remainder:       0.96 hrs
+Employee: Goncalo
+  Total Available R&D Hours:   2162.00 hrs
+  Total Allocated R&D:         2162.00 hrs
+----------------------------------------------------------------
+  Total R&D Remainder:          -0.00 hrs
+----------------------------------------------------------------
+----------------------------------------------------------------
+  Total Available Non-R&D:      31.00 hrs
+  Total Allocated Non-R&D:       0.03 hrs
+----------------------------------------------------------------
+  Total Non-R&D Remainder:      30.97 hrs
+Employee: Tangrui Li
+  Total Available R&D Hours:    23.00 hrs
+  Total Allocated R&D:          23.00 hrs
+----------------------------------------------------------------
+  Total R&D Remainder:          -0.00 hrs
+----------------------------------------------------------------
+----------------------------------------------------------------
+  Total Available Non-R&D:       0.00 hrs
+  Total Allocated Non-R&D:       0.00 hrs
+----------------------------------------------------------------
+  Total Non-R&D Remainder:      -0.00 hrs
+Employee: Mário Jorge Silva Correia
+  Total Available R&D Hours:   244.00 hrs
+  Total Allocated R&D:         244.00 hrs
+----------------------------------------------------------------
+  Total R&D Remainder:          -0.00 hrs
+----------------------------------------------------------------
+----------------------------------------------------------------
+  Total Available Non-R&D:       0.00 hrs
+  Total Allocated Non-R&D:       0.00 hrs
+----------------------------------------------------------------
+  Total Non-R&D Remainder:      -0.00 hrs
+Employee: Kris
+  Total Available R&D Hours:   688.00 hrs
+  Total Allocated R&D:         688.00 hrs
+----------------------------------------------------------------
+  Total R&D Remainder:          -0.00 hrs
+----------------------------------------------------------------
+----------------------------------------------------------------
+  Total Available Non-R&D:     207.00 hrs
+  Total Allocated Non-R&D:       0.40 hrs
+----------------------------------------------------------------
+  Total Non-R&D Remainder:     206.60 hrs
+==========================================================================
+
+
+================= DIAGNOSTIC: PER-PROJECT EMPLOYEE ALLOCATIONS =================
+
+Project: EURIDICE
+  Arash Sheikhlar     :  14.51 hrs
+  Marta Abad Torrent  : 164.38 hrs
+  Sander Kaatee       :  39.40 hrs
+  Bridget Burger      :   9.61 hrs
+  Jeff Thompson       : 118.28 hrs
+  Goncalo             : 409.89 hrs
+  Tangrui Li          :   4.87 hrs
+  Mário Jorge Silva Correia:  48.96 hrs
+  Kris                : 162.56 hrs
+
+Project: ICE-ID
+  Arash Sheikhlar     :   9.61 hrs
+  Marta Abad Torrent  : 164.38 hrs
+  Sander Kaatee       :  35.08 hrs
+  Bridget Burger      :   2.83 hrs
+  Jeff Thompson       :  51.45 hrs
+  Goncalo             : 405.04 hrs
+  Tangrui Li          :   3.94 hrs
+  Mário Jorge Silva Correia:  43.73 hrs
+  Kris                : 105.66 hrs
+
+Project: FRESH-ID
+  Arash Sheikhlar     :  17.06 hrs
+  Marta Abad Torrent  : 261.50 hrs
+  Sander Kaatee       :  57.37 hrs
+  Bridget Burger      :   4.74 hrs
+  Jeff Thompson       : 105.36 hrs
+  Goncalo             : 646.11 hrs
+  Tangrui Li          :   6.60 hrs
+  Mário Jorge Silva Correia:  71.47 hrs
+  Kris                : 188.58 hrs
+
+Project: REA
+  Arash Sheikhlar     :   2.41 hrs
+  Marta Abad Torrent  :  41.10 hrs
+  Sander Kaatee       :   8.77 hrs
+  Bridget Burger      :   0.75 hrs
+  Jeff Thompson       :  12.86 hrs
+  Goncalo             : 101.27 hrs
+  Tangrui Li          :   0.98 hrs
+  Mário Jorge Silva Correia:  10.93 hrs
+  Kris                :  26.45 hrs
+
+Project: AI-STYLIST
+  Arash Sheikhlar     :  18.43 hrs
+  Marta Abad Torrent  : 241.66 hrs
+  Sander Kaatee       :  55.38 hrs
+  Bridget Burger      :   4.71 hrs
+  Jeff Thompson       : 134.09 hrs
+  Goncalo             : 599.73 hrs
+  Tangrui Li          :   6.61 hrs
+  Mário Jorge Silva Correia:  68.90 hrs
+  Kris                : 205.15 hrs
+==========================================================================
+
+
+================= DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS =================
+Project 'EURIDICE':
+  Computed Cost:               5995402.66
+  Target Cost:                 7000000.00
+  Overhead Rate:               7.00 %
+  Deviation from Target: -14.35 %
+  Topic Allocations:
+    General Info. System / Methodology: 321.96 hrs
+    Data Processing / Data Mgmt: 321.96 hrs
+    Training Env. / Artificial Pedagogy: 321.96 hrs
+-------------------------------------------------------------
+Project 'ICE-ID':
+  Computed Cost:               4803369.41
+  Target Cost:                 3500000.00
+  Overhead Rate:               0.00 %
+  Deviation from Target: 37.24 %
+  Topic Allocations:
+    General Info. System / Methodology: 205.39 hrs
+    Cogn. Architecture / Hybrid Archi: 205.39 hrs
+    Data Processing / Data Mgmt: 205.39 hrs
+    Reasoning / Planning: 205.39 hrs
+-------------------------------------------------------------
+Project 'FRESH-ID':
+  Computed Cost:               8043310.61
+  Target Cost:                 8300000.00
+  Overhead Rate:               22.00 %
+  Deviation from Target: -3.09 %
+  Topic Allocations:
+    General Info. System / Methodology: 226.44 hrs
+    Networks / Distributed Systems: 226.44 hrs
+    System / Architecture Integration: 226.44 hrs
+    Data Processing / Data Mgmt: 226.44 hrs
+    Visualization / UX: 226.44 hrs
+    Modeling / Simulation: 226.44 hrs
+-------------------------------------------------------------
+Project 'REA':
+  Computed Cost:               1201716.95
+  Target Cost:                 500000.00
+  Overhead Rate:               0.00 %
+  Deviation from Target: 140.34 %
+  Topic Allocations:
+    Visualization / UX: 205.39 hrs
+-------------------------------------------------------------
+Project 'AI-STYLIST':
+  Computed Cost:               8050022.72
+  Target Cost:                 8910000.00
+  Overhead Rate:               20.00 %
+  Deviation from Target: -9.65 %
+  Topic Allocations:
+    General Info. System / Methodology: 266.90 hrs
+    System / Architecture Integration: 266.90 hrs
+    Data Processing / Data Mgmt: 266.90 hrs
+    Visualization / UX: 266.90 hrs
+    Modeling / Simulation: 266.90 hrs
+-------------------------------------------------------------
+==========================================================================
+
+Algorithm finished.
+Iterations used (if any): N/A
+
+================= PROJECT COSTS (Actual vs. Target) =================
+Project: EURIDICE
+  Actual Cost : 5995402.66
+  Target Cost : 7000000.00
+  Budget Status: OK
+------------------------------------------------------------
+Project: ICE-ID
+  Actual Cost : 4803369.41
+  Target Cost : 3500000.00
+  >>> WARNING: Over Budget by 1303369.41 ( 37.24%)
+------------------------------------------------------------
+Project: FRESH-ID
+  Actual Cost : 8043310.61
+  Target Cost : 8300000.00
+  Budget Status: OK
+------------------------------------------------------------
+Project: REA
+  Actual Cost : 1201716.95
+  Target Cost :  500000.00
+  >>> WARNING: Over Budget by  701716.95 (140.34%)
+------------------------------------------------------------
+Project: AI-STYLIST
+  Actual Cost : 8050022.72
+  Target Cost : 8910000.00
+  Budget Status: OK
+------------------------------------------------------------
+======================================================================
+
+
+Diagnostics:
+=== Per-Employee Allocation Diagnostics ===
+
+
+Employee: Arash Sheikhlar
+--------------------------------------------------
+--------------------------------------------------
+Summary for Arash Sheikhlar:
+  Total R&D      : Available =  62.00 hrs, Allocated =  62.00 hrs
+  Total Non‑R&D  : Available =  26.00 hrs, Allocated =   0.02 hrs
+==================================================
+
+Employee: Marta Abad Torrent
+--------------------------------------------------
+--------------------------------------------------
+Summary for Marta Abad Torrent:
+  Total R&D      : Available = 873.00 hrs, Allocated = 873.00 hrs
+  Total Non‑R&D  : Available =  50.00 hrs, Allocated =   0.03 hrs
+==================================================
+
+Employee: Sander Kaatee
+--------------------------------------------------
+--------------------------------------------------
+Summary for Sander Kaatee:
+  Total R&D      : Available = 196.00 hrs, Allocated = 196.00 hrs
+  Total Non‑R&D  : Available =   0.00 hrs, Allocated =   0.00 hrs
+==================================================
+
+Employee: Bridget Burger
+--------------------------------------------------
+--------------------------------------------------
+Summary for Bridget Burger:
+  Total R&D      : Available =  16.00 hrs, Allocated =  16.00 hrs
+  Total Non‑R&D  : Available = 400.00 hrs, Allocated =   6.65 hrs
+==================================================
+
+Employee: Jeff Thompson
+--------------------------------------------------
+--------------------------------------------------
+Summary for Jeff Thompson:
+  Total R&D      : Available = 422.00 hrs, Allocated = 422.00 hrs
+  Total Non‑R&D  : Available =   1.00 hrs, Allocated =   0.04 hrs
+==================================================
+
+Employee: Goncalo
+--------------------------------------------------
+--------------------------------------------------
+Summary for Goncalo:
+  Total R&D      : Available = 2162.00 hrs, Allocated = 2162.00 hrs
+  Total Non‑R&D  : Available =  31.00 hrs, Allocated =   0.03 hrs
+==================================================
+
+Employee: Tangrui Li
+--------------------------------------------------
+--------------------------------------------------
+Summary for Tangrui Li:
+  Total R&D      : Available =  23.00 hrs, Allocated =  23.00 hrs
+  Total Non‑R&D  : Available =   0.00 hrs, Allocated =   0.00 hrs
+==================================================
+
+Employee: Mário Jorge Silva Correia
+--------------------------------------------------
+--------------------------------------------------
+Summary for Mário Jorge Silva Correia:
+  Total R&D      : Available = 244.00 hrs, Allocated = 244.00 hrs
+  Total Non‑R&D  : Available =   0.00 hrs, Allocated =   0.00 hrs
+==================================================
+
+Employee: Kris
+--------------------------------------------------
+--------------------------------------------------
+Summary for Kris:
+  Total R&D      : Available = 688.00 hrs, Allocated = 688.00 hrs
+  Total Non‑R&D  : Available = 207.00 hrs, Allocated =   0.40 hrs
+==================================================
+
+
+=== Overall Allocations ===
+
+Overall R&D      : Total available = 4686.00 hrs, Total allocated = 4686.00 hrs
+
+Overall Non‑R&D  : Total available = 715.00 hrs, Total allocated =   7.16 hrs
+[INFO] Diagnostics written to output_diagnostics.txt
+
+Detailed Project Cost Breakdown:
+Project 'EURIDICE':
+  Total R&D Hours: 965.89
+  Total Non-R&D Hours: 6.58
+  Direct Cost (R&D + Non-R&D): 767411540.64
+  Overhead Cost (Rate 0.07): 53718807.84
+  Computed Total Cost: 821130348.48 | Target Cost: 7000000.0
+  Matching Fund Threshold: 10500000.00
+  Relative Cost Deviation: 116.30
+-------------------------------------------------------------
+Project 'ICE-ID':
+  Total R&D Hours: 821.57
+  Total Non-R&D Hours: 0.14
+  Direct Cost (R&D + Non-R&D): 614831284.33
+  Overhead Cost (Rate 0.00): 0.00
+  Computed Total Cost: 614831284.33 | Target Cost: 3500000.0
+  Matching Fund Threshold: 3500000.00
+  Relative Cost Deviation: 174.67
+-------------------------------------------------------------
+Project 'FRESH-ID':
+  Total R&D Hours: 1358.64
+  Total Non-R&D Hours: 0.14
+  Direct Cost (R&D + Non-R&D): 1029543758.12
+  Overhead Cost (Rate 0.22): 226499626.79
+  Computed Total Cost: 1256043384.91 | Target Cost: 8300000.0
+  Matching Fund Threshold: 15950000.00
+  Relative Cost Deviation: 150.33
+-------------------------------------------------------------
+Project 'REA':
+  Total R&D Hours: 205.39
+  Total Non-R&D Hours: 0.14
+  Direct Cost (R&D + Non-R&D): 153819769.36
+  Overhead Cost (Rate 0.00): 0.00
+  Computed Total Cost: 153819769.36 | Target Cost: 500000.0
+  Matching Fund Threshold: 500000.00
+  Relative Cost Deviation: 306.64
+-------------------------------------------------------------
+Project 'AI-STYLIST':
+  Total R&D Hours: 1334.51
+  Total Non-R&D Hours: 0.14
+  Direct Cost (R&D + Non-R&D): 1030402907.62
+  Overhead Cost (Rate 0.20): 206080581.52
+  Computed Total Cost: 1236483489.15 | Target Cost: 8910000.0
+  Matching Fund Threshold: 11750000.00
+  Relative Cost Deviation: 137.77
+-------------------------------------------------------------
+================================================================

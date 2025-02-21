@@ -390,7 +390,7 @@ class ProjectModel:
     def __init__(self, name="", funding_agency="", grant_min=0, grant_max=0, grant_contractual=0,
                  funding_start="", funding_end="", currency="Euros", exchange_rate=0,
                  report_type="Annual", matching_fund_type="Percentage", matching_fund_value=0,
-                 operational_overhead=0, travel_cost=0, equipment_cost=0, other_cost=0, max_nonrnd_percentage=0):
+                 operational_overhead=0, travel_cost=0, equipment_cost=0, other_cost=0, nonrnd_percentage=0):
         self.id = None
         self.name = name
         self.funding_agency = funding_agency
@@ -408,7 +408,7 @@ class ProjectModel:
         self.travel_cost = travel_cost
         self.equipment_cost = equipment_cost
         self.other_cost = other_cost
-        self.max_nonrnd_percentage = max_nonrnd_percentage
+        self.nonrnd_percentage = nonrnd_percentage
 
         # A list of research topics. Initially empty.
         self.research_topics = []

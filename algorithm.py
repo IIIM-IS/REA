@@ -30,7 +30,7 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     projects : list
         A list of ProjectModel objects. Each ProjectModel can have:
           - name
-          - max_nonrnd_percentage
+          - nonrnd_percentage
           - operational_overhead
           - grant_contractual (the target cost)
           - matching_fund_type ("Percentage" or "Absolute")
@@ -72,6 +72,8 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
        experience numerical issues, consider a different solver (e.g. SCS,
        OSQP, or a commercial one).
     """
+    
+    locked_allocations={"Bridget Burger":"EURIDICE"}
 
     # -------------------------------------------------------------------------
     # 1. Build the date range from start_date to end_date inclusive
@@ -84,6 +86,29 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         date_list.append(current.strftime("%m-%d-%Y"))
         current += timedelta(days=1)
 
+
+    # Partition employees into locked and free lists.
+    locked_employee_list = []
+    free_employee_list = []
+    locked_allocs_output = {}  # Pre-assigned allocations for locked employees.
+    for emp in employees:
+        if emp.employee_name in locked_allocations:
+            locked_employee_list.append(emp)
+            locked_project = locked_allocations[emp.employee_name]
+            locked_allocs_output[emp.employee_name] = {}
+            for d in date_list:
+                # For each day, assign all available hours to the locked project.
+                locked_allocs_output[emp.employee_name][d] = {
+                    locked_project: {
+                        # For simplicity, we assign all R&D hours under a dummy topic 'total'.
+                        "topics": {"total": emp.research_hours.get(d, 0.0)},
+                        "nonRnD": emp.nonRnD_hours.get(d, 0.0)
+                    }
+                }
+        else:
+            free_employee_list.append(emp)
+
+    employees = free_employee_list  # Now use only free employees for the optimization.
     num_days      = len(date_list)
     num_employees = len(employees)
     num_projects  = len(projects)
@@ -162,23 +187,26 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
 
     # 6a. R&D Allocation Constraint:
     #     For each (employee, day), all available R&D hours must be allocated.
-    constraints.append(cp.sum(X, axis=(2,3)) + cp.sum(Y_cap + Y_extra, axis=2) == research_hours_array)
+    constraints.append(cp.sum(X, axis=(2,3)) == research_hours_array)
 
     # 6a-alt. Non-R&D Allocation Constraint:
     #     Non-R&D hours are optional; allocated non-R&D (both initial and extra) cannot exceed what is available.
     constraints.append(cp.sum(Y_cap + Y_extra, axis=2) <= nonrnd_hours_array)
 
-    # 6b. Non-R&D Cap for each project:
-    #     For each (employee, day), Y <= (project.max_nonrnd_percentage * available_hours).
-    #     If none is set, we use 25% as the default cap.
+    # 6b. Per-Project Non‑R&D Funding Constraint:
+    # Compute the total available non‑R&D hours (a global constant)
+    total_nonrnd_available = float(np.sum(nonrnd_hours_array))
+    tol = 1e-3  # Tolerance for equality constraints
+
     for p_idx, proj in enumerate(projects):
-        cap = getattr(proj, 'max_nonrnd_percentage', 0.25)
-        if cap <= 0:
-            cap = 0.25
-        constraints.append(
-            cp.multiply(Y_cap[:, :, p_idx], (nonrnd_hours_array > 0)) <=
-            cap * cp.multiply(nonrnd_hours_array, (nonrnd_hours_array > 0))
-        )
+        # The project stores its target as a whole number (e.g., 92 means 92%)
+        desired_frac = getattr(proj, 'nonrnd_percentage', 0) / 100.0  
+        # The target non‑R&D allocation for this project (global, over all employees/days)
+        target_nonrnd_alloc = desired_frac * total_nonrnd_available
+        # Total non‑R&D allocation for project p_idx (over all employees and days)
+        nonrnd_alloc_expr = cp.sum(Y_cap[:, :, p_idx] + Y_extra[:, :, p_idx])
+        # Enforce that the non‑R&D allocation for this project equals its target (within tolerance)
+        constraints.append(cp.abs(nonrnd_alloc_expr - target_nonrnd_alloc) <= tol)
 
     # 6c. Topic Constraints:
     #     For each project, only allowed topics may have R&D hours > 0.
@@ -188,6 +216,8 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         for k_idx in range(num_topics):
             if k_idx not in allowed_topic_indices:
                 constraints.append(X[:, :, p_idx, k_idx] == 0)
+
+    
 
     # -------------------------------------------------------------------------
     # 7. Soft Penalties for Cost Being BELOW the Target/Matching Threshold
@@ -218,10 +248,11 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         if proj.operational_overhead is None:
             print(f"Warning: operational_overhead is None for {pname}, setting to 0")
             proj.operational_overhead = 0.0
+            
         overhead_expr = proj.operational_overhead * direct_cost_expr
 
         # Total cost for this project
-        cost_expr = direct_cost_expr - overhead_expr
+        cost_expr = direct_cost_expr
         project_cost_exprs[pname] = cost_expr
 
         # ---------------------------
@@ -320,6 +351,10 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                         "topics": topic_allocs,
                         "nonRnD": nonrnd_val
                     }
+    
+    # Merge the pre-assigned locked allocations with the optimization result.
+    for emp_name, locked_data in locked_allocs_output.items():
+        allocations[emp_name] = locked_data
 
     # -------------------------------------------------------------------------
     # DIAGNOSTICS
@@ -327,17 +362,29 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
 
     # 1. Allocation Consistency Check (Daily)
     print("\n================= DIAGNOSTIC: ALLOCATION CONSISTENCY CHECK =================")
+    warning_flag = False
     for i, emp in enumerate(employees):
         emp_name = emp.employee_name
         for j, d_str in enumerate(date_list):
-            allocated_total = 0.0
+            # Sum R&D allocations (from topics)
+            allocated_rnd = 0.0
+            # Sum non-R&D allocations
+            allocated_nonrnd = 0.0
             for p_name, alloc_data in allocations[emp_name][d_str].items():
-                allocated_total += alloc_data.get("nonRnD", 0.0)
-                allocated_total += sum(alloc_data.get("topics", {}).values())
-            available_total = emp.research_hours.get(d_str, 0.0)
-            if abs(allocated_total - available_total) > 1e-3:
-                print(f"WARNING: {emp_name} on {d_str}: allocated = {allocated_total:.2f} hrs, "
-                    f"available = {available_total:.2f} hrs")
+                allocated_rnd += sum(alloc_data.get("topics", {}).values())
+                allocated_nonrnd += alloc_data.get("nonRnD", 0.0)
+                
+            available_rnd = emp.research_hours.get(d_str, 0.0)
+            available_nonrnd = emp.nonRnD_hours.get(d_str, 0.0)
+            
+            if abs(allocated_rnd - available_rnd) > 1e-3:
+                print(f"WARNING: {emp_name} on {d_str} (R&D): allocated = {allocated_rnd:.2f} hrs, available = {available_rnd:.2f} hrs")
+                warning_flag = True
+            if allocated_nonrnd - available_nonrnd > 1e-3:
+                print(f"WARNING: {emp_name} on {d_str} (Non-R&D): allocated = {allocated_nonrnd:.2f} hrs, available = {available_nonrnd:.2f} hrs")
+                warning_flag = True
+    if not warning_flag:
+        print("All allocations are consistent.")
     print("==========================================================================\n")
 
 
@@ -348,34 +395,15 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         print(f"\nEmployee: {emp_name}")
         for j, d_str in enumerate(date_list):
             # Total research hours available (for both R&D and Non‑R&D)
-            available = emp.research_hours.get(d_str, 0.0)
-            # R&D allocated: sum over all projects and topics
-            rnd_alloc = sum(X_val[i, j, p_idx, k_idx] for p_idx in range(num_projects)
-                            for k_idx in range(num_topics))
-            # Non‑R&D allocated: sum of Y_cap and Y_extra over projects
-            nonrnd_alloc = float(np.sum(Y_cap_val[i, j, :]) + np.sum(Y_extra_val[i, j, :]))
-            overall_alloc = rnd_alloc + nonrnd_alloc
-            overall_remainder = available - overall_alloc
+            available_rnd = emp.research_hours.get(d_str, 0.0)
+            allocated_rnd = sum(X_val[i, j, p_idx, k_idx] 
+                                for p_idx in range(num_projects)
+                                for k_idx in range(num_topics))
+            rnd_remainder = available_rnd - allocated_rnd
 
-            # Non‑R&D available (maximum allowed)
-            max_nonrnd = nonrnd_hours_array[i, j]
-            nonrnd_remainder = max_nonrnd - nonrnd_alloc
-
-            # For R&D, assume the full research hours would be available if no Non‑R&D were used.
-            rnd_remainder = available - rnd_alloc
-
-            # print(f"Date {d_str}:")
-            # print(f"  Total Available Research Hours: {available:6.2f} hrs")
-            # print("  [R&D]")
-            # print(f"    Allocated R&D:                {rnd_alloc:6.2f} hrs")
-            # print(f"    R&D Remainder:                {rnd_remainder:6.2f} hrs")
-            # print("  [Non-R&D]")
-            # print(f"    Maximum Allowed Non-R&D:      {max_nonrnd:6.2f} hrs")
-            # print(f"    Allocated Non-R&D:            {nonrnd_alloc:6.2f} hrs")
-            # print(f"    Non-R&D Remainder:            {nonrnd_remainder:6.2f} hrs")
-            # print("  [Overall]")
-            # print(f"    Total Allocated:              {overall_alloc:6.2f} hrs")
-            # print(f"    Overall Remainder:            {overall_remainder:6.2f} hrs")
+            available_nonrnd = nonrnd_hours_array[i, j]
+            allocated_nonrnd = float(np.sum(Y_cap_val[i, j, :]) + np.sum(Y_extra_val[i, j, :]))
+            nonrnd_remainder = available_nonrnd - allocated_nonrnd
     print("==========================================================================\n")
 
 
@@ -383,36 +411,59 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     print("\n================= DIAGNOSTIC: SUMMARY ALLOCATIONS PER EMPLOYEE =================")
     for i, emp in enumerate(employees):
         emp_name = emp.employee_name
-        total_available = 0.0
-        total_rnd_alloc = 0.0
-        total_nonrnd_alloc = 0.0
-        total_max_nonrnd = 0.0
+        total_available_rnd = 0.0
+        total_allocated_rnd = 0.0
+        total_available_nonrnd = 0.0
+        total_allocated_nonrnd = 0.0
         for j, d_str in enumerate(date_list):
-            available = emp.research_hours.get(d_str, 0.0)
-            total_available += available
-            rnd_alloc = sum(X_val[i, j, p_idx, k_idx] for p_idx in range(num_projects)
-                            for k_idx in range(num_topics))
-            nonrnd_alloc = float(np.sum(Y_cap_val[i, j, :]) + np.sum(Y_extra_val[i, j, :]))
-            total_rnd_alloc += rnd_alloc
-            total_nonrnd_alloc += nonrnd_alloc
-            total_max_nonrnd += nonrnd_hours_array[i, j]
-        overall_alloc = total_rnd_alloc + total_nonrnd_alloc
-        overall_remainder = total_available - overall_alloc
-        rnd_remainder = total_available - total_rnd_alloc  # (This equals total_nonrnd_alloc if fully allocated)
-        nonrnd_remainder = total_max_nonrnd - total_nonrnd_alloc
+            total_available_rnd += emp.research_hours.get(d_str, 0.0)
+            total_allocated_rnd += sum(X_val[i, j, p_idx, k_idx] 
+                                    for p_idx in range(num_projects)
+                                    for k_idx in range(num_topics))
+            total_available_nonrnd += nonrnd_hours_array[i, j]
+            total_allocated_nonrnd += float(np.sum(Y_cap_val[i, j, :]) + np.sum(Y_extra_val[i, j, :]))
+
+        rnd_remainder = total_available_rnd - total_allocated_rnd
+        nonrnd_remainder = total_available_nonrnd - total_allocated_nonrnd
+
         print(f"Employee: {emp_name}")
-        print(f"  Total Available Research Hours: {total_available:6.2f} hrs")
-        print("  [R&D]")
-        print(f"    Total Allocated R&D:            {total_rnd_alloc:6.2f} hrs")
-        print(f"    Total R&D Remainder:            {rnd_remainder:6.2f} hrs")
-        print("  [Non-R&D]")
-        print(f"    Total Available Non-R&D:  {total_max_nonrnd:6.2f} hrs")
-        print(f"    Total Allocated Non-R&D:        {total_nonrnd_alloc:6.2f} hrs")
-        print(f"    Total Non-R&D Remainder:        {nonrnd_remainder:6.2f} hrs")
-        print("  [Overall]")
-        print(f"    Total Allocated:                {overall_alloc:6.2f} hrs")
-        print(f"    Total Overall Remainder:        {overall_remainder:6.2f} hrs")
-        print("-------------------------------------------------------------")
+        print(f"  Total Available R&D Hours:   {total_available_rnd:6.2f} hrs")
+        print(f"  Total Allocated R&D:         {total_allocated_rnd:6.2f} hrs")
+        print("----------------------------------------------------------------")
+        print(f"  Total R&D Remainder:         {rnd_remainder:6.2f} hrs")
+        print("----------------------------------------------------------------")
+        print("----------------------------------------------------------------")
+        print(f"  Total Available Non-R&D:     {total_available_nonrnd:6.2f} hrs")
+        print(f"  Total Allocated Non-R&D:     {total_allocated_nonrnd:6.2f} hrs")
+        print("----------------------------------------------------------------")
+        print(f"  Total Non-R&D Remainder:     {nonrnd_remainder:6.2f} hrs")
+    print("==========================================================================\n")
+
+    # 4. Per-Project Employee Allocations
+    print("\n================= DIAGNOSTIC: PER-PROJECT EMPLOYEE ALLOCATIONS =================")
+    for p_idx, proj in enumerate(projects):
+        proj_name = proj.name if proj.name else f"Project_{p_idx}"
+        allocations_per_employee = {}
+        # Iterate over each employee and sum their allocated hours for this project over the date range.
+        for emp in employees:
+            emp_name = emp.employee_name
+            total_allocated = 0.0
+            for d_str in date_list:
+                if emp_name in allocations and d_str in allocations[emp_name]:
+                    if proj_name in allocations[emp_name][d_str]:
+                        alloc_data = allocations[emp_name][d_str][proj_name]
+                        # Sum both R&D (topics) and non-R&D allocations.
+                        total_allocated += alloc_data.get("nonRnD", 0.0) + sum(alloc_data.get("topics", {}).values())
+            if total_allocated > 1e-3:
+                allocations_per_employee[emp_name] = total_allocated
+
+        # Print the per-project breakdown.
+        print(f"\nProject: {proj_name}")
+        if allocations_per_employee:
+            for emp_name, hours in allocations_per_employee.items():
+                print(f"  {emp_name:20s}: {hours:6.2f} hrs")
+        else:
+            print("  No allocations found for this project.")
     print("==========================================================================\n")
 
     # 5. Project Cost Details & Topic Allocations
@@ -422,13 +473,13 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
         computed_cost = final_costs[pname]
         target_cost = target_costs[pname]
         overhead_rate = proj.operational_overhead or 0.0
-        rel_dev = 1 - (computed_cost / (target_cost + 1e-6)) if target_cost > 0 else np.nan
+        rel_dev = (computed_cost / (target_cost + 1e-6)) - 1 if target_cost > 0 else np.nan
 
         print(f"Project '{pname}':")
-        print(f"  Computed Cost:               {computed_cost:.2f}")
-        print(f"  Target Cost:                 {target_cost:.2f}")
-        print(f"  Overhead Rate:               {100 * overhead_rate:.2f} (%)")
-        print(f"  Percent Deviation from Target: {100 * rel_dev:.2f}")
+        # print(f"  Computed Cost:               {computed_cost:.2f}")
+        # print(f"  Target Cost:                 {target_cost:.2f}")
+        # print(f"  Overhead Rate:               {100 * overhead_rate:.2f} %")
+        # print(f"  Deviation from Target: {100 * rel_dev:.2f} %")
 
         # Aggregate R&D hours allocated per topic for this project.
         topic_hours = {}
@@ -442,8 +493,6 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                 print(f"    {topic}: {hours:.2f} hrs")
         print("-------------------------------------------------------------")
     print("==========================================================================\n")
-
-
 
     return {
         "solver_status": problem.status,

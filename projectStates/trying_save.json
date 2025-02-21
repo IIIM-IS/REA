@@ -31420,7 +31420,7 @@
         "Data Processing / Data Mgmt",
         "Training Env. / Artificial Pedagogy"
       ],
-      "max_nonrnd_percentage": 0.05
+      "nonrnd_percentage": 0.05
     },
     {
       "name": "ICE-ID",
@@ -31445,7 +31445,7 @@
         "Data Processing / Data Mgmt",
         "Reasoning / Planning"
       ],
-      "max_nonrnd_percentage": 0.05
+      "nonrnd_percentage": 0.05
     },
     {
       "name": "FRESH-ID",
@@ -31472,7 +31472,7 @@
         "Visualization / UX",
         "Modeling / Simulation"
       ],
-      "max_nonrnd_percentage": 0.05
+      "nonrnd_percentage": 0.05
     },
     {
       "name": "REA",
@@ -31496,7 +31496,7 @@
         "Data Processing / Data Mgmt",
         "Visualization / UX"
       ],
-      "max_nonrnd_percentage": 0.05
+      "nonrnd_percentage": 0.05
     },
     {
       "name": "AI-STYLIST",
@@ -31522,7 +31522,7 @@
         "Visualization / UX",
         "Modeling / Simulation"
       ],
-      "max_nonrnd_percentage": 0.05
+      "nonrnd_percentage": 0.05
     }
   ]
 }

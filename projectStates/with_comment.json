@@ -31421,7 +31421,7 @@
         "Data Processing / Data Mgmt",
         "Training Env. / Artificial Pedagogy"
       ],
-      "max_nonrnd_percentage": 0.05
+      "nonrnd_percentage": 0.92
     },
     {
       "name": "ICE-ID",
@@ -31434,7 +31434,7 @@
       "currency": "Euros",
       "exchange_rate": 0,
       "report_type": "Annual",
-      "matching_fund_type": "percentage",
+      "matching_fund_type": "absolute",
       "matching_fund_value": 0.0,
       "operational_overhead": 0.0,
       "travel_cost": 0,
@@ -31446,22 +31446,22 @@
         "Data Processing / Data Mgmt",
         "Reasoning / Planning"
       ],
-      "max_nonrnd_percentage": 0.05
+      "nonrnd_percentage": 0.02
     },
     {
       "name": "FRESH-ID",
       "funding_agency": "Rannis",
       "grant_min": 8300000.0,
-      "grant_max": 12000000.0,
-      "grant_contractual": 12000000.0,
+      "grant_max": 8500000.0,
+      "grant_contractual": 8300000.0,
       "funding_start": "01-01-2024",
       "funding_end": "12-31-2024",
       "currency": "Euros",
       "exchange_rate": 0,
       "report_type": "Annual",
-      "matching_fund_type": "percentage",
+      "matching_fund_type": "absolute",
       "matching_fund_value": 7650000.0,
-      "operational_overhead": 0.33,
+      "operational_overhead": 0.22,
       "travel_cost": 0,
       "equipment_cost": 0,
       "other_cost": 0,
@@ -31473,7 +31473,7 @@
         "Visualization / UX",
         "Modeling / Simulation"
       ],
-      "max_nonrnd_percentage": 0.05
+      "nonrnd_percentage": 0.02
     },
     {
       "name": "REA",
@@ -31493,11 +31493,9 @@
       "equipment_cost": 0,
       "other_cost": 0,
       "research_topics": [
-        "General Info. System / Methodology",
-        "Data Processing / Data Mgmt",
         "Visualization / UX"
       ],
-      "max_nonrnd_percentage": 0.05
+      "nonrnd_percentage": 0.02
     },
     {
       "name": "AI-STYLIST",
@@ -31523,7 +31521,7 @@
         "Visualization / UX",
         "Modeling / Simulation"
       ],
-      "max_nonrnd_percentage": 0.05
+      "nonrnd_percentage": 0.02
     }
   ]
 }

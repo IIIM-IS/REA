@@ -417,13 +417,13 @@ class ReaDataView(QMainWindow):
         layout.addWidget(grant_label)
         grant_layout = QHBoxLayout()
         min_input = QLineEdit()
-        max_input = QLineEdit()
+        input = QLineEdit()
         contractual_input = QLineEdit()
 
         grant_layout.addWidget(QLabel("Min:"))
         grant_layout.addWidget(min_input)
         grant_layout.addWidget(QLabel("Max:"))
-        grant_layout.addWidget(max_input)
+        grant_layout.addWidget(input)
         grant_layout.addWidget(QLabel("Contractual:"))
         grant_layout.addWidget(contractual_input)
         layout.addLayout(grant_layout)
@@ -449,10 +449,10 @@ class ReaDataView(QMainWindow):
         layout.addLayout(matching_layout)
 
         # --- Max non-R&D ---
-        max_nonrnd_label = QLabel("Max Non-R&D (%)")
-        layout.addWidget(max_nonrnd_label)
-        max_nonrnd_input = QLineEdit()
-        layout.addWidget(max_nonrnd_input)
+        nonrnd_label = QLabel("Min Non-R&D (%)")
+        layout.addWidget(nonrnd_label)
+        nonrnd_input = QLineEdit()
+        layout.addWidget(nonrnd_input)
 
         # --- Funding period ---
         funding_period_label = QLabel("Funding Period:")
@@ -493,9 +493,9 @@ class ReaDataView(QMainWindow):
             # Convert matching type to string
             matching_type = matching_type_combo.currentText().lower()
 
-            # Convert max_nonrnd % text to float
-            max_nonrnd_text = max_nonrnd_input.text().strip()
-            max_nonrnd_float = float(max_nonrnd_text) / 100.0 if max_nonrnd_text else None
+            # Convert nonrnd % text to float
+            nonrnd_text = nonrnd_input.text().strip()
+            nonrnd_float = float(nonrnd_text) / 100.0 if nonrnd_text else None
 
             # Gather topics
             selected_topics = [cb.text() for cb in topic_checkboxes if cb.isChecked()]
@@ -504,12 +504,12 @@ class ReaDataView(QMainWindow):
                 "name": name_input.text().strip(),
                 "funding_agency": funding_input.text().strip(),
                 "grant_min": min_input.text().strip(),
-                "grant_max": max_input.text().strip(),
+                "grant_max": input.text().strip(),
                 "grant_contractual": contractual_input.text().strip(),
                 "operational_overhead": oh_float,
                 "matching_fund_type": matching_type,
                 "matching_fund_value": matching_value_input.text().strip(),
-                "max_nonrnd_percentage": max_nonrnd_float,
+                "nonrnd_percentage": nonrnd_float,
                 "funding_start": start_input.text().strip(),
                 "funding_end": end_input.text().strip(),
                 "research_topics": selected_topics,
@@ -528,7 +528,7 @@ class ReaDataView(QMainWindow):
             name_input.setText(project.name)
             funding_input.setText(project.funding_agency)
             min_input.setText(str(project.grant_min))
-            max_input.setText(str(project.grant_max))
+            input.setText(str(project.grant_max))
             contractual_input.setText(str(project.grant_contractual))
             if project.operational_overhead:
                 overhead_input.setText(str(project.operational_overhead * 100))
@@ -536,8 +536,8 @@ class ReaDataView(QMainWindow):
                 1 if (project.matching_fund_type and project.matching_fund_type.lower() == "absolute") else 0
             )
             matching_value_input.setText(str(project.matching_fund_value))
-            if project.max_nonrnd_percentage:
-                max_nonrnd_input.setText(str(project.max_nonrnd_percentage * 100))
+            if project.nonrnd_percentage:
+                nonrnd_input.setText(str(project.nonrnd_percentage * 100))
             start_input.setText(project.funding_start)
             end_input.setText(project.funding_end)
             if project.research_topics:
