@@ -5,6 +5,7 @@ from PyQt5.QtWidgets import (
     QPushButton, QWidget, QListWidget, QLineEdit, QCalendarWidget, QCheckBox,
     QComboBox
 )
+
 from PyQt5.QtCore import Qt, pyqtSignal
 from PyQt5.QtWidgets import QTextEdit
 
@@ -149,6 +150,91 @@ class ReaDataView(QMainWindow):
 
         self.load_state_button = QPushButton("Load State")
         self.main_tab_layout.addWidget(self.load_state_button)
+
+        # ---------------- Diagnostics Tab ---------------- #
+        # Add this in __init__ after setting up the main tab:
+        self.diagnostics_tab = QWidget()
+        self.tab_widget.addTab(self.diagnostics_tab, "Diagnostics")
+        self.diagnostics_layout = QVBoxLayout(self.diagnostics_tab)
+        self.diagnostics_output = QTextEdit()
+        self.diagnostics_output.setReadOnly(True)
+        self.diagnostics_layout.addWidget(self.diagnostics_output)
+
+
+    # -------------------------------------------------------------------------
+    # DIAGNOSTICS UI
+    # -------------------------------------------------------------------------
+    def _format_diagnostics_to_html(self, diag_text: str) -> str:
+        """
+        Converts the raw diagnostics text into a nicely formatted HTML report.
+        The raw text is assumed to have double newlines separating sections.
+        Each section is wrapped in a styled <div> with a <pre> block to preserve formatting.
+        """
+        # Split the diagnostics into sections (assuming double-newline separation)
+        sections = diag_text.split("\n\n")
+        html_sections = []
+        for section in sections:
+            # You might further parse headers if needed; for now, we simply wrap the section text.
+            # We also replace any remaining newlines with <br> if desired.
+            # Here we keep the preformatting.
+            html_sections.append(f"<div class='diag-section'><pre>{section}</pre></div>")
+        html_content = "<div class='diag-container'>" + "\n".join(html_sections) + "</div>"
+        
+        # Build full HTML with embedded CSS for styling.
+        full_html = f"""
+        <html>
+        <head>
+            <style>
+            body {{
+                font-family: Arial, sans-serif;
+                background-color: #f4f4f4;
+                color: #333;
+                margin: 0;
+                padding: 0;
+            }}
+            .diag-container {{
+                margin: 20px;
+                padding: 10px;
+            }}
+            .diag-section {{
+                background-color: #fff;
+                border: 1px solid #ccc;
+                border-radius: 5px;
+                padding: 10px;
+                margin-bottom: 15px;
+                box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.1);
+            }}
+            .diag-section pre {{
+                white-space: pre-wrap;
+                word-wrap: break-word;
+                font-size: 11pt;
+                margin: 0;
+            }}
+            h1 {{
+                text-align: center;
+                color: #2a7ae2;
+                border-bottom: 2px solid #2a7ae2;
+                padding-bottom: 5px;
+                margin: 20px 0;
+            }}
+            </style>
+        </head>
+        <body>
+            <h1>Diagnostics Report</h1>
+            {html_content}
+        </body>
+        </html>
+        """
+        return full_html
+
+    def show_diagnostics(self, diag_text: str):
+        """
+        Displays the formatted diagnostics report in the Diagnostics tab.
+        """
+        formatted_html = self._format_diagnostics_to_html(diag_text)
+        self.diagnostics_output.setHtml(formatted_html)
+        # Switch to the Diagnostics tab so the user immediately sees the report.
+        self.tab_widget.setCurrentWidget(self.diagnostics_tab)
 
     # -------------------------------------------------------------------------
     # EMPLOYEE OVERVIEW UI

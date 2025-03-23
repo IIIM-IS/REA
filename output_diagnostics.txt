@@ -9,7 +9,7 @@ Employee: Arash Sheikhlar
 --------------------------------------------------
 Summary for Arash Sheikhlar:
   Total R&D      : Available =  62.00 hrs, Allocated =  62.00 hrs
-  Total Non‑R&D  : Available =  26.00 hrs, Allocated =   0.08 hrs
+  Total Non‑R&D  : Available =  26.00 hrs, Allocated =  26.00 hrs
 ==================================================
 
 Employee: Marta Abad Torrent
@@ -17,7 +17,7 @@ Employee: Marta Abad Torrent
 --------------------------------------------------
 Summary for Marta Abad Torrent:
   Total R&D      : Available = 873.00 hrs, Allocated = 873.00 hrs
-  Total Non‑R&D  : Available =  50.00 hrs, Allocated =   0.02 hrs
+  Total Non‑R&D  : Available =  50.00 hrs, Allocated =  50.00 hrs
 ==================================================
 
 Employee: Sander Kaatee
@@ -41,7 +41,7 @@ Employee: Jeff Thompson
 --------------------------------------------------
 Summary for Jeff Thompson:
   Total R&D      : Available = 422.00 hrs, Allocated = 422.00 hrs
-  Total Non‑R&D  : Available =   1.00 hrs, Allocated =   0.08 hrs
+  Total Non‑R&D  : Available =   1.00 hrs, Allocated =   1.00 hrs
 ==================================================
 
 Employee: Goncalo
@@ -49,7 +49,7 @@ Employee: Goncalo
 --------------------------------------------------
 Summary for Goncalo:
   Total R&D      : Available = 2162.00 hrs, Allocated = 2162.00 hrs
-  Total Non‑R&D  : Available =  31.00 hrs, Allocated =   0.14 hrs
+  Total Non‑R&D  : Available =  31.00 hrs, Allocated =  31.00 hrs
 ==================================================
 
 Employee: Tangrui Li
@@ -73,7 +73,7 @@ Employee: Kris
 --------------------------------------------------
 Summary for Kris:
   Total R&D      : Available = 688.00 hrs, Allocated = 688.00 hrs
-  Total Non‑R&D  : Available = 207.00 hrs, Allocated =   2.83 hrs
+  Total Non‑R&D  : Available = 207.00 hrs, Allocated = 207.00 hrs
 ==================================================
 
 
@@ -81,4 +81,4 @@ Summary for Kris:
 
 Overall R&D      : Total available = 4686.00 hrs, Total allocated = 4686.00 hrs
 
-Overall Non‑R&D  : Total available = 715.00 hrs, Total allocated = 403.16 hrs
+Overall Non‑R&D  : Total available = 715.00 hrs, Total allocated = 715.00 hrs

@@ -351,6 +351,9 @@ class Controller:
         print("\nDiagnostics:")
         print(diag_text)
 
+        # Show the diagnostics in the UI
+        self.view.show_diagnostics(diag_text)
+
         try:
             with open("output_diagnostics.txt", "w") as diag_file:
                 diag_file.write("Allocation Diagnostics\n")
