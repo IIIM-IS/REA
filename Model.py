@@ -409,6 +409,7 @@ class ProjectModel:
         self.equipment_cost = equipment_cost
         self.other_cost = other_cost
         self.nonrnd_percentage = nonrnd_percentage
+        self.color = None
 
         # A list of research topics. Initially empty.
         self.research_topics = []

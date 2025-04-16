@@ -49,7 +49,6 @@ class Controller:
 
         # Projects
         self.view.add_project_button.clicked.connect(self.create_new_project)
-        self.view.toggle_project_button.clicked.connect(self.view.toggle_project_section)
 
         # Output
         self.view.generate_output_button.clicked.connect(self.generate_output)
@@ -62,12 +61,8 @@ class Controller:
         self.view.project_deleted.connect(self.on_project_deleted)
 
         # Employee Salary Editing
-        # The view should emit a new signal (e.g., employee_salary_range_added) 
-        # when the user inputs a salary level, start date, end date, etc.
         self.view.employee_salary_range_added.connect(self.on_employee_salary_range_added)
-
         self.view.employee_salary_interval_edited.connect(self.on_employee_salary_interval_edited)
-
 
     # -------------------------------------------------------------------------
     # SALARY RANGE ADDITION
@@ -75,16 +70,7 @@ class Controller:
     def on_employee_salary_range_added(self, data):
         """
         Handler for the View's 'employee_salary_range_added' signal.
-
-        The 'data' dict might look like:
-            {
-                "employee_object": <EmployeeModel>,
-                "level_label": "Level 1",
-                "amount": 120.0,
-                "start_date": "01-01-2025",
-                "end_date": "01-31-2025"
-            }
-        We iterate from start_date to end_date, setting the employee's salary level.
+        Applies a salary level to an employee over a date range.
         """
         emp_obj = data["employee_object"]
         level_label = data["level_label"]
@@ -119,7 +105,7 @@ class Controller:
             print("[WARN] Start date is after end date. Invalid range.")
             return
 
-        # For each day in [start_dt, end_dt], set the salary
+        # Set salary for each day in the range
         current_dt = start_dt
         while current_dt <= end_dt:
             day_str = current_dt.strftime("%m-%d-%Y")
@@ -129,37 +115,32 @@ class Controller:
         print(f"[INFO] Applied salary '{level_label}' = {amount_val} for {emp_obj.employee_name} "
               f"from {start_str} to {end_str}.")
 
-        # Optionally re-draw the employee UI if needed
+        # Update the Employees tab
         self.view.create_employee_overview_section(self.employees)
-
 
     # -------------------------------------------------------------------------
     # PROJECT CREATION
     # -------------------------------------------------------------------------
     def create_new_project(self):
         """
-        Create a new ProjectModel, add it to our internal list,
-        and tell the view to build UI for it.
+        Creates a new ProjectModel and adds it as a tab in the UI.
+        The view assigns a unique color to the tab.
         """
         new_proj = ProjectModel()
         self.projects.append(new_proj)
         self.view.projects.append(new_proj)
-        # Make sure the projects section is visible
-        self.view.projects_section_container.setVisible(True)
-        
-        # Now build & show the subsection
         self.view.create_project_subsection_from_project(new_proj)
 
     # -------------------------------------------------------------------------
     # DATE RANGES & CALENDAR
     # -------------------------------------------------------------------------
     def toggle_calendar(self):
+        """Toggles the visibility of the calendar widget."""
         self.view.calendar.setVisible(not self.view.calendar.isVisible())
 
     def set_date(self, q_date):
         """
-        Called when the user clicks a date in the QCalendarWidget.
-        We either set start_date_input or end_date_input depending on the toggle.
+        Sets the start or end date input based on the calendar selection.
         """
         selected_date = q_date.toString("MM-dd-yyyy")
         if self.setting_start_date:
@@ -170,10 +151,7 @@ class Controller:
             self.setting_start_date = True
 
     def add_dates(self):
-        """
-        Grab the start_date_input and end_date_input from the View
-        and append the resulting (start, end) to self.date_ranges.
-        """
+        """Adds a date range from the UI inputs to the date_ranges list."""
         start_date = self.view.start_date_input.text().strip()
         end_date = self.view.end_date_input.text().strip()
         if not start_date or not end_date:
@@ -189,8 +167,7 @@ class Controller:
     # -------------------------------------------------------------------------
     def read_timesheets(self):
         """
-        Asks the user to pick a directory and then calls the model to parse CSV files
-        within that directory for each date range. 
+        Reads timesheets from a selected directory and updates the Employees tab.
         """
         if not self.date_ranges:
             print("Error: You must specify at least one date range before loading timesheets.")
@@ -207,7 +184,6 @@ class Controller:
             self.employees = self.model.extract_data_from_csv(directory, self.date_ranges)
             self.view.create_employee_overview_section(self.employees)
 
-            # Debug info
             for emp in self.employees:
                 print(f"[DEBUG] Employee: {emp.employee_name}")
                 for date_str in sorted(emp.research_hours.keys()):
@@ -219,35 +195,29 @@ class Controller:
         except Exception as e:
             print(f"Unexpected error while processing timesheets: {e}")
 
-
     # -------------------------------------------------------------------------
     # GENERATING OUTPUT (Allocation Algorithm)
     # -------------------------------------------------------------------------
     def generate_output(self):
         """
-        Runs the allocation algorithm using the employees, projects,
-        and the last date range in self.date_ranges.
-        Then prints a summary + diagnostics.
+        Runs the allocation algorithm and displays results in the diagnostics tab.
         """
         if not self.date_ranges:
             print("No date range specified.")
             return
 
-        # Sync local list with whatever is in the View
         self.projects = self.view.projects
 
         if not self.projects:
             print("No projects have been defined. Please add at least one project before generating output.")
             return
 
-        # We'll use the last date range
         start_date, end_date = self.date_ranges[-1]
         all_topics = self.model.research_topics
 
         print(f"[DEBUG] Running algorithm from {start_date} to {end_date} "
               f"with {len(self.employees)} employees and {len(self.projects)} projects.")
 
-        # Run the allocation algorithm
         result = run_allocation_algorithm(
             employees=self.employees,
             projects=self.projects,
@@ -259,7 +229,7 @@ class Controller:
         print("Algorithm finished.")
         print(f"Iterations used (if any): {result.get('iteration','N/A')}")
 
-        # 1) Project Costs
+        # Project Costs
         print("\n================= PROJECT COSTS (Actual vs. Target) =================")
         final_costs = result['final_costs']
         for proj in self.projects:
@@ -283,20 +253,17 @@ class Controller:
             print("-" * 60)
         print("======================================================================\n")
 
-        # 2) Print final allocations
-        # print("\nOptimized Hours Allocation:")
+        # Final Allocations
         allocations = result['allocations']
         for emp_name, date_dict in allocations.items():
-            # print(f"Employee: {emp_name}")
             for date_str, project_dict in date_dict.items():
                 daily_total = 0.0
                 for proj_name, proj_info in project_dict.items():
                     nonrnd_val = proj_info.get("nonRnD", 0.0)
                     topics_sum = sum(proj_info.get("topics", {}).values())
                     daily_total += (nonrnd_val + topics_sum)
-                # print(f"  Date {date_str}: allocated {daily_total:.2f} hours total")
 
-        # 3) Diagnostics
+        # Diagnostics
         diagnostics = []
         diagnostics.append("=== Per-Employee Allocation Diagnostics ===\n")
 
@@ -324,8 +291,6 @@ class Controller:
                 allocated_nonrnd += day_alloc_nonrnd
                 available_nonrnd_day = employee.nonRnD_hours.get(date_str, 0.0)
 
-                # emp_lines.append(f"{date_str:12s} | R&D: Allocated = {day_alloc_rnd:6.2f} hrs (Avail: {available:6.2f} hrs) | "
-                                # f"Non‑R&D: Allocated = {day_alloc_nonrnd:6.2f} hrs (Avail: {available_nonrnd_day:6.2f} hrs)")
                 if abs(day_alloc_rnd - available) > 1e-3:
                     emp_lines.append(f"    >> WARNING: R&D mismatch on {date_str}: allocated {day_alloc_rnd:.2f} vs available {available:.2f}")
                 if day_alloc_nonrnd - available_nonrnd_day > 1e-3:
@@ -348,10 +313,14 @@ class Controller:
         diagnostics.append(f"Overall Non‑R&D  : Total available = {overall_nonrnd_avail:6.2f} hrs, Total allocated = {overall_nonrnd_alloc:6.2f} hrs")
 
         diag_text = "\n\n".join(diagnostics)
+
+        # Adding allocation algorithm diagnostics
+        if "diagnostics" in result:
+            diag_text += "\n\n=== Allocation Algorithm Diagnostics ===\n" + result["diagnostics"]
+
         print("\nDiagnostics:")
         print(diag_text)
 
-        # Show the diagnostics in the UI
         self.view.show_diagnostics(diag_text)
 
         try:
@@ -363,7 +332,7 @@ class Controller:
         except Exception as e:
             print("[ERROR] Writing diagnostics file:", e)
 
-        # 4) Detailed Project Cost Breakdown
+        # Detailed Project Cost Breakdown
         print("\nDetailed Project Cost Breakdown:")
         for proj in self.projects:
             proj_name = proj.name if proj.name else "Unnamed"
@@ -404,13 +373,12 @@ class Controller:
             print("-------------------------------------------------------------")
         print("================================================================\n")
 
-
     # -------------------------------------------------------------------------
     # SAVE / LOAD STATE
     # -------------------------------------------------------------------------
     def save_state(self):
         """
-        Saves the current state (date ranges, UI fields, employees, projects) to a JSON file.
+        Saves the current state, including project colors, to a JSON file.
         """
         filename, _ = QFileDialog.getSaveFileName(
             self.view, "Save State As", "", "JSON Files (*.json);;All Files (*)"
@@ -421,12 +389,11 @@ class Controller:
 
         state_data = {}
         state_data["run_comment"] = self.view.run_comment_input.toPlainText()
-        # 1) Date ranges & UI fields
         state_data["date_ranges"] = self.date_ranges
         state_data["ui_start_date"] = self.view.start_date_input.text().strip()
         state_data["ui_end_date"] = self.view.end_date_input.text().strip()
 
-        # 2) Employees
+        # Employees
         employees_list = []
         for emp in self.employees:
             emp_dict = {
@@ -442,7 +409,7 @@ class Controller:
             employees_list.append(emp_dict)
         state_data["employees"] = employees_list
 
-        # 3) Projects
+        # Projects
         projects_list = []
         for proj in self.view.projects:
             proj_dict = {
@@ -464,6 +431,7 @@ class Controller:
                 "other_cost": proj.other_cost,
                 "research_topics": proj.research_topics[:],
                 "nonrnd_percentage": proj.nonrnd_percentage,
+                "color": proj.color  # Save the project tab color
             }
             projects_list.append(proj_dict)
         state_data["projects"] = projects_list
@@ -479,8 +447,7 @@ class Controller:
 
     def load_state(self):
         """
-        Loads a previously saved JSON state, updates self.employees & self.projects,
-        and re-creates the view elements accordingly.
+        Loads a saved state, clears existing project tabs, and recreates them with colors.
         """
         filename, _ = QFileDialog.getOpenFileName(
             self.view, "Load State", "", "JSON Files (*.json);;All Files (*)"
@@ -495,13 +462,11 @@ class Controller:
             print(f"[INFO] State loaded from {filename}")
 
             self.view.run_comment_input.setPlainText(state_data.get("run_comment", ""))
-
-            # 1) Date Ranges + UI Fields
             self.date_ranges = state_data.get("date_ranges", [])
             self.view.start_date_input.setText(state_data.get("ui_start_date", ""))
             self.view.end_date_input.setText(state_data.get("ui_end_date", ""))
 
-            # 2) Employees
+            # Employees
             self.employees.clear()
             for emp_dict in state_data.get("employees", []):
                 emp = EmployeeModel(emp_dict["employee_name"])
@@ -514,9 +479,10 @@ class Controller:
                 emp.salary_levels.update(emp_dict.get("salary_levels", {}))
                 self.employees.append(emp)
 
-            # 3) Projects
+            # Projects
             self.projects.clear()
             self.view.projects.clear()
+            self.view.clear_project_tabs()  # Clear existing tabs
             for proj_dict in state_data.get("projects", []):
                 proj = ProjectModel()
                 proj.name = proj_dict.get("name", "")
@@ -537,26 +503,22 @@ class Controller:
                 proj.other_cost = proj_dict.get("other_cost", 0)
                 proj.research_topics = proj_dict.get("research_topics", [])
                 proj.nonrnd_percentage = proj_dict.get("nonrnd_percentage", 0)
+                proj.color = proj_dict.get("color", "")  # Load the project tab color
                 self.projects.append(proj)
                 self.view.projects.append(proj)
-
-            # Rebuild the UI with the newly loaded employees and projects
-            self.view.create_employee_overview_section(self.employees)
-            for proj in self.projects:
                 self.view.create_project_subsection_from_project(proj)
 
+            self.view.create_employee_overview_section(self.employees)
             print(f"[INFO] Loaded {len(self.employees)} employees, {len(self.projects)} projects.")
             print("[INFO] State restoration complete.")
 
         except Exception as e:
             print(f"[ERROR] Failed to load state from {filename}: {e}")
 
-
     def on_project_saved(self, project_obj, data):
         """
-        Updates an existing project's fields when 'Save Project' is clicked.
+        Updates a project's fields when saved.
         """
-        # Convert all numeric text fields to appropriate types
         try:
             project_obj.grant_min = float(data["grant_min"]) if data["grant_min"] else 0
         except:
@@ -587,7 +549,6 @@ class Controller:
         except:
             project_obj.nonrnd_percentage = 0
 
-        # Non-numeric fields
         project_obj.name = data["name"]
         project_obj.funding_agency = data["funding_agency"]
         project_obj.matching_fund_type = data["matching_fund_type"]
@@ -599,26 +560,21 @@ class Controller:
 
     def on_project_deleted(self, project_obj):
         """
-        Removes the project from our lists and redraws the project UI.
+        Removes a project and its corresponding tab from the UI.
         """
         if project_obj in self.projects:
             self.projects.remove(project_obj)
         if project_obj in self.view.projects:
             self.view.projects.remove(project_obj)
-        # Now refresh the project section in the view
-        self.view.refresh_projects_section(self.projects)
+        self.view.remove_project_tab(project_obj)
         print(f"[INFO] Project '{project_obj.name}' removed.")
 
     def on_employee_salary_interval_edited(self, employee, old_start, old_end, new_start, new_end, new_level, new_amount):
         """
-        Handler for editing an existing salary interval.
-        It removes salary entries from old_start to old_end and then sets new salary entries
-        from new_start to new_end with the provided new_level and new_amount.
+        Edits an employee's salary interval and updates the Employees tab.
         """
-        # Remove the old salary interval
         employee.remove_salary_interval(old_start, old_end)
-        
-        # Validate and parse the new salary amount and dates
+
         try:
             new_amount_val = float(new_amount)
         except ValueError:
@@ -636,7 +592,6 @@ class Controller:
             print("[WARN] New start date is after new end date. Invalid range.")
             return
 
-        # For each day in [new_start_dt, new_end_dt], set the new salary
         current_dt = new_start_dt
         while current_dt <= new_end_dt:
             day_str = current_dt.strftime("%m-%d-%Y")
@@ -644,5 +599,4 @@ class Controller:
             current_dt += timedelta(days=1)
 
         print(f"[INFO] Edited salary for {employee.employee_name}: Changed interval {old_start}–{old_end} to {new_start}–{new_end} with level '{new_level}' and amount {new_amount_val}.")
-        # Refresh the UI to reflect changes
         self.view.create_employee_overview_section(self.employees)

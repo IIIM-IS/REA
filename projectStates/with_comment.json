@@ -31421,7 +31421,8 @@
         "Data Processing / Data Mgmt",
         "Training Env. / Artificial Pedagogy"
       ],
-      "nonrnd_percentage": 0.92
+      "nonrnd_percentage": 0.92,
+      "color": "red"
     },
     {
       "name": "ICE-ID",
@@ -31446,7 +31447,8 @@
         "Data Processing / Data Mgmt",
         "Reasoning / Planning"
       ],
-      "nonrnd_percentage": 0.02
+      "nonrnd_percentage": 0.02,
+      "color": "blue"
     },
     {
       "name": "FRESH-ID",
@@ -31473,7 +31475,8 @@
         "Visualization / UX",
         "Modeling / Simulation"
       ],
-      "nonrnd_percentage": 0.02
+      "nonrnd_percentage": 0.02,
+      "color": "green"
     },
     {
       "name": "REA",
@@ -31495,7 +31498,8 @@
       "research_topics": [
         "Visualization / UX"
       ],
-      "nonrnd_percentage": 0.02
+      "nonrnd_percentage": 0.02,
+      "color": "yellow"
     },
     {
       "name": "AI-STYLIST",
@@ -31521,7 +31525,8 @@
         "Visualization / UX",
         "Modeling / Simulation"
       ],
-      "nonrnd_percentage": 0.02
+      "nonrnd_percentage": 0.02,
+      "color": "pink"
     }
   ]
 }

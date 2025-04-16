@@ -38,3 +38,49 @@ This project is licensed under the MIT License
 2. Test the Algorithm using the unit tests -> change wtv needs to be changed to make it work
 3. Add for debugging - Did we spend more hours than we had? Yes/No : (equation = result) the number of hours available from the sheets minus the number of hours spent | ways in which the program fucked up or did something that we do not want it to do - experiments to test these hypothesis. 
 4. Reading files is a problem atm
+
+
+
+2024 SALARY LEVELS
+Level 0 1.310.000
+Level 1 1.150.080
+Level 2   940000
+Level 3   800.000
+Level 4   700.000
+Level 5   570.000
+Level 6   470.000
+
+BB - L0
+JT - L1
+KRTh - L2
+GC - L3
+MAT - L6
+AHH - L1
+MC - L5
+AS - L3
+
+REA:
+
+Add the outputs to the UI.
+
+Allocation of non-R&D and R&D - can only be done in steps of full hours - they need to be fully allocated (the output is also wrong - it's a percentage of an hour and it should just be in hours) - do not print these out in the report.
+
+non-R&D are not weight locked - so that they can float around.
+
+See if I can implement matrix weight on the weights.
+
+change iteration count to number of iterations instead, which could be 0.
+
+remove arash, tory and jeff from eurodici.
+
+breakdown per person per project.
+
+big picture:
+total number of hours, total hours percent per project, total cost per project, relative hours and cost per project too
+
+Budget status - cannot be okay if it's under.
+
+We have to spend all the money for the individual projects.
+
+project breakdown:
+Per person
