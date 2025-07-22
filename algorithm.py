@@ -1,9 +1,62 @@
-# Keep imports and round_vector_preserve_sum_two_decimals function as they were
+import math
 import cvxpy as cp
 import numpy as np
+import itertools, sys, time
+import sys, io
+
+from cvxpy import CLARABEL
+from cvxpy.error import SolverError
 from datetime import datetime, timedelta
 
-# --- [Include the round_vector_preserve_sum_two_decimals function from the previous response here] ---
+"""
+ECOS (Interior-Point Method)
+ECOS reformulates the problem as a “homogeneous self-dual” cone program and then uses a primal–dual interior-point method to solve it. It keeps both the original (primal) and the dual variables strictly inside the feasible region and takes Newton-style steps—adjusting step lengths in a predictor–corrector fashion—to satisfy the optimality (KKT) conditions. This typically converges in a few dozen iterations with high accuracy for medium-sized problems.
+
+SCS (Operator Splitting / ADMM)
+Instead of Newton steps, SCS applies a first-order operator-splitting algorithm (a variant of ADMM) to the same self-dual embedding. It breaks the problem into two simple sub-steps—projecting onto the cone constraints, then taking a linear least-squares update—and alternates between them. Because each iteration is just matrix–vector multiplies and simple projections, SCS can handle very large problems using modest memory, but it often takes hundreds to thousands of iterations to reach moderate accuracy.
+"""
+
+# ================= DEBUG HELPERS =========================================
+_buf = io.StringIO()
+_old_stdout = sys.stdout
+sys.stdout = _buf
+
+_constraint_labels  = []          # parallel lists
+_constraints_store  = []
+
+_spinner = itertools.cycle("⠁⠂⠄⡀⢀⣀⣠⣄⡤⡄⡆")
+def _spin(msg):
+    sys.stdout.write("\r" + msg + " " + next(_spinner))
+    sys.stdout.flush()
+
+def add(label, constr):
+    """register a labelled constraint and return the same object"""
+    _constraint_labels.append(label)
+    _constraints_store.append(constr)
+    return constr
+
+def top_violations(k=10, tol=1e-6):
+    """largest absolute gaps among all constraints"""
+    bad = []
+    for lab, c in zip(_constraint_labels, _constraints_store):
+        try:
+            gap = float(np.max(np.abs(c.violation())))
+            if gap > tol:
+                bad.append((lab, gap))
+        except Exception:
+            pass
+    return sorted(bad, key=lambda t: t[1], reverse=True)[:k]
+
+def append_failure_report(problem, msg, diag):
+    diag += ["", "========== FAILURE REPORT ==========",
+             f"Status  : {problem.status}",
+             f"Message : {msg.strip()}"]
+    for lab, gap in top_violations():
+        diag.append(f"{lab:40s}  gap = {gap:.3e}")
+    diag.append("====================================")
+# =========================================================================
+
+
 def round_vector_preserve_sum_two_decimals_two_decimals(v, target_total):
     """
     Rounds a 1D numpy array `v` to two decimals such that the sum is equal to `target_total`
@@ -14,7 +67,7 @@ def round_vector_preserve_sum_two_decimals_two_decimals(v, target_total):
     
     scale = 100
     v_scaled = v * scale
-    # Round target_total * scale to handle potential floating point inaccuracies before casting to int
+    # Round target_total * scale to handle  floating point inaccuracies before casting to int
     target_scaled = int(round(target_total * scale))
 
     floor_vals = np.floor(v_scaled)
@@ -105,13 +158,23 @@ def round_vector_preserve_sum_two_decimals_two_decimals(v, target_total):
     #    print(f"  WARNING: Final sum {final_sum:.4f} still differs significantly from target {target_total:.4f}")
     # print(f"  Final rounded vector: {result}, Final Sum: {np.sum(result):.4f}")
 
-    # Round result again to 2 decimals to clean up potential floating point noise introduced by adjustment
+    # Round result again to 2 decimals to clean up  floating point noise introduced by adjustment
     return np.round(result, 2)
 
 
-def run_allocation_algorithm(employees, projects, start_date, end_date, all_topics):
+def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, all_topics_arg):
     diag_lines = []
     locked_allocations = {"Bridget Burger": "EURIDICE"}
+
+    # reset debug collectors ----------------------------------------------
+    global _constraint_labels, _constraints_store
+    _constraint_labels.clear()
+    _constraints_store.clear()
+
+    # Preserve original arguments if they are modified later
+    employees_orig = employees_arg[:]
+    projects = projects_arg[:]
+    all_topics = all_topics_arg[:]
 
     # --- [Sections 1-6: Setup, Data Prep, Variables - Keep as is] ---
     # Add a common topic "Bridge" available for all personnel and projects.
@@ -132,38 +195,43 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     locked_employee_list = []
     free_employee_list = []
     locked_allocs_output = {}  # Pre-assigned allocations for locked employees.
-    for emp in employees:
+    for emp in employees_orig: # Use the original employees list here
         if emp.employee_name in locked_allocations:
             locked_employee_list.append(emp)
-            locked_project = locked_allocations[emp.employee_name]
+            locked_project_name = locked_allocations[emp.employee_name]
             locked_allocs_output[emp.employee_name] = {}
             for d in date_list:
                 r_hours = emp.research_hours.get(d, 0.0)
                 nr_hours = emp.nonRnD_hours.get(d, 0.0)
-                # Round hours here for the locked output consistency? No, keep internal precision.
-                # Rounding only for display/integer checks.
                 locked_allocs_output[emp.employee_name][d] = {
-                    locked_project: {
+                    locked_project_name: {
                         "topics": {common_topic: r_hours} if r_hours > 1e-6 else {},
                         "nonRnD": nr_hours if nr_hours > 1e-6 else 0.0
                     }
                 }
-                # Clean up empty project entries
-                if not locked_allocs_output[emp.employee_name][d][locked_project]["topics"] and \
-                   locked_allocs_output[emp.employee_name][d][locked_project]["nonRnD"] == 0.0:
-                    del locked_allocs_output[emp.employee_name][d][locked_project]
+                if not locked_allocs_output[emp.employee_name][d][locked_project_name]["topics"] and \
+                   locked_allocs_output[emp.employee_name][d][locked_project_name]["nonRnD"] == 0.0:
+                    del locked_allocs_output[emp.employee_name][d][locked_project_name]
         else:
             free_employee_list.append(emp)
 
     employees = free_employee_list  # Use only free employees for optimization.
     num_days      = len(date_list)
-    num_employees = len(employees)
+    num_employees = len(employees) # This is num_free_employees
     num_projects  = len(projects)
     num_topics    = len(all_topics)
 
-    if num_employees == 0:
+    if num_employees == 0 and not locked_employee_list: # Adjusted condition slightly
+        print("Warning: No employees (free or locked) to allocate. Returning empty.")
+        return {
+            "solver_status": "no_employees_to_allocate",
+            "final_objective": 0.0,
+            "final_costs": {proj.name if proj.name else f"Project_{i}": 0.0 for i, proj in enumerate(projects)},
+            "allocations": {}
+        }
+    
+    if num_employees == 0 and locked_employee_list: # Only locked employees
         print("Warning: No free employees to allocate. Returning only locked allocations.")
-        # Calculate locked costs based on locked allocations
         locked_costs = {proj.name if proj.name else f"Project_{i}": 0.0 for i, proj in enumerate(projects)}
         for emp in locked_employee_list:
              locked_proj_name = locked_allocations[emp.employee_name]
@@ -173,21 +241,27 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                  hourly_rate = (base_salary / 160.0) * 1.25 if base_salary > 0 else 0.0
                  r_hours = emp.research_hours.get(d_str, 0.0)
                  nr_hours = emp.nonRnD_hours.get(d_str, 0.0)
-                 locked_costs[locked_proj_name] += (r_hours + nr_hours) * hourly_rate
+                 if locked_proj_name in locked_costs: # Ensure project name exists
+                    locked_costs[locked_proj_name] += (r_hours + nr_hours) * hourly_rate
+                 else: # Fallback if project name from locked_allocations isn't in projects list
+                    # This case should ideally not happen if data is consistent
+                    print(f"Warning: Locked project '{locked_proj_name}' not in project list for cost calculation.")
+
 
         return {
             "solver_status": "no_free_employees",
             "final_objective": 0.0,
-            "final_costs": locked_costs, # Return calculated locked costs
+            "final_costs": locked_costs,
             "allocations": locked_allocs_output
         }
+
 
     # Map topics to indices for easier referencing in CVXPY
     topic_to_idx = {topic: i for i, topic in enumerate(all_topics)}
 
-    # Build salary matrix (num_employees x num_days)
-    salary_matrix = np.zeros((num_employees, num_days))
-    for i, emp in enumerate(employees):
+    # Build salary matrix (num_free_employees x num_days)
+    salary_matrix = np.zeros((num_employees, num_days)) # For free employees
+    for i, emp in enumerate(employees): # These are free employees
         for j, d_str in enumerate(date_list):
             day_info = emp.salary_levels.get(d_str, {})
             base_salary = float(day_info.get("amount", 0.0))
@@ -196,12 +270,12 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
             else:
                  salary_matrix[i, j] = 0.0
 
-    # Build research and non-R&D hours arrays (num_employees x num_days)
-    research_hours_array = np.zeros((num_employees, num_days))
-    nonrnd_hours_array   = np.zeros((num_employees, num_days))
+    # Build research and non-R&D hours arrays (num_free_employees x num_days)
+    research_hours_array = np.zeros((num_employees, num_days)) # For free employees
+    nonrnd_hours_array   = np.zeros((num_employees, num_days)) # For free employees
     total_avail_rd_free = 0.0
     total_avail_nonrnd_free = 0.0
-    for i, emp in enumerate(employees):
+    for i, emp in enumerate(employees): # These are free employees
         for j, d_str in enumerate(date_list):
             r_hrs = emp.research_hours.get(d_str, 0.0)
             nr_hrs = emp.nonRnD_hours.get(d_str, 0.0)
@@ -214,167 +288,421 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     print("\n================= DEBUG INFO: HOURS & SALARY (Free Employees) =================")
     grand_total_hours_free = 0.0
     grand_potential_cost_free = 0.0
-    for i, emp in enumerate(employees):
-        emp_name = emp.employee_name
-        emp_hours = float(np.sum(research_hours_array[i, :]) + np.sum(nonrnd_hours_array[i, :]))
-        daily_costs = salary_matrix[i, :] * (research_hours_array[i, :] + nonrnd_hours_array[i, :])
-        emp_cost = float(np.sum(daily_costs))
-        grand_total_hours_free += emp_hours
-        grand_potential_cost_free += emp_cost
-        # --- CHANGE: Round for display ---
-        print(f"Employee '{emp_name}': total hours = {round(emp_hours):d}, potential total cost = {round(emp_cost):d}")
-    print(f"\nALL FREE EMPLOYEES COMBINED: total R&D hours = {round(total_avail_rd_free):d}")
-    print(f"ALL FREE EMPLOYEES COMBINED: total NonR&D hours = {round(total_avail_nonrnd_free):d}")
-    print(f"ALL FREE EMPLOYEES COMBINED: total hours = {round(grand_total_hours_free):d}")
-    print(f"ALL FREE EMPLOYEES COMBINED: potential total cost = {round(grand_potential_cost_free):d}")
-    # --- END CHANGE ---
+    if num_employees > 0: # Check if there are free employees
+        for i, emp in enumerate(employees): # Iterate free employees
+            emp_name = emp.employee_name
+            emp_hours = float(np.sum(research_hours_array[i, :]) + np.sum(nonrnd_hours_array[i, :]))
+            daily_costs = salary_matrix[i, :] * (research_hours_array[i, :] + nonrnd_hours_array[i, :])
+            emp_cost = float(np.sum(daily_costs))
+            grand_total_hours_free += emp_hours
+            grand_potential_cost_free += emp_cost
+            print(f"Employee '{emp_name}': total hours = {round(emp_hours):d},  total cost = {round(emp_cost):d}")
+        print(f"\nALL FREE EMPLOYEES COMBINED: total R&D hours = {round(total_avail_rd_free):d}")
+        print(f"ALL FREE EMPLOYEES COMBINED: total NonR&D hours = {round(total_avail_nonrnd_free):d}")
+        print(f"ALL FREE EMPLOYEES COMBINED: total hours = {round(grand_total_hours_free):d}")
+        print(f"ALL FREE EMPLOYEES COMBINED:  total cost = {round(grand_potential_cost_free):d}")
+    else:
+        print("No free employees for this breakdown.")
     print("===============================================================================\n")
 
     # --- DEBUG INFO: HOURS & SALARY (Locked Employees) ---
     print("\n================= DEBUG INFO: HOURS & SALARY (Locked Employees) =================")
     grand_total_hours_locked = 0.0
     grand_potential_cost_locked = 0.0
-    for emp in locked_employee_list:
-        emp_name = emp.employee_name
-        emp_hours = 0.0
-        emp_cost = 0.0
-        for d in date_list:
-            r_hrs = emp.research_hours.get(d, 0.0)
-            nr_hrs = emp.nonRnD_hours.get(d, 0.0)
-            day_hours = r_hrs + nr_hrs
-            emp_hours += day_hours
-            day_info = emp.salary_levels.get(d, {})
-            base_salary = float(day_info.get("amount", 0.0))
-            daily_rate = (base_salary / 160.0) * 1.25 if base_salary > 0 else 0.0
-            emp_cost += daily_rate * day_hours
-        grand_total_hours_locked += emp_hours
-        grand_potential_cost_locked += emp_cost
-        # --- CHANGE: Round for display ---
-        print(f"Employee '{emp_name}': total hours = {round(emp_hours):d}, potential total cost = {round(emp_cost):d}")
-    print(f"\nALL LOCKED EMPLOYEES COMBINED: total hours = {round(grand_total_hours_locked):d}, potential total cost = {round(grand_potential_cost_locked):d}")
-    # --- END CHANGE ---
+    total_avail_rd_locked = 0.0
+    total_avail_nonrnd_locked = 0.0
+    if locked_employee_list:
+        for emp in locked_employee_list:
+            emp_name = emp.employee_name
+            emp_hours = 0.0
+            emp_cost = 0.0
+            emp_rd_hours = 0.0
+            emp_nonrnd_hours = 0.0
+            for d_str in date_list: # Corrected variable name from d to d_str
+                r_hrs = emp.research_hours.get(d_str, 0.0)
+                nr_hrs = emp.nonRnD_hours.get(d_str, 0.0)
+                day_hours = r_hrs + nr_hrs
+                emp_hours += day_hours
+                emp_rd_hours += r_hrs
+                emp_nonrnd_hours += nr_hrs
+                day_info = emp.salary_levels.get(d_str, {})
+                base_salary = float(day_info.get("amount", 0.0))
+                daily_rate = (base_salary / 160.0) * 1.25 if base_salary > 0 else 0.0
+                emp_cost += daily_rate * day_hours
+            grand_total_hours_locked += emp_hours
+            grand_potential_cost_locked += emp_cost
+            total_avail_rd_locked += emp_rd_hours
+            total_avail_nonrnd_locked += emp_nonrnd_hours
+            print(f"Employee '{emp_name}': total hours = {round(emp_hours):d},  total cost = {round(emp_cost):d}")
+        print(f"\nALL LOCKED EMPLOYEES COMBINED: total R&D hours = {round(total_avail_rd_locked):d}")
+        print(f"ALL LOCKED EMPLOYEES COMBINED: total NonR&D hours = {round(total_avail_nonrnd_locked):d}")
+        print(f"ALL LOCKED EMPLOYEES COMBINED: total hours = {round(grand_total_hours_locked):d},  total cost = {round(grand_potential_cost_locked):d}")
+    else:
+        print("No locked employees for this breakdown.")
     print("===============================================================================\n")
 
     # --- DEBUG INFO: HOURS & SALARY (ALL Employees) ---
     print("\n================= DEBUG INFO: HOURS & SALARY (ALL Employees) =================")
     combined_total_hours = grand_total_hours_free + grand_total_hours_locked
     combined_total_cost = grand_potential_cost_free + grand_potential_cost_locked
-    # --- CHANGE: Round for display ---
-    print(f"ALL EMPLOYEES COMBINED: total hours = {round(combined_total_hours):d}, potential total cost = {round(combined_total_cost):d}")
-    # --- END CHANGE ---
+    combined_total_rd_hours = total_avail_rd_free + total_avail_rd_locked
+    combined_total_nonrnd_hours = total_avail_nonrnd_free + total_avail_nonrnd_locked
+    print(f"ALL EMPLOYEES COMBINED: total R&D hours = {round(combined_total_rd_hours):d}")
+    print(f"ALL EMPLOYEES COMBINED: total NonR&D hours = {round(combined_total_nonrnd_hours):d}")
+    print(f"ALL EMPLOYEES COMBINED: total hours = {round(combined_total_hours):d}")
+    print(f"ALL EMPLOYEES COMBINED:  total cost = {round(combined_total_cost):d}")
     print("===============================================================================\n")
 
+    # --- PROJECT TARGETS & LOCKED CONTRIBUTIONS ---
+    print("\n================= DEBUG INFO: PROJECT TARGETS & LOCKED CONTRIBUTIONS =================")
+    if not projects:
+        print("No projects defined.")
+    else:
+        for proj in projects:
+            proj_name = proj.name if proj.name else "Unnamed Project"
+            target_cost = float(proj.grant_contractual or 0.0)
+            print(f"Project '{proj_name}': Target Cost = {round(target_cost):d}")
+
+            current_proj_locked_hours = 0.0
+            current_proj_locked_cost = 0.0
+            current_proj_locked_rd_hours = 0.0
+            current_proj_locked_nonrnd_hours = 0.0
+            found_locked_for_proj = False
+
+            for emp in locked_employee_list:
+                if locked_allocations.get(emp.employee_name) == proj_name:
+                    found_locked_for_proj = True
+                    emp_proj_hours = 0.0
+                    emp_proj_cost = 0.0
+                    emp_proj_rd_hours = 0.0
+                    emp_proj_nonrnd_hours = 0.0
+                    for d_str in date_list:
+                        r_hrs = emp.research_hours.get(d_str, 0.0)
+                        nr_hrs = emp.nonRnD_hours.get(d_str, 0.0)
+                        day_hours = r_hrs + nr_hrs
+                        emp_proj_hours += day_hours
+                        emp_proj_rd_hours += r_hrs
+                        emp_proj_nonrnd_hours += nr_hrs
+
+                        day_info = emp.salary_levels.get(d_str, {})
+                        base_salary = float(day_info.get("amount", 0.0))
+                        daily_rate = (base_salary / 160.0) * 1.25 if base_salary > 0 else 0.0
+                        emp_proj_cost += daily_rate * day_hours
+                    
+                    print(f"  Locked Employee '{emp.employee_name}': total hours = {round(emp_proj_hours):d} (R&D: {round(emp_proj_rd_hours):d}, NonR&D: {round(emp_proj_nonrnd_hours):d}),  cost = {round(emp_proj_cost):d}")
+                    current_proj_locked_hours += emp_proj_hours
+                    current_proj_locked_cost += emp_proj_cost
+                    current_proj_locked_rd_hours += emp_proj_rd_hours
+                    current_proj_locked_nonrnd_hours += emp_proj_nonrnd_hours
+            
+            if found_locked_for_proj:
+                print(f"  Project '{proj_name}' LOCKED TOTALS: hours = {round(current_proj_locked_hours):d} (R&D: {round(current_proj_locked_rd_hours):d}, NonR&D: {round(current_proj_locked_nonrnd_hours):d}), cost = {round(current_proj_locked_cost):d}")
+            else:
+                print(f"  No employees directly locked to Project '{proj_name}'.")
+            print("  ----------------------------------------------------------")
+    print("====================================================================================\n")
+
+    print("\n================= DEBUG INFO: HOURS & COSTS PER PROJECT (Employee Availability) =================")
+    if not projects:
+        print("No projects defined.")
+    else:
+        for proj in projects:
+            proj_name_display = proj.name if proj.name else "Unnamed Project" # Renamed for clarity
+            target_cost_display = float(proj.grant_contractual or 0.0) # Renamed for clarity
+            print(f"Project '{proj_name_display}': Target Cost = {round(target_cost_display):d}")
+            print(f"  Employee Contributions (based on their total available hours):")
+
+            project_total_hours_from_all_emps = 0.0
+            project_total_cost_from_all_emps = 0.0
+            project_total_rd_hours_from_all_emps = 0.0
+            project_total_non_rd_hours_from_all_emps = 0.0
+
+            # Iterate through ALL original employees to show their  for this project
+            for emp_idx, emp_obj in enumerate(employees_orig): # Renamed emp to emp_obj
+                emp_total_hours = 0.0
+                emp_total_cost = 0.0
+                emp_total_rd_hours = 0.0
+                emp_total_non_rd_hours = 0.0
+                
+                is_locked_to_this_project = emp_obj.employee_name in locked_allocations and locked_allocations[emp_obj.employee_name] == proj_name_display
+                is_locked_elsewhere = emp_obj.employee_name in locked_allocations and locked_allocations[emp_obj.employee_name] != proj_name_display
+                locked_status_info = ""
+                if is_locked_to_this_project:
+                    locked_status_info = " (Locked to this project)"
+                elif is_locked_elsewhere:
+                    locked_status_info = f" (Locked to {locked_allocations[emp_obj.employee_name]})"
+
+                # Calculate total available hours & cost for this employee across all days
+                for d_str_inner in date_list: # Renamed d_str to d_str_inner
+                    r_hrs_inner = emp_obj.research_hours.get(d_str_inner, 0.0) # Renamed
+                    nr_hrs_inner = emp_obj.nonRnD_hours.get(d_str_inner, 0.0) # Renamed
+                    day_hours_inner = r_hrs_inner + nr_hrs_inner # Renamed
+                    
+                    emp_total_hours += day_hours_inner
+                    emp_total_rd_hours += r_hrs_inner
+                    emp_total_non_rd_hours += nr_hrs_inner
+
+                    day_info_inner = emp_obj.salary_levels.get(d_str_inner, {}) # Renamed
+                    base_salary_inner = float(day_info_inner.get("amount", 0.0)) # Renamed
+                    daily_rate_inner = (base_salary_inner / 160.0) * 1.25 if base_salary_inner > 0 else 0.0 # Renamed
+                    emp_total_cost += daily_rate_inner * day_hours_inner
+                
+                print(f"    - {emp_obj.employee_name}{locked_status_info}: Total Avail. Hours = {round(emp_total_hours):d} (R&D: {round(emp_total_rd_hours):d}, NonR&D: {round(emp_total_non_rd_hours):d}), Cost of these hours = {round(emp_total_cost):d}")
+                
+                # Sum these total available hours for an overall project 
+                # This is illustrative of the *total pool*, not a sum of direct assignments yet
+                project_total_hours_from_all_emps += emp_total_hours
+                project_total_cost_from_all_emps += emp_total_cost
+                project_total_rd_hours_from_all_emps += emp_total_rd_hours
+                project_total_non_rd_hours_from_all_emps += emp_total_non_rd_hours
+
+            print(f"  Overall  Pool for '{proj_name_display}' (sum of all employees' total avail. hours):")
+            print(f"    Total Hours = {round(project_total_hours_from_all_emps):d} (R&D: {round(project_total_rd_hours_from_all_emps):d}, NonR&D: {round(project_total_non_rd_hours_from_all_emps):d})")
+            print(f"    Associated Cost = {round(project_total_cost_from_all_emps):d}")
+            print("  -----------------------------------------------------------------------------------")
+    print("==============================================================================================\n")
+    
+    # ================= PER PROJECT • PER SALARY BRACKET • EMPLOYEE LIST =================
+    print("\n================= DEBUG INFO: PER PROJECT, PER SALARY BRACKET (Summary) =================")
+    for proj_obj in projects:
+        pname = proj_obj.name if proj_obj.name else f"Project_{projects.index(proj_obj)}"
+        print(f"Project: {pname}")
+
+        #  (level_label, hourly_rate)  -> set(employee_names)
+        bracket_to_emps = {}
+
+        for emp in employees_orig:                   # all employees (free + locked)
+            unique_pairs = set()
+            for d_str in date_list:                  # examine every day in range
+                sal_info = emp.salary_levels.get(d_str, {})
+                lvl  = sal_info.get("level", "").strip() or "UNSPEC"
+                base = sal_info.get("amount", 0.0)          # monthly amount
+                if base <= 0:                               # skip days with no salary
+                    continue
+                hr_rate = round((base / 160.0) * 1.25, 2)   # YOUR hourly-rate formula
+                unique_pairs.add((lvl, hr_rate))
+
+            # Register this employee once per unique bracket they ever had
+            for lvl, hr in unique_pairs:
+                bracket_to_emps.setdefault((lvl, hr), set()).add(emp.employee_name)
+
+        if not bracket_to_emps:
+            print("  No salary data.")
+        else:
+            for (lvl, hr) in sorted(bracket_to_emps, key=lambda t: t[1]):  # sort by rate
+                emp_list = ", ".join(sorted(bracket_to_emps[(lvl, hr)]))
+                # “L1 (42 000 ISK/hr): Alice, Bob”
+                print(f"  {lvl} ({hr:,.0f} ISK/hr): {emp_list}")
+
+        print("---------------------------------------------------------------------------")
+    print("========================================================================================\n")
+
     # -------------------------------------------------------------------------
-    # 6. Define CVXPY Variables for allocations
+    # 6. Define CVXPY Variables for allocations (for free employees)
     # -------------------------------------------------------------------------
+    # This section proceeds only if there are free employees to optimize for.
+    # If num_employees (free) is 0, the function would have returned earlier with locked allocations.
+    
     X = cp.Variable((num_employees, num_days, num_projects, num_topics), nonneg=True)  # R&D hours
     Y = cp.Variable((num_employees, num_days, num_projects), nonneg=True)             # Non-R&D hours
 
     constraints = []
 
-    # (a) R&D allocation: assign all available R&D hours.
-    constraints.append(cp.sum(X, axis=(2, 3)) == research_hours_array)
+    cost_deviation_penalties = []
+    BIG_SLACK_PENALTY        = 1e4
 
-    # (b) Non-R&D allocation: assign all available Non-R&D hours.
-    constraints.append(cp.sum(Y, axis=2) == nonrnd_hours_array)
+    constraints.append(
+        add("R&D balance all emp/day (HARD)",
+        cp.sum(cp.sum(X, axis=3), axis=2) == research_hours_array)
+    )
+    constraints.append(
+        add("Non-R&D balance all emp/day (HARD)",
+        cp.sum(Y, axis=2) == nonrnd_hours_array)
+    )
+
+    eps_rd = eps_nrd = None 
+
+    # Calculate avg_target_cost before topic constraints loop
+    all_target_costs_vals = [float(p.grant_contractual or 0.0) for p in projects]
+    non_zero_targets = [tc for tc in all_target_costs_vals if tc > 1e-6]
+    avg_target_cost = np.mean(non_zero_targets) if non_zero_targets else 1.0
+    avg_target_cost = max(avg_target_cost, 1e-6)
 
     # (c) Topic constraints: only allowed topics get R&D hours.
+    # Compute disallowed_topic_indices for each project
     for p_idx, proj in enumerate(projects):
-        allowed_topic_indices = [topic_to_idx[t] for t in proj.research_topics if t in topic_to_idx]
-        # Ensure common topic is allowed if it exists
-        if common_topic in topic_to_idx and topic_to_idx[common_topic] not in allowed_topic_indices:
-            allowed_topic_indices.append(topic_to_idx[common_topic])
-        # Handle projects with no specific topics - allow only common topic
-        if not proj.research_topics and common_topic in topic_to_idx:
-             allowed_topic_indices = [topic_to_idx[common_topic]]
-        # Fallback if common topic somehow isn't in topic_to_idx (shouldn't happen with current logic)
-        elif not allowed_topic_indices and common_topic in topic_to_idx:
-             allowed_topic_indices.append(topic_to_idx[common_topic])
-
-        all_topic_indices = set(range(num_topics))
-        disallowed_topic_indices = list(all_topic_indices - set(allowed_topic_indices))
+        allowed_topics = set(getattr(proj, 'allowed_topics', []))
+        disallowed_topic_indices = [i for i, topic in enumerate(all_topics) if topic not in allowed_topics]
+        # Allow spill-over into “forbidden” topics, but punish it heavily
+        # so the optimiser will do it *only* when it is otherwise infeasible.
+        # ------------------------------------------------------------------
         if disallowed_topic_indices:
-             # Apply constraint only if there are topics to disallow
-             constraints.append(X[:, :, p_idx, disallowed_topic_indices] == 0)
+            slack_topics = cp.Variable(nonneg=True,
+                                        name=f"slack_topic_{p_idx}")
+            constraints.append(
+                add(f"Topic whitelist (soft) proj={proj.name or p_idx}",
+                    cp.sum(X[:, :, p_idx, disallowed_topic_indices])
+                    <= slack_topics)
+            )
+            cost_deviation_penalties.append(
+                BIG_SLACK_PENALTY * slack_topics / avg_target_cost
+            )
+        
 
     # -------------------------------------------------------------------------
     # 7. Cost, Non‑R&D, and R&D Penalties
     # -------------------------------------------------------------------------
     project_cost_exprs = {}
     target_costs = {}
-    cost_deviation_penalties = []
-    nonrnd_frac_penalty_expr = 0  # DCP-Compliant version
+    nonrnd_frac_penalty_expr = 0
 
-    lambda_smooth = 1e-3 # Penalty for hour changes day-to-day per employee/project/topic
-    lambda_topic = 1e-2  # Penalty for deviation from target R&D topic ratios
-    smooth_penalty = cp.sum_squares(X[:, 1:, :, :] - X[:, :-1, :, :]) # Penalize difference between consecutive days
-    topic_penalty = 0    # Initialize topic ratio penalty
+    lambda_smooth = 1e-3
+    lambda_topic = 1e-2
+    smooth_penalty = cp.sum_squares(X[:, 1:, :, :] - X[:, :-1, :, :])
+    topic_penalty = 0
+    slacks = {} 
 
-    # Calculate average target cost for scaling huber loss M parameter
-    all_target_costs = [float(p.grant_contractual or 0.0) for p in projects]
-    non_zero_targets = [tc for tc in all_target_costs if tc > 1e-6]
-    avg_target_cost = np.mean(non_zero_targets) if non_zero_targets else 1.0 # Use 1.0 if no targets > 0
-    avg_target_cost = max(avg_target_cost, 1e-6) # Ensure it's positive
-    print(f"--- Average Non-Zero Target Cost (for scaling penalties): {avg_target_cost:.2f} ---") # Keep decimal for context
+    all_target_costs_vals = [float(p.grant_contractual or 0.0) for p in projects]
+    non_zero_targets = [tc for tc in all_target_costs_vals if tc > 1e-6] # Renamed variable
+    avg_target_cost = np.mean(non_zero_targets) if non_zero_targets else 1.0
+    avg_target_cost = max(avg_target_cost, 1e-6)
+    print(f"--- Average Non-Zero Target Cost (for scaling penalties): {avg_target_cost:.2f} ---")
+
+    # -----------------------------------------------------------------
+    # QUICK HARD-BOUND SANITY CHECK – prints only, does NOT affect the model
+    # -----------------------------------------------------------------
+    free_cost_cap = np.sum(                     # everything free employees
+        salary_matrix * (research_hours_array + nonrnd_hours_array)
+    )
+    locked_cost_cap = 0.0                       # everything already locked
+    for emp in locked_employee_list:
+        for d_str in date_list:
+            base  = float(emp.salary_levels.get(d_str, {}).get("amount", 0.0))
+            rate  = (base / 160.0) * 1.25 if base > 0 else 0.0
+            hrs   = emp.research_hours.get(d_str, 0.0) + \
+                    emp.nonRnD_hours.get(d_str, 0.0)
+            locked_cost_cap += hrs * rate
+
+    print("\n=== COST-CAPACITY VS. PROJECT LOWER-BOUNDS ===")
+    print(f"Max cost that *could* be spent this period : "
+          f"{free_cost_cap + locked_cost_cap:,.0f} ISK")
+    print(f"    from free   employees : {free_cost_cap:,.0f}")
+    print(f"    from locked employees : {locked_cost_cap:,.0f}")
+
+    for p in projects:
+        need = float(p.grant_contractual or 0.0)
+        print(f"  – {p.name:<12s} needs ≥ {need:,.0f}  (target={need:,.0f})")
+    print("===========================================================\n")
+
+    required_total_cost = 0.0
+    for p in projects:
+        tgt = float(p.grant_contractual or 0.0)
+        mf  = float(p.matching_fund_value or 0.0)
+        if mf and p.matching_fund_type.lower() == 'percentage':
+            required_total_cost += tgt * (1 + mf/100.0)
+        else:
+            required_total_cost += tgt + mf
+
+    hard_capacity = free_cost_cap + locked_cost_cap
+    if required_total_cost > hard_capacity + 1e-6:
+        gap = required_total_cost - hard_capacity
+        print("⚠️  WARNING  ⚠️  Requested MINIMUM spend exceeds absolute capacity "
+            f"by {gap:,.0f} ISK. The optimisation will continue, "
+            "but expect large slacks in the result.\n")
 
     for p_idx, proj in enumerate(projects):
         pname = proj.name if proj.name else f"Project_{p_idx}"
         target_costs[pname] = float(proj.grant_contractual or 0.0)
 
-        # Calculate total cost for this project
-        rnd_hours_proj_emp_day = cp.sum(X[:, :, p_idx, :], axis=2) # Sum R&D hours across topics for this project
-        nonrnd_hours_proj_emp_day = Y[:, :, p_idx]                 # Non-R&D hours for this project
+        # ---------------------------------------------------------
+        # (1)  constant cost contributed by the *locked* employees
+        # ---------------------------------------------------------
+        locked_cost_const = 0.0
+        for emp in locked_employee_list:
+            if locked_allocations.get(emp.employee_name) == pname:
+                for d_str in date_list:
+                    base = float(emp.salary_levels
+                                .get(d_str, {})
+                                .get("amount", 0.0))
+                    rate = (base / 160.0) * 1.25 if base > 0 else 0.0
+                    r_hrs  = emp.research_hours.get(d_str, 0.0)
+                    nr_hrs = emp.nonRnD_hours.get(d_str, 0.0)
+                    locked_cost_const += (r_hrs + nr_hrs) * rate
+
+        # ---------------------------------------------------------
+        # (2)  variable cost coming from the *free* employees
+        # ---------------------------------------------------------
+        rnd_hours_proj_emp_day = cp.sum(X[:, :, p_idx, :], axis=2)
+        nonrnd_hours_proj_emp_day = Y[:, :, p_idx]
         combined_hours_proj_emp_day = rnd_hours_proj_emp_day + nonrnd_hours_proj_emp_day
-        # Element-wise multiplication with salary matrix and sum over employees and days
-        cost_expr = cp.sum(cp.multiply(salary_matrix, combined_hours_proj_emp_day))
-        project_cost_exprs[pname] = cost_expr
+        cost_expr_free = cp.sum(cp.multiply(salary_matrix, combined_hours_proj_emp_day))
 
-        # Cost Deviation Penalty (Huber Loss)
+        # ---------------------------------------------------------
+        # (3)  total cost expression  (constant + variable)
+        # ---------------------------------------------------------
+        cost_expr_total = cost_expr_free + locked_cost_const
+        project_cost_exprs[pname] = cost_expr_total
+
+        # ---------------------------------------------------------
+        # ► MATCHING-FUND REQUIREMENT
+        # ---------------------------------------------------------
+        match_raw = float(proj.matching_fund_value or 0.0)
+        if match_raw > 0:
+            if proj.matching_fund_type.lower() == "percentage":
+                match_amount = match_raw / 100.0 * target_costs[pname]
+            else:
+                match_amount = match_raw
+
+            required_total = target_costs[pname] + match_amount
+
+            # create a non-negative slack (one per project)
+
+            slack_under_spend = cp.Variable(nonneg=True)
+            slacks[pname] = slack_under_spend
+            constraints.append(
+                add(f"match-fund soft ≥  ({pname})",
+                    cost_expr_total + slack_under_spend >= required_total)
+            )
+            cost_deviation_penalties.append(
+                BIG_SLACK_PENALTY * slack_under_spend / avg_target_cost
+            )
+
         target_val = target_costs[pname]
-        # Set M for Huber loss relative to average target cost (e.g., 10% of average)
-        huber_M_cost = avg_target_cost * 0.1
-        # Penalize deviation from target, scaled by average target cost
-        cost_deviation_penalties.append(cp.huber(cost_expr - target_val, M=huber_M_cost) / avg_target_cost)
+        huber_M_cost = int(round(avg_target_cost * 0.1)) # Ensure M is integer
+        huber_M_cost = max(1, huber_M_cost) # M must be positive for Huber
+        cost_deviation_penalties.append(cp.huber(cost_expr_total - target_val, M=huber_M_cost) / avg_target_cost)
 
-        # Non-R&D Percentage Penalty (Linearized Quadratic Penalty)
         desired_frac = getattr(proj, 'nonrnd_percentage', 0) / 100.0
-        if desired_frac >= 0 and desired_frac <= 1: # Only apply if valid percentage
-            rnd_hours_proj_total = cp.sum(X[:, :, p_idx, :]) # Total R&D hours for this project
-            nonrnd_hours_proj_total = cp.sum(Y[:, :, p_idx]) # Total Non-R&D hours for this project
-            # Linear target deviation: (1 - desired_frac) * NonR&D - desired_frac * R&D should be zero
+        if desired_frac >= 0 and desired_frac <= 1:
+            rnd_hours_proj_total = cp.sum(X[:, :, p_idx, :])
+            nonrnd_hours_proj_total = cp.sum(Y[:, :, p_idx])
             linear_target_deviation = (1.0 - desired_frac) * nonrnd_hours_proj_total - desired_frac * rnd_hours_proj_total
-            # Penalize the square of this deviation
             nonrnd_frac_penalty_expr += cp.square(linear_target_deviation)
 
-        # R&D Topic Ratio Penalty
         if hasattr(proj, 'rnd_topic_ratios') and proj.rnd_topic_ratios:
-            # Build target ratio vector based on all_topics order
             target_vector = np.array([proj.rnd_topic_ratios.get(topic, 0) for topic in all_topics])
             sum_target_vector = np.sum(target_vector)
-            if sum_target_vector > 1e-6: # Normalize if sum is non-zero
+            if sum_target_vector > 1e-6:
                  target_vector = target_vector / sum_target_vector
-                 # Allocated R&D hours per employee, day, topic for this project
                  allocated_rd_topics = X[:, :, p_idx, :]
-                 # Total R&D allocated per employee, day for this project
                  total_rd_alloc_per_emp_day = cp.sum(allocated_rd_topics, axis=2, keepdims=True)
-                 # Target allocation per topic based on the total R&D and the target ratios
-                 # Reshape target_vector for broadcasting: (1, 1, num_topics)
-                 target_alloc = total_rd_alloc_per_emp_day @ target_vector.reshape((1, -1)) # Use matrix multiplication for broadcasting
-                 # Penalize squared difference between actual and target topic allocations
+                 # Ensure target_vector is 1D for this operation if total_rd_alloc_per_emp_day is (N,D,1)
+                 # and target_vector is (T,). We need (N,D,T) as target_alloc.
+                 # target_alloc = total_rd_alloc_per_emp_day * target_vector.reshape((1, 1, -1)) # Broadcasting
+                 # Using matmul for explicit broadcasting with reshaped target_vector
+                 target_alloc = total_rd_alloc_per_emp_day @ target_vector.reshape((1, -1))
                  topic_penalty += cp.sum_squares(allocated_rd_topics - target_alloc)
 
 
     # -------------------------------------------------------------------------
     # 8. Composite Objective
     # -------------------------------------------------------------------------
-    beta  = 1e-2  # Weight for cost deviation penalty
-    gamma = 1e-5  # Weight for non-R&D fraction penalty
-    reg_lambda = 1e-6 # Weight for L2 regularization
+    beta  = 1e-2
+    gamma = 1e-5
+    reg_lambda = 1e-6
 
-    # L2 Regularization on allocation variables to encourage smaller values (helps stability)
     reg_expr = reg_lambda * (cp.sum_squares(X) + cp.sum_squares(Y))
 
-    # Combine all penalty terms into the objective function
     obj_expr = beta * cp.sum(cost_deviation_penalties) \
                + gamma * nonrnd_frac_penalty_expr \
                + lambda_smooth * smooth_penalty \
@@ -386,65 +714,55 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     # 9. Solve the Problem with CVXPY
     # -------------------------------------------------------------------------
     problem = cp.Problem(objective, constraints)
-    solver_opts = {
-        "max_iters": 500000,
-        "abstol": 1e-7,
-        "reltol": 1e-7,
-        "feastol": 1e-7,
-        # Potential ECOS specific options if needed
-        # "max_iters_ls": 20, # Max iterations for line search
-        # "mi_max_iters": 1000 # If using ECOS_BB for mixed-integer problems (not the case here)
+
+    def _attempt(prob, slv, opts, label):
+        """Run <solver>; always return (val, status, err_msg)."""
+        t0, err_msg, val = time.time(), None, None
+        try:
+            _spin(f"Solving with {label} …")
+            val = prob.solve(solver=slv, **opts)
+        except cp.SolverError as e:
+            err_msg = str(e)
+            val = prob.value          # whatever we got
+        finally:
+            status = prob.status
+            print(f"\rSolving with {label} finished in "
+                f"{time.time()-t0:6.2f}s  (status: {status})")
+            return val, status, err_msg
+
+    # --- options you already had --------------------------------------
+    opts = {
+        cp.ECOS:      dict(max_iters=20_000, abstol=1e-7,
+                        reltol=1e-7, feastol=1e-7, verbose=True),
+        cp.SCS:       dict(max_iters=20_000, eps=5e-4,  verbose=True),
+        cp.CLARABEL:  dict(max_iter=10_000,  verbose=True),
     }
-    solver_to_use = cp.ECOS # ECOS is generally good for SOCPs which this might reduce to.
-    # Alternatives: cp.SCS (can be faster but less accurate), cp.OSQP (good for QPs)
-    try:
-        print(f"Attempting to solve with {solver_to_use}...")
-        # Consider adding verbose=True for more solver output during debugging
-        opt_val = problem.solve(solver=solver_to_use, **solver_opts, verbose=False)
-        print(f"Solver status: {problem.status}")
-        if opt_val is not None and np.isfinite(opt_val):
-            print(f"Optimal value: {opt_val:.6e}")
-        else:
-            print(f"Optimal value: {opt_val} (Non-finite or None)")
-    except cp.error.SolverError as e:
-        print(f"CVXPY SolverError with {solver_to_use}: {e}")
-        print("This might indicate numerical issues, infeasibility, or unboundedness.")
-        # Consider trying a different solver or adjusting parameters/problem formulation.
-    except Exception as e:
-        print(f"General Solver error with {solver_to_use}: {e}")
+
+    # --- pick the solvers you *really* have ---------------------------
+    solver_chain = [cp.ECOS, cp.SCS, cp.CLARABEL]
+    solver_chain = [s for s in solver_chain if s in cp.installed_solvers()]
+
+    opt_val, stat, err = math.inf, None, None
+    for cand in solver_chain:
+        opt_val, stat, err = _attempt(problem, cand, opts[cand], str(cand))
+        if stat in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE) \
+        or (isinstance(opt_val, (int, float)) and math.isfinite(opt_val)):
+            break          # ✅ success, stop trying further solvers
+
+    if stat is None:
+        stat = "solver_failed"
 
     # -------------------------------------------------------------------------
-    # 10. Extract and Format Results using the continuous solution directly
+    # 10. Extract and Format Results
     # -------------------------------------------------------------------------
+    if problem.status not in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE):
+        print("⚠️  Solver returned", problem.status,
+            "— continuing with last iterate (slacks will show).")
 
-    if problem.status not in [cp.OPTIMAL, cp.OPTIMAL_INACCURATE]:
-        print(f"ERROR: Solver status is '{problem.status}'. Cannot proceed reliably.")
-        # Calculate locked costs even on error if possible
-        locked_costs_err = {proj.name if proj.name else f"Project_{i}": 0.0 for i, proj in enumerate(projects)}
-        for emp in locked_employee_list:
-             locked_proj_name = locked_allocations[emp.employee_name]
-             for d_str in date_list:
-                 day_info = emp.salary_levels.get(d_str, {})
-                 base_salary = float(day_info.get("amount", 0.0))
-                 hourly_rate = (base_salary / 160.0) * 1.25 if base_salary > 0 else 0.0
-                 r_hours = emp.research_hours.get(d_str, 0.0)
-                 nr_hours = emp.nonRnD_hours.get(d_str, 0.0)
-                 if locked_proj_name in locked_costs_err:
-                     locked_costs_err[locked_proj_name] += (r_hours + nr_hours) * hourly_rate
-        final_costs_err = {p.name if p.name else f"Project_{i}": locked_costs_err.get(p.name if p.name else f"Project_{i}", float('nan')) for i,p in enumerate(projects)}
-
-        allocs_err = {emp.employee_name: {} for emp in employees} # Empty for free employees
-        allocs_err.update(locked_allocs_output) # Include locked allocations
-        return {
-            "solver_status": problem.status,
-            "final_objective": problem.value if problem.value is not None else float('nan'),
-            "final_costs": final_costs_err,
-            "allocations": allocs_err
-        }
     if X.value is None or Y.value is None:
+        append_failure_report(problem, "variables have no value", diag_lines)
         print(f"ERROR: Solver status '{problem.status}', but variables have no values.")
-        # Calculate locked costs even on error if possible (same as above)
-        locked_costs_err = {proj.name if proj.name else f"Project_{i}": 0.0 for i, proj in enumerate(projects)}
+        locked_costs_err = {proj.name if proj.name else f"Project_{i}": 0.0 for i, p_obj in enumerate(projects)}
         for emp in locked_employee_list:
              locked_proj_name = locked_allocations[emp.employee_name]
              for d_str in date_list:
@@ -455,26 +773,27 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                  nr_hours = emp.nonRnD_hours.get(d_str, 0.0)
                  if locked_proj_name in locked_costs_err:
                      locked_costs_err[locked_proj_name] += (r_hours + nr_hours) * hourly_rate
-        final_costs_err = {p.name if p.name else f"Project_{i}": locked_costs_err.get(p.name if p.name else f"Project_{i}", float('nan')) for i,p in enumerate(projects)}
+        final_costs_err_payload = {p.name if p.name else f"Project_{i}": locked_costs_err.get(p.name if p.name else f"Project_{i}", 0.0) for i,p in enumerate(projects)}
 
-        allocs_err = {emp.employee_name: {} for emp in employees} # Empty for free employees
-        allocs_err.update(locked_allocs_output) # Include locked allocations
+        allocs_err = {}
+        allocs_err.update(locked_allocs_output)
+        status_str = str(problem.status) if problem.status else "solver_failed"
+
         return {
-            "solver_status": problem.status + "_VAR_NONE",
+            "solver_status": status_str + "_VAR_NONE",
             "final_objective": problem.value if problem.value is not None else float('nan'),
-            "final_costs": final_costs_err,
-            "allocations": allocs_err
+            "final_costs": final_costs_err_payload,
+            "allocations": allocs_err,
+            "diagnostics": "\n".join(diag_lines) +
+                        "\nSolver variables are None; diagnostics might be incomplete."
         }
 
-    # Replace potential Nans/Infs in solution with 0 (might happen with inaccurate solves)
     X_val = np.nan_to_num(X.value)
     Y_val = np.nan_to_num(Y.value)
-
-    # Ensure non-negativity after potential numerical issues
     X_val = np.maximum(X_val, 0)
     Y_val = np.maximum(Y_val, 0)
 
-    print("\n--- Continuous Solution Sanity Check ---")
+    print("\n--- Continuous Solution Sanity Check (Free Employees) ---") # Clarified scope
     cont_alloc_rd_sum = np.sum(X_val)
     cont_alloc_nonrnd_sum = np.sum(Y_val)
     print(f"Total Available R&D (Free Emps):   {total_avail_rd_free:.4f}")
@@ -483,170 +802,204 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
     print(f"Total Allocated NonR&D (Continuous):{cont_alloc_nonrnd_sum:.4f}")
     rd_diff = abs(cont_alloc_rd_sum - total_avail_rd_free)
     nonrnd_diff = abs(cont_alloc_nonrnd_sum - total_avail_nonrnd_free)
-    # Use a slightly larger tolerance for check due to solver inaccuracies
-    if rd_diff > 1e-2 or nonrnd_diff > 1e-2:
+    if rd_diff > 1e-2 or nonrnd_diff > 1e-2: # Relaxed tolerance slightly
         print(f"WARNING: Continuous allocation sum deviates significantly! R&D diff: {rd_diff:.2e}, NonR&D diff: {nonrnd_diff:.2e}")
     else:
-        print("Continuous allocation sums match available hours within reasonable tolerance.")
-    print("--------------------------------------\n")
+        print("Continuous allocation sums for free employees match available hours within reasonable tolerance.")
+    print("-----------------------------------------------------------\n")
 
     allocations = {} # For free employees first
-    # Recalculate R&D hours per employee/day from the potentially adjusted X_val
-    # This ensures the rounding target matches the (potentially corrected) solution values.
     research_hours_array_from_X = np.sum(X_val, axis=(2, 3))
 
-    for i, emp in enumerate(employees):
+    for i, emp in enumerate(employees): # Iterate free employees
         emp_name = emp.employee_name
         allocations[emp_name] = {}
         for j, d_str in enumerate(date_list):
-            # Use the original available hours as the target for rounding,
-            # as constraints enforce this sum.
-            target_rd_today = research_hours_array[i, j]
-            target_nonrnd_today = nonrnd_hours_array[i, j]
+            target_rd_today = research_hours_array[i, j] # Original available R&D for this free emp/day
+            target_nonrnd_today = nonrnd_hours_array[i, j] # Original available Non-R&D
 
-            # Only create entries for days where hours were available OR allocated
-            # Check against original availability AND check if any allocation exists after rounding
             if target_rd_today > 1e-6 or target_nonrnd_today > 1e-6:
-                day_allocations = {} # Temporary dict for the day
-
-                # --- Sum-preserving rounding for non-R&D across projects for this day ---
-                nonrnd_vector = Y_val[i, j, :]  # shape: (num_projects,)
-                # Target sum is the available non-R&D for this employee/day
+                day_allocations = {}
+                nonrnd_vector = Y_val[i, j, :]
                 nonrnd_rounded = round_vector_preserve_sum_two_decimals_two_decimals(nonrnd_vector, target_nonrnd_today)
-
-                # --- Sum-preserving rounding for R&D across ALL projects/topics for this day ---
-                # Flatten the R&D allocation for this emp/day across projects and topics
-                # Shape: (num_projects * num_topics)
+                
                 rd_vector_flat = X_val[i, j, :, :].flatten()
-                # Target sum is the available R&D for this employee/day
                 rd_rounded_flat = round_vector_preserve_sum_two_decimals_two_decimals(rd_vector_flat, target_rd_today)
-                # Reshape back to (num_projects, num_topics)
                 rd_rounded_matrix = rd_rounded_flat.reshape((num_projects, num_topics))
 
-                # --- Aggregate results into the output format ---
                 day_has_allocation = False
                 for p_idx, proj in enumerate(projects):
                     pname = proj.name if proj.name else f"Project_{p_idx}"
                     topic_allocs = {}
-
-                    # Get the rounded R&D values for this project
                     rd_rounded_proj_topics = rd_rounded_matrix[p_idx, :]
                     for k_idx, topic_name in enumerate(all_topics):
-                        # Use the already rounded value directly. Check against small epsilon.
                         if rd_rounded_proj_topics[k_idx] > 1e-7:
                             topic_allocs[topic_name] = rd_rounded_proj_topics[k_idx]
-
-                    # Use the already rounded non-R&D value directly. Check against small epsilon.
+                    
                     nonrnd_val = nonrnd_rounded[p_idx]
-
                     if topic_allocs or nonrnd_val > 1e-7:
                         day_allocations[pname] = {
                             "topics": topic_allocs,
-                            "nonRnD": nonrnd_val if nonrnd_val > 1e-7 else 0.0 # Store 0 if effectively zero
+                            "nonRnD": nonrnd_val if nonrnd_val > 1e-7 else 0.0
                         }
-                        day_has_allocation = True # Mark that this day has content
-
-                # Only add the day to the main allocations if it has non-zero rounded allocations
+                        day_has_allocation = True
+                
                 if day_has_allocation:
                     allocations[emp_name][d_str] = day_allocations
 
-
-    # Merge pre-assigned locked allocations (handles locked employees)
+    # Merge pre-assigned locked allocations
     for emp_name, daily_allocs in locked_allocs_output.items():
         if emp_name not in allocations:
             allocations[emp_name] = {}
         for d_str, project_allocs in daily_allocs.items():
             if d_str not in allocations[emp_name]:
                 allocations[emp_name][d_str] = {}
-            # Merge project data, ensuring locked data overwrites potentially empty entries
             for pname, data in project_allocs.items():
-                 # Only add if there are topics or non-zero nonRnD
                  if data.get("topics", {}) or data.get("nonRnD", 0.0) > 1e-7:
                      allocations[emp_name][d_str][pname] = data
 
 
-    # --- [Diagnostics Section: Overall Allocations Check] ---
+   # ─────────────────────────────────────────────────────────────
+    #  DEBUG ▶ ALLOCATED HOURS ▸ per-project ▸ per-employee ▸ income-bracket
+    #  (now that `allocations` is ready)
+    # ─────────────────────────────────────────────────────────────
+    print("\n================= DEBUG INFO: PER PROJECT, PER EMPLOYEE, PER SALARY BRACKET (ALLOCATED HOURS) =================")
+
+    for proj_obj in projects:
+        pname = proj_obj.name or f"Project_{projects.index(proj_obj)}"
+        print(f"Project: {pname}")
+
+        for emp in employees_orig:
+            emp_name = emp.employee_name
+
+            # all days where this employee really worked on this project
+            days_here = [
+                d for d in date_list
+                if emp_name in allocations
+                and d in allocations[emp_name]
+                and pname in allocations[emp_name][d]
+            ]
+            if not days_here:
+                continue   # nothing allocated → skip
+
+            # bucket → {tot, rd, nrd}
+            bracket_totals = {}
+
+            for d in days_here:
+                day_pay = emp.salary_levels.get(d, {})
+                base    = float(day_pay.get("amount", 0.0))
+                rate    = round((base / 160.0) * 1.25, 2) if base > 0 else 0.0
+
+                alloc   = allocations[emp_name][d][pname]
+                rd_h    = sum(alloc["topics"].values())
+                nrd_h   = alloc["nonRnD"]
+                all_h   = rd_h + nrd_h
+
+                if rate not in bracket_totals:
+                    bracket_totals[rate] = {"tot": 0.0, "rd": 0.0, "nrd": 0.0}
+
+                bracket_totals[rate]["tot"] += all_h
+                bracket_totals[rate]["rd"]  += rd_h
+                bracket_totals[rate]["nrd"] += nrd_h
+
+            print(f"  Employee: {emp_name}")
+            for rate, data in sorted(bracket_totals.items()):
+                print(f"    @{rate:,.2f} ISK/hr → "
+                    f"{data['tot']:.2f} h  (R&D {data['rd']:.2f} h, "
+                    f"Non-R&D {data['nrd']:.2f} h)")
+        print("----------------------------------------------------------------")
+    print("================================================================\n")
+    
     header = "\n================= DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values) =================="
-    print(header)
+    # print(header) # Print statements for these final diags are already in the original code
     diag_lines.append(header)
-    overall_alloc_rd = 0.0 # Use float for accumulation
-    overall_alloc_nonrnd = 0.0 # Use float for accumulation
+    overall_alloc_rd = 0.0
+    overall_alloc_nonrnd = 0.0
     overall_avail_rd = 0.0
     overall_avail_nonrnd = 0.0
 
-    all_emps_combined = locked_employee_list + free_employee_list
-    for emp in all_emps_combined:
-        emp_name = emp.employee_name
+    # Use employees_orig for iterating through ALL employees for available hours
+    for emp in employees_orig:
         for d_str in date_list:
-            # Accumulate available hours directly from employee objects
             overall_avail_rd += emp.research_hours.get(d_str, 0.0)
             overall_avail_nonrnd += emp.nonRnD_hours.get(d_str, 0.0)
-            # Accumulate allocated hours from the final 'allocations' dictionary
-            if emp_name in allocations and d_str in allocations[emp_name]:
-                for pname, data in allocations[emp_name][d_str].items():
+            
+            if emp.employee_name in allocations and d_str in allocations[emp.employee_name]:
+                for pname, data in allocations[emp.employee_name][d_str].items():
                     overall_alloc_rd += sum(data.get("topics", {}).values())
                     overall_alloc_nonrnd += data.get("nonRnD", 0)
 
-    # --- CHANGE: Round values before printing and checking ---
     rounded_overall_avail_rd = round(overall_avail_rd)
     rounded_overall_alloc_rd = round(overall_alloc_rd)
     rounded_overall_avail_nonrnd = round(overall_avail_nonrnd)
     rounded_overall_alloc_nonrnd = round(overall_alloc_nonrnd)
 
     msg = f"Overall R&D      : Total available = {rounded_overall_avail_rd:d} hrs, Total allocated = {rounded_overall_alloc_rd:d} hrs"
-    print(msg)
     diag_lines.append(msg)
     msg = f"Overall Non‑R&D  : Total available = {rounded_overall_avail_nonrnd:d} hrs, Total allocated = {rounded_overall_alloc_nonrnd:d} hrs"
-    print(msg)
     diag_lines.append(msg)
-
-    # --- CHANGE: Check rounded values against tolerance ---
-    # Compare rounded integers. Tolerance of 1.0 means they must be exactly equal.
-    tolerance = 1.0
+    
+    tolerance = 1.0 # For integer comparison after rounding
     if abs(rounded_overall_alloc_rd - rounded_overall_avail_rd) >= tolerance or abs(rounded_overall_alloc_nonrnd - rounded_overall_avail_nonrnd) >= tolerance:
          warning_msg = f"WARNING: Overall rounded allocated hours deviate from rounded available hours by >= {tolerance:.0f} hr."
-         print(warning_msg)
          diag_lines.append(warning_msg)
     else:
          msg = "Overall rounded allocated hours match rounded available hours."
-         print(msg)
          diag_lines.append(msg)
-    # --- END CHANGE ---
     footer = "==========================================================================================="
-    print(footer)
     diag_lines.append(footer)
+    # Print all diagnostic lines accumulated so far for this section
+    for line in diag_lines[diag_lines.index(header):]: print(line)
+
 
     # --- Diagnostics: Project Cost Breakdown & Topic Allocations ---
     header = "\n================= DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS ================="
-    print(header)
     diag_lines.append(header)
-    grand_total_cost = 0.0
+    grand_total_cost_rounded_final = 0.0 # Renamed to avoid conflict
     grand_target_cost = 0.0
-    # Calculate final costs based on the OPTIMIZER'S continuous solution values
-    # Also calculate costs based on the ROUNDED allocation values for comparison/reporting
+    
     final_project_costs_solver = {}
     final_project_costs_rounded = {}
 
-    # Calculate costs from solver's continuous values
+    # Calculate costs from solver's continuous values (for free employees)
+    # and add locked employee costs.
+    
+    # Initialize with locked costs
     for p_idx, proj in enumerate(projects):
         pname = proj.name if proj.name else f"Project_{p_idx}"
-        try:
-            # Cost from solver's perspective (using continuous X.value, Y.value)
-            cost_val = project_cost_exprs[pname].value
-            final_project_costs_solver[pname] = float(cost_val) if cost_val is not None and np.isfinite(cost_val) else 0.0
-        except Exception as e:
-            print(f"Warning: Error evaluating solver cost for {pname}: {e}")
-            final_project_costs_solver[pname] = float("nan")
+        final_project_costs_solver[pname] = 0.0 # Start with 0
+        # Add costs from locked employees assigned to this project
+        for emp in locked_employee_list:
+            if locked_allocations.get(emp.employee_name) == pname:
+                for d_str in date_list:
+                    day_info = emp.salary_levels.get(d_str, {})
+                    base_salary = float(day_info.get("amount", 0.0))
+                    hourly_rate = (base_salary / 160.0) * 1.25 if base_salary > 0 else 0.0
+                    r_hours = emp.research_hours.get(d_str, 0.0)
+                    nr_hours = emp.nonRnD_hours.get(d_str, 0.0)
+                    final_project_costs_solver[pname] += (r_hours + nr_hours) * hourly_rate
+    
+    # Add costs from free employees (solver's continuous values)
+    if num_employees > 0: # If there were free employees in the optimization
+        for p_idx, proj in enumerate(projects):
+            pname = proj.name if proj.name else f"Project_{p_idx}"
+            try:
+                cost_val = project_cost_exprs[pname].value # Cost from free employees for this project
+                # Add to existing (locked) costs for this project
+                final_project_costs_solver[pname] += float(cost_val) if cost_val is not None and np.isfinite(cost_val) else 0.0
+            except Exception as e:
+                diag_lines.append(f"Warning: Error evaluating solver cost for {pname} (free emps): {e}")
+                # final_project_costs_solver[pname] might already exist from locked part
 
-    # Calculate costs from the final rounded 'allocations' dictionary
-    # This requires iterating through the allocations and applying salary rates
+    # Calculate costs from the final rounded 'allocations' dictionary (includes both locked and free)
     for p_idx, proj in enumerate(projects):
          pname = proj.name if proj.name else f"Project_{p_idx}"
          proj_cost_rounded = 0.0
+         # Iterate through all employees in the final allocations output
          for emp_name_iter, daily_allocs in allocations.items():
-              # Find the corresponding employee object to get salary info
-              emp_obj = next((e for e in all_emps_combined if e.employee_name == emp_name_iter), None)
-              if not emp_obj: continue # Should not happen
+              # Find the original employee object (from employees_orig) for salary info
+              emp_obj = next((e for e in employees_orig if e.employee_name == emp_name_iter), None)
+              if not emp_obj: continue
 
               for d_str, project_data in daily_allocs.items():
                    if pname in project_data:
@@ -660,133 +1013,123 @@ def run_allocation_algorithm(employees, projects, start_date, end_date, all_topi
                         proj_cost_rounded += (r_hours + nr_hours) * hourly_rate
          final_project_costs_rounded[pname] = proj_cost_rounded
 
-    # --- CHANGE: Use Rounded Costs and Hours for Display ---
     info_msg = "(Note: Costs below are based on the final rounded allocations, Solver cost in brackets)"
-    print(info_msg)
     diag_lines.append(info_msg)
 
     for p_idx, proj in enumerate(projects):
         pname = proj.name if proj.name else f"Project_{p_idx}"
-        # Use rounded cost for primary display, solver cost for comparison
         computed_cost_rounded = final_project_costs_rounded.get(pname, 0.0)
         computed_cost_solver = final_project_costs_solver.get(pname, float('nan'))
-        target_cost = target_costs.get(pname, 0.0)
+        target_cost_val = target_costs.get(pname, 0.0) # Use target_costs dict from problem setup
 
-        # --- CHANGE: Round costs for display ---
         rounded_computed_cost_rounded = round(computed_cost_rounded)
-        rounded_computed_cost_solver = round(computed_cost_solver) if not np.isnan(computed_cost_solver) else 'N/A'
-        rounded_target_cost = round(target_cost)
-        # --- END CHANGE ---
+        rounded_computed_cost_solver_display = round(computed_cost_solver) if not np.isnan(computed_cost_solver) else 'N/A'
+        rounded_target_cost = round(target_cost_val)
 
-        grand_total_cost += computed_cost_rounded # Accumulate rounded cost for grand total
-        grand_target_cost += target_cost
+        grand_total_cost_rounded_final += computed_cost_rounded
+        grand_target_cost += target_cost_val
 
-        # Keep relative deviation based on the continuous solver cost for consistency with optimization goal
         rel_dev_percent_solver = float('nan')
         if not np.isnan(computed_cost_solver):
-             if target_cost > 1e-6:
-                 rel_dev_percent_solver = ((computed_cost_solver / target_cost) - 1) * 100
+             if target_cost_val > 1e-6:
+                 rel_dev_percent_solver = ((computed_cost_solver / target_cost_val) - 1) * 100
              elif computed_cost_solver > 1e-6:
-                 rel_dev_percent_solver = float('inf') # Infinite deviation if target is zero but cost is positive
+                 rel_dev_percent_solver = float('inf')
              else:
-                 rel_dev_percent_solver = 0.0 # Zero deviation if both are zero
+                 rel_dev_percent_solver = 0.0
 
         msg = f"Project '{pname}':"
-        print(msg)
         diag_lines.append(msg)
-        # --- CHANGE: Display rounded integer costs ---
-        msg = f"  Computed Cost (Rounded): {rounded_computed_cost_rounded:10d} | Target Cost: {rounded_target_cost:10d} [Solver: {rounded_computed_cost_solver}]"
-        print(msg)
+        msg = f"  Computed Cost (Rounded): {rounded_computed_cost_rounded:10d} | Target Cost: {rounded_target_cost:10d} [Solver: {rounded_computed_cost_solver_display}]"
         diag_lines.append(msg)
         if not np.isnan(rel_dev_percent_solver):
-            msg = f"  Relative Cost Deviation (Solver): {rel_dev_percent_solver:+.1f} %" # Keep one decimal for percentage
+            msg = f"  Relative Cost Deviation (Solver): {rel_dev_percent_solver:+.1f} %"
         else:
             msg = "  Relative Cost Deviation (Solver): N/A"
-        print(msg)
         diag_lines.append(msg)
 
-        # Calculate total hours per project from the 'allocations' dictionary
         topic_hours = {}
         total_proj_rd_hours = 0.0
         total_proj_nonrnd_hours = 0.0
-        for emp_name_iter in allocations:
+        for emp_name_iter in allocations: # Iterate all employees in final allocations
             for d_str in date_list:
                 if d_str in allocations[emp_name_iter] and pname in allocations[emp_name_iter][d_str]:
                     alloc_data = allocations[emp_name_iter][d_str][pname]
                     current_nonrnd = alloc_data.get("nonRnD", 0.0)
                     total_proj_nonrnd_hours += current_nonrnd
-                    for topic, hours in alloc_data.get("topics", {}).items():
-                        topic_hours[topic] = topic_hours.get(topic, 0.0) + hours
-                        total_proj_rd_hours += hours
-
-        # --- CHANGE: Round hours for display ---
+                    for topic, hours_val in alloc_data.get("topics", {}).items(): # renamed hours to hours_val
+                        topic_hours[topic] = topic_hours.get(topic, 0.0) + hours_val
+                        total_proj_rd_hours += hours_val
+        
         rounded_total_proj_rd_hours = round(total_proj_rd_hours)
         rounded_total_proj_nonrnd_hours = round(total_proj_nonrnd_hours)
 
         msg = f"  Total R&D Hours (Rounded):   {rounded_total_proj_rd_hours:6d}"
-        print(msg)
         diag_lines.append(msg)
         msg = f"  Total Non-R&D Hours (Rounded): {rounded_total_proj_nonrnd_hours:6d}"
-        print(msg)
         diag_lines.append(msg)
         if topic_hours:
             msg = "  Topic Allocations (Rounded):"
-            print(msg)
             diag_lines.append(msg)
             sorted_topics = sorted(topic_hours.items(), key=lambda item: item[1], reverse=True)
-            for topic, hours in sorted_topics:
-                 # --- CHANGE: Round topic hours for display ---
-                 rounded_topic_hours = round(hours)
-                 # Only display if rounded hours > 0
+            for topic, hours_val in sorted_topics:
+                 rounded_topic_hours = round(hours_val)
                  if rounded_topic_hours > 0:
                     topic_msg = f"    {topic:20s}: {rounded_topic_hours:6d} hrs"
-                    print(topic_msg)
                     diag_lines.append(topic_msg)
         separator = "-------------------------------------------------------------"
-        print(separator)
         diag_lines.append(separator)
-    # --- END Cost/Hour Display Changes ---
-
-    # --- CHANGE: Round grand totals for display ---
-    rounded_grand_total_cost = round(grand_total_cost) # Based on sum of rounded project costs
+    
+    rounded_grand_total_cost_final = round(grand_total_cost_rounded_final) # Use the one accumulated from rounded
     rounded_grand_target_cost = round(grand_target_cost)
 
-    msg = f"\nGrand Total Computed Cost (Rounded): {rounded_grand_total_cost:12d}"
-    print(msg)
+    msg = f"\nGrand Total Computed Cost (Rounded Allocations): {rounded_grand_total_cost_final:12d}" # Clarified source
     diag_lines.append(msg)
-    msg = f"Grand Total Target Cost:          {rounded_grand_target_cost:12d}"
-    print(msg)
+    msg = f"Grand Total Target Cost:                         {rounded_grand_target_cost:12d}"
     diag_lines.append(msg)
 
-    # Keep overall relative deviation based on solver's continuous costs
-    grand_total_cost_solver = sum(v for v in final_project_costs_solver.values() if not np.isnan(v))
+    # Overall relative deviation based on SUM of solver costs vs SUM of target costs
+    grand_total_cost_solver_sum = sum(v for v in final_project_costs_solver.values() if not np.isnan(v))
     grand_rel_dev_percent_solver = float('nan')
-    if grand_target_cost > 1e-6:
-        grand_rel_dev_percent_solver = ((grand_total_cost_solver / grand_target_cost) - 1) * 100
-    elif grand_total_cost_solver > 1e-6:
+    if grand_target_cost > 1e-6: # Use the already summed grand_target_cost
+        grand_rel_dev_percent_solver = ((grand_total_cost_solver_sum / grand_target_cost) - 1) * 100
+    elif grand_total_cost_solver_sum > 1e-6:
         grand_rel_dev_percent_solver = float('inf')
     else:
         grand_rel_dev_percent_solver = 0.0
 
     if not np.isnan(grand_rel_dev_percent_solver):
-        msg = f"Overall Relative Deviation (Solver Cost):{grand_rel_dev_percent_solver:+.1f} %" # Keep one decimal
+        msg = f"Overall Relative Deviation (Sum of Solver Costs vs Sum of Target Costs):{grand_rel_dev_percent_solver:+.1f} %"
     else:
-        msg = "Overall Relative Deviation (Solver Cost): N/A"
-    print(msg)
+        msg = "Overall Relative Deviation (Sum of Solver Costs vs Sum of Target Costs): N/A"
     diag_lines.append(msg)
-    # --- END CHANGE ---
     footer = "=========================================================================================="
-    print(footer)
     diag_lines.append(footer)
+    # Print all diagnostic lines accumulated for this section
+    for line in diag_lines[diag_lines.index(header):]: print(line)
 
-    # At the end, join all diagnostic lines and include them in the returned result.
+
     diagnostics_str = "\n".join(diag_lines)
+
+    # ---- Slack diagnostics ----------------------------------------
+    if slacks:
+        print("\n=== MATCH-FUND SLACKS (ISK) ===")
+        for pname, sl in slacks.items():
+            val = sl.value if sl.value is not None else float('nan')
+            print(f"  {pname:<15s}: {val:,.2f} ISK")
+
+    else:
+        print("\n(No matching-fund rules defined.)")
+
     return {
         "solver_status": problem.status,
         "final_objective": problem.value if problem.value is not None else float('nan'),
-        # Return the costs calculated from the solver's continuous results
-        "final_costs": final_project_costs_solver,
-        # Return the allocations dictionary (contains 2-decimal rounded values)
-        "allocations": allocations,
-        "diagnostics": diagnostics_str # Appended diagnostic information with integer formatting
+        "final_costs": final_project_costs_solver, # Report solver costs
+        "allocations": allocations, # Report 2-decimal rounded allocations
+        "diagnostics": diagnostics_str
     }
+
+
+sys.stdout = _old_stdout
+with open("allocation_debug.log", "w") as f:
+    f.write(_buf.getvalue())

@@ -31402,16 +31402,16 @@
     {
       "name": "EURIDICE",
       "funding_agency": "EU(EDP)",
-      "grant_min": 7000000.0,
-      "grant_max": 7000000.0,
-      "grant_contractual": 7000000.0,
+      "grant_min": 10000000.0,
+      "grant_max": 10000000.0,
+      "grant_contractual": 10000000.0,
       "funding_start": "01-01-2024",
       "funding_end": "12-31-2024",
       "currency": "Euros",
       "exchange_rate": 0,
       "report_type": "Annual",
-      "matching_fund_type": "absolute",
-      "matching_fund_value": 3500000.0,
+      "matching_fund_type": "percentage",
+      "matching_fund_value": 100.0,
       "operational_overhead": 0.07,
       "travel_cost": 0,
       "equipment_cost": 0,
@@ -31422,7 +31422,7 @@
         "Training Env. / Artificial Pedagogy"
       ],
       "nonrnd_percentage": 0.92,
-      "color": "red"
+      "color": "#e6194B"
     },
     {
       "name": "ICE-ID",
@@ -31448,21 +31448,21 @@
         "Reasoning / Planning"
       ],
       "nonrnd_percentage": 0.02,
-      "color": "blue"
+      "color": "#3cb44b"
     },
     {
       "name": "FRESH-ID",
       "funding_agency": "Rannis",
-      "grant_min": 8300000.0,
-      "grant_max": 8500000.0,
-      "grant_contractual": 8300000.0,
+      "grant_min": 7300000.0,
+      "grant_max": 7500000.0,
+      "grant_contractual": 7300000.0,
       "funding_start": "01-01-2024",
       "funding_end": "12-31-2024",
       "currency": "Euros",
       "exchange_rate": 0,
       "report_type": "Annual",
       "matching_fund_type": "absolute",
-      "matching_fund_value": 7650000.0,
+      "matching_fund_value": 6650000.0,
       "operational_overhead": 0.22,
       "travel_cost": 0,
       "equipment_cost": 0,
@@ -31476,30 +31476,7 @@
         "Modeling / Simulation"
       ],
       "nonrnd_percentage": 0.02,
-      "color": "green"
-    },
-    {
-      "name": "REA",
-      "funding_agency": "Internal",
-      "grant_min": 500000.0,
-      "grant_max": 500000.0,
-      "grant_contractual": 500000.0,
-      "funding_start": "01-01-2024",
-      "funding_end": "12-31-2024",
-      "currency": "Euros",
-      "exchange_rate": 0,
-      "report_type": "Annual",
-      "matching_fund_type": "percentage",
-      "matching_fund_value": 0.0,
-      "operational_overhead": 0.0,
-      "travel_cost": 0,
-      "equipment_cost": 0,
-      "other_cost": 0,
-      "research_topics": [
-        "Visualization / UX"
-      ],
-      "nonrnd_percentage": 0.02,
-      "color": "yellow"
+      "color": "#ffe119"
     },
     {
       "name": "AI-STYLIST",
@@ -31526,7 +31503,7 @@
         "Modeling / Simulation"
       ],
       "nonrnd_percentage": 0.02,
-      "color": "pink"
+      "color": "#4363d8"
     }
   ]
 }

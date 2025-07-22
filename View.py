@@ -265,7 +265,7 @@ class ReaDataView(QMainWindow):
 
         if not employees:
             no_emp_label = QLabel("No employee data loaded or available.")
-            no_emp_label.setAlignment(Qt.AlignCenter)
+            no_emp_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
             self.employees_layout.addWidget(no_emp_label)
             return
 
@@ -325,9 +325,9 @@ class ReaDataView(QMainWindow):
                 hbox = QHBoxLayout()
 
                 interval_info_label = QLabel(
-                    f"[{old_start} → {old_end}] <b>{old_level}</b>: ${old_amount:,.2f}" # Format amount
+                    f"[{old_start} → {old_end}] <b>{old_level}</b>: ISK{old_amount:,.2f}" # Format amount
                 )
-                interval_info_label.setToolTip(f"Salary: {old_level} (${old_amount}) from {old_start} to {old_end}")
+                interval_info_label.setToolTip(f"Salary: {old_level} (ISK{old_amount}) from {old_start} to {old_end}")
                 hbox.addWidget(interval_info_label, 1) # Give label more space
 
                 edit_button = QPushButton("Edit")

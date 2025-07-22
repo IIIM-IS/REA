@@ -217,13 +217,12 @@ class Controller:
 
         print(f"[DEBUG] Running algorithm from {start_date} to {end_date} "
               f"with {len(self.employees)} employees and {len(self.projects)} projects.")
-
         result = run_allocation_algorithm(
-            employees=self.employees,
-            projects=self.projects,
+            employees_arg=self.employees,
+            projects_arg=self.projects,
             start_date=start_date,
             end_date=end_date,
-            all_topics=all_topics
+            all_topics_arg=all_topics
         )
 
         print("Algorithm finished.")
@@ -291,10 +290,10 @@ class Controller:
                 allocated_nonrnd += day_alloc_nonrnd
                 available_nonrnd_day = employee.nonRnD_hours.get(date_str, 0.0)
 
-                if abs(day_alloc_rnd - available) > 1e-3:
-                    emp_lines.append(f"    >> WARNING: R&D mismatch on {date_str}: allocated {day_alloc_rnd:.2f} vs available {available:.2f}")
-                if day_alloc_nonrnd - available_nonrnd_day > 1e-3:
-                    emp_lines.append(f"    >> WARNING: Non‑R&D mismatch on {date_str}: allocated {day_alloc_nonrnd:.2f} vs available {available_nonrnd_day:.2f}")
+                # if abs(day_alloc_rnd - available) > 1e-3:
+                    # emp_lines.append(f"    >> WARNING: R&D mismatch on {date_str}: allocated {day_alloc_rnd:.2f} vs available {available:.2f}")
+                # if day_alloc_nonrnd - available_nonrnd_day > 1e-3:
+                    # emp_lines.append(f"    >> WARNING: Non‑R&D mismatch on {date_str}: allocated {day_alloc_nonrnd:.2f} vs available {available_nonrnd_day:.2f}")
 
             emp_lines.append("-" * 50)
             emp_lines.append(f"Summary for {emp_name}:")
