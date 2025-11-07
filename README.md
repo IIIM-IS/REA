@@ -1,4 +1,5 @@
 # Research Expenditure Allocation (REA)
+# testingtesting
 
 A PyQt5-based application for transparent compensation assessment and expenditure allocation. The application optimizes the distribution of employee hours across research projects to meet funding targets while respecting constraints and preferences.
 
