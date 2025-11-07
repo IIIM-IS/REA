@@ -243,6 +243,11 @@ class Controller:
         directory = QFileDialog.getExistingDirectory(self.view, "Select Timesheet Directory")
         if not directory:
             self.logger.info("Directory selection cancelled")
+            ErrorHandler.show_warning(
+                self.view,
+                "No Directory Selected",
+                "No directory was selected. Timesheet loading cancelled."
+            )
             return
         
         self.view.directory_label.setText(f"Selected Directory: {directory}")
@@ -273,11 +278,23 @@ class Controller:
         self.employees = employees
         self.view.create_employee_overview_section(self.employees)
         self.logger.info(f"Loaded {len(employees)} employees from timesheets")
-        ErrorHandler.show_info(
-            self.view,
-            "Timesheets Loaded",
-            f"Successfully loaded {len(employees)} employee timesheets"
-        )
+        
+        if not employees:
+            ErrorHandler.show_warning(
+                self.view,
+                "No Employees Loaded",
+                "No valid employee data was found in the selected directory.\n\n"
+                "Please check that:\n"
+                "- The directory contains CSV files\n"
+                "- The CSV files have the correct format\n"
+                "- The date ranges match dates in the timesheets"
+            )
+        else:
+            ErrorHandler.show_info(
+                self.view,
+                "Timesheets Loaded",
+                f"Successfully loaded {len(employees)} employee timesheets"
+            )
     
     def _on_csv_error(self, error_message: str):
         """
@@ -286,11 +303,18 @@ class Controller:
         Args:
             error_message: Error description
         """
-        ErrorHandler.show_error(
+        ErrorHandler.show_warning(
             self.view,
-            "Timesheet Loading Failed",
-            error_message
+            "Timesheet Loading Issue",
+            f"Could not load timesheets from the selected directory.\n\n"
+            f"Details: {error_message}\n\n"
+            f"Please check that:\n"
+            f"- The directory exists and is accessible\n"
+            f"- The directory contains valid CSV files\n"
+            f"- The CSV files have the correct format\n"
+            f"- You have read permissions for the directory"
         )
+        self.logger.warning(f"CSV loading failed: {error_message}")
 
     @handle_exceptions(show_dialog=True)
     def generate_output(self, checked=False):
