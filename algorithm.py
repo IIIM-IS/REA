@@ -793,19 +793,92 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
     X_val = np.maximum(X_val, 0)
     Y_val = np.maximum(Y_val, 0)
 
-    print("\n--- Continuous Solution Sanity Check (Free Employees) ---") # Clarified scope
+    # -------------------------------------------------------------------------
+    # CRITICAL: Enforce exact hour balance constraints
+    # The solver may return an inaccurate solution that violates constraints.
+    # We MUST normalize to exactly satisfy: sum(allocations) == available_hours
+    # This is a hard constraint that cannot be violated.
+    # -------------------------------------------------------------------------
+    print("\n--- Enforcing Exact Hour Balance Constraints ---")
+    
+    # For each employee and day, normalize allocations to exactly match available hours
+    for i in range(num_employees):
+        for j in range(num_days):
+            # R&D hours: sum over all projects and topics must equal available R&D
+            target_rd = research_hours_array[i, j]
+            allocated_rd = np.sum(X_val[i, j, :, :])
+            
+            if target_rd > 1e-6:
+                if allocated_rd > 1e-6:
+                    # Scale all R&D allocations proportionally to match target exactly
+                    scale_factor = target_rd / allocated_rd
+                    X_val[i, j, :, :] = X_val[i, j, :, :] * scale_factor
+                else:
+                    # Solver allocated zero but we have available hours - this is an error
+                    # Distribute evenly across all projects/topics as fallback
+                    if num_projects > 0 and num_topics > 0:
+                        X_val[i, j, :, :] = target_rd / (num_projects * num_topics)
+            else:
+                # No R&D hours available - ensure zero allocation
+                X_val[i, j, :, :] = 0.0
+            
+            # Non-R&D hours: sum over all projects must equal available Non-R&D
+            target_nonrnd = nonrnd_hours_array[i, j]
+            allocated_nonrnd = np.sum(Y_val[i, j, :])
+            
+            if target_nonrnd > 1e-6:
+                if allocated_nonrnd > 1e-6:
+                    # Scale all Non-R&D allocations proportionally to match target exactly
+                    scale_factor = target_nonrnd / allocated_nonrnd
+                    Y_val[i, j, :] = Y_val[i, j, :] * scale_factor
+                else:
+                    # Solver allocated zero but we have available hours - distribute evenly
+                    if num_projects > 0:
+                        Y_val[i, j, :] = target_nonrnd / num_projects
+            else:
+                # No Non-R&D hours available - ensure zero allocation
+                Y_val[i, j, :] = 0.0
+    
+    # Verify constraints are now exactly satisfied
+    print("--- Continuous Solution Constraint Verification (Free Employees) ---")
     cont_alloc_rd_sum = np.sum(X_val)
     cont_alloc_nonrnd_sum = np.sum(Y_val)
     print(f"Total Available R&D (Free Emps):   {total_avail_rd_free:.4f}")
-    print(f"Total Allocated R&D (Continuous):  {cont_alloc_rd_sum:.4f}")
+    print(f"Total Allocated R&D (After Normalization):  {cont_alloc_rd_sum:.4f}")
     print(f"Total Available NonR&D (Free Emps):{total_avail_nonrnd_free:.4f}")
-    print(f"Total Allocated NonR&D (Continuous):{cont_alloc_nonrnd_sum:.4f}")
+    print(f"Total Allocated NonR&D (After Normalization):{cont_alloc_nonrnd_sum:.4f}")
     rd_diff = abs(cont_alloc_rd_sum - total_avail_rd_free)
     nonrnd_diff = abs(cont_alloc_nonrnd_sum - total_avail_nonrnd_free)
-    if rd_diff > 1e-2 or nonrnd_diff > 1e-2: # Relaxed tolerance slightly
-        print(f"WARNING: Continuous allocation sum deviates significantly! R&D diff: {rd_diff:.2e}, NonR&D diff: {nonrnd_diff:.2e}")
+    
+    # Check per-employee, per-day constraints
+    max_rd_violation = 0.0
+    max_nonrnd_violation = 0.0
+    for i in range(num_employees):
+        for j in range(num_days):
+            allocated_rd_emp_day = np.sum(X_val[i, j, :, :])
+            target_rd_emp_day = research_hours_array[i, j]
+            rd_violation = abs(allocated_rd_emp_day - target_rd_emp_day)
+            max_rd_violation = max(max_rd_violation, rd_violation)
+            
+            allocated_nonrnd_emp_day = np.sum(Y_val[i, j, :])
+            target_nonrnd_emp_day = nonrnd_hours_array[i, j]
+            nonrnd_violation = abs(allocated_nonrnd_emp_day - target_nonrnd_emp_day)
+            max_nonrnd_violation = max(max_nonrnd_violation, nonrnd_violation)
+    
+    print(f"Maximum per-employee/day R&D violation: {max_rd_violation:.2e}")
+    print(f"Maximum per-employee/day NonR&D violation: {max_nonrnd_violation:.2e}")
+    
+    # Normalization should always succeed mathematically. This check is only for
+    # floating-point numerical precision issues (should be < 1e-10 typically).
+    # If violations are larger, it indicates a bug in the normalization code.
+    if rd_diff > 1e-6 or nonrnd_diff > 1e-6 or max_rd_violation > 1e-6 or max_nonrnd_violation > 1e-6:
+        print(f"WARNING: Unexpected numerical precision issues after normalization!")
+        print(f"  Total R&D diff: {rd_diff:.2e}, Total NonR&D diff: {nonrnd_diff:.2e}")
+        print(f"  Max per-emp/day violations: R&D={max_rd_violation:.2e}, NonR&D={max_nonrnd_violation:.2e}")
+        print(f"  (This may indicate a bug - normalization should always work mathematically)")
+        diag_lines.append(f"WARNING: Numerical precision issues after normalization (unexpected)")
     else:
-        print("Continuous allocation sums for free employees match available hours within reasonable tolerance.")
+        print("✓ Hour balance constraints exactly satisfied (within numerical precision)")
     print("-----------------------------------------------------------\n")
 
     allocations = {} # For free employees first
@@ -939,13 +1012,56 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
     msg = f"Overall Non‑R&D  : Total available = {rounded_overall_avail_nonrnd:d} hrs, Total allocated = {rounded_overall_alloc_nonrnd:d} hrs"
     diag_lines.append(msg)
     
-    tolerance = 1.0 # For integer comparison after rounding
-    if abs(rounded_overall_alloc_rd - rounded_overall_avail_rd) >= tolerance or abs(rounded_overall_alloc_nonrnd - rounded_overall_avail_nonrnd) >= tolerance:
-         warning_msg = f"WARNING: Overall rounded allocated hours deviate from rounded available hours by >= {tolerance:.0f} hr."
-         diag_lines.append(warning_msg)
+    # CRITICAL: Hour balance must be exact after normalization and rounding
+    # Normalization ensures exact balance mathematically, but rounding to 2 decimals
+    # may introduce small discrepancies. We check that these are minimal.
+    rd_diff_exact = abs(overall_alloc_rd - overall_avail_rd)
+    nonrnd_diff_exact = abs(overall_alloc_nonrnd - overall_avail_nonrnd)
+    rd_diff_rounded = abs(rounded_overall_alloc_rd - rounded_overall_avail_rd)
+    nonrnd_diff_rounded = abs(rounded_overall_alloc_nonrnd - rounded_overall_avail_nonrnd)
+    
+    # Also verify per-employee, per-day balance
+    max_emp_day_rd_violation = 0.0
+    max_emp_day_nonrnd_violation = 0.0
+    for emp in employees_orig:
+        for d_str in date_list:
+            avail_rd = emp.research_hours.get(d_str, 0.0)
+            avail_nonrnd = emp.nonRnD_hours.get(d_str, 0.0)
+            
+            alloc_rd = 0.0
+            alloc_nonrnd = 0.0
+            if emp.employee_name in allocations and d_str in allocations[emp.employee_name]:
+                for pname, data in allocations[emp.employee_name][d_str].items():
+                    alloc_rd += sum(data.get("topics", {}).values())
+                    alloc_nonrnd += data.get("nonRnD", 0.0)
+            
+            rd_viol = abs(alloc_rd - avail_rd)
+            nonrnd_viol = abs(alloc_nonrnd - avail_nonrnd)
+            max_emp_day_rd_violation = max(max_emp_day_rd_violation, rd_viol)
+            max_emp_day_nonrnd_violation = max(max_emp_day_nonrnd_violation, nonrnd_viol)
+    
+    # Tolerance: 0.01 hours (due to 2-decimal rounding precision)
+    # The rounding function should preserve exact sums, so violations should be < 0.01
+    # If larger, it indicates a bug in the rounding function or normalization
+    strict_tolerance = 0.01
+    if (rd_diff_exact > strict_tolerance or nonrnd_diff_exact > strict_tolerance or 
+        max_emp_day_rd_violation > strict_tolerance or max_emp_day_nonrnd_violation > strict_tolerance):
+        error_msg = f"CRITICAL ERROR: Hour balance constraints violated after normalization and rounding!"
+        error_msg += f"\n  This should not happen - normalization ensures exact balance mathematically."
+        error_msg += f"\n  Total R&D difference: {rd_diff_exact:.4f} hrs (exact), {rd_diff_rounded:d} hrs (rounded)"
+        error_msg += f"\n  Total NonR&D difference: {nonrnd_diff_exact:.4f} hrs (exact), {nonrnd_diff_rounded:d} hrs (rounded)"
+        error_msg += f"\n  Max per-employee/day R&D violation: {max_emp_day_rd_violation:.4f} hrs"
+        error_msg += f"\n  Max per-employee/day NonR&D violation: {max_emp_day_nonrnd_violation:.4f} hrs"
+        error_msg += f"\n  This likely indicates a bug in the rounding function."
+        diag_lines.append(error_msg)
+        print(f"\n{error_msg}")
+        raise ValueError("Hour balance constraints violated - this indicates a bug in normalization/rounding!")
     else:
-         msg = "Overall rounded allocated hours match rounded available hours."
-         diag_lines.append(msg)
+        msg = f"✓ Hour balance constraints exactly satisfied"
+        msg += f"\n  R&D: {rd_diff_exact:.4f} hrs difference (within {strict_tolerance:.2f} hr rounding tolerance)"
+        msg += f"\n  NonR&D: {nonrnd_diff_exact:.4f} hrs difference (within {strict_tolerance:.2f} hr rounding tolerance)"
+        msg += f"\n  Max per-employee/day violations: R&D={max_emp_day_rd_violation:.4f}, NonR&D={max_emp_day_nonrnd_violation:.4f}"
+        diag_lines.append(msg)
     footer = "==========================================================================================="
     diag_lines.append(footer)
     # Print all diagnostic lines accumulated so far for this section
@@ -979,17 +1095,28 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     nr_hours = emp.nonRnD_hours.get(d_str, 0.0)
                     final_project_costs_solver[pname] += (r_hours + nr_hours) * hourly_rate
     
-    # Add costs from free employees (solver's continuous values)
-    if num_employees > 0: # If there were free employees in the optimization
+    # Recalculate costs from normalized solution (AFTER normalization)
+    # This gives accurate solver costs that match the normalized allocations
+    if num_employees > 0:
         for p_idx, proj in enumerate(projects):
             pname = proj.name if proj.name else f"Project_{p_idx}"
-            try:
-                cost_val = project_cost_exprs[pname].value # Cost from free employees for this project
-                # Add to existing (locked) costs for this project
-                final_project_costs_solver[pname] += float(cost_val) if cost_val is not None and np.isfinite(cost_val) else 0.0
-            except Exception as e:
-                diag_lines.append(f"Warning: Error evaluating solver cost for {pname} (free emps): {e}")
-                # final_project_costs_solver[pname] might already exist from locked part
+            # Start with locked costs (already in final_project_costs_solver)
+            # Then add costs from normalized free employee allocations
+            normalized_cost_free = 0.0
+            for i, emp in enumerate(employees):
+                emp_name = emp.employee_name
+                for j, d_str in enumerate(date_list):
+                    day_info = emp.salary_levels.get(d_str, {})
+                    base_salary = float(day_info.get("amount", 0.0))
+                    hourly_rate = (base_salary / 160.0) * 1.25 if base_salary > 0 else 0.0
+                    
+                    # Use normalized X_val and Y_val (after normalization step)
+                    rnd_hours = np.sum(X_val[i, j, p_idx, :])
+                    nonrnd_hours = Y_val[i, j, p_idx]
+                    normalized_cost_free += (rnd_hours + nonrnd_hours) * hourly_rate
+            
+            # Update solver cost: locked (already added) + normalized free employee costs
+            final_project_costs_solver[pname] += normalized_cost_free
 
     # Calculate costs from the final rounded 'allocations' dictionary (includes both locked and free)
     for p_idx, proj in enumerate(projects):
@@ -1013,7 +1140,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                         proj_cost_rounded += (r_hours + nr_hours) * hourly_rate
          final_project_costs_rounded[pname] = proj_cost_rounded
 
-    info_msg = "(Note: Costs below are based on the final rounded allocations, Solver cost in brackets)"
+    info_msg = "(Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)"
     diag_lines.append(info_msg)
 
     for p_idx, proj in enumerate(projects):

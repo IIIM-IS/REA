@@ -170,68 +170,251 @@ class ReaDataView(QMainWindow):
         self.diagnostics_output.setReadOnly(True)
         self.diagnostics_layout.addWidget(self.diagnostics_output)
 
-    # --- [ DIAGNOSTICS UI - unchanged ] ---
+    # --- [ DIAGNOSTICS UI - Markdown Rendering ] ---
     def _format_diagnostics_to_html(self, diag_text: str) -> str:
         """
-        Converts the raw diagnostics text into a nicely formatted HTML report.
-        The raw text is assumed to have double newlines separating sections.
-        Each section is wrapped in a styled <div> with a <pre> block to preserve formatting.
+        Converts the raw diagnostics text into a nicely formatted HTML report using Markdown.
+        The text is parsed as Markdown and rendered with enhanced styling for better readability.
         """
-        sections = diag_text.split("\n\n")
-        html_sections = []
-        for section in sections:
-            # Basic HTML escaping for safety, though <pre> handles most formatting
+        try:
+            import markdown
+            
+            # Configure markdown with extensions for better formatting
+            md = markdown.Markdown(extensions=[
+                'codehilite',
+                'tables',
+                'fenced_code',
+                'nl2br',  # Convert newlines to <br>
+                'sane_lists',  # Better list handling
+            ])
+            
+            # Convert markdown to HTML
+            html_content = md.convert(diag_text)
+        except ImportError:
+            # Fallback if markdown library is not available
             import html
-            escaped_section = html.escape(section)
-            html_sections.append(f"<div class='diag-section'><pre>{escaped_section}</pre></div>")
-        html_content = "<div class='diag-container'>" + "\n".join(html_sections) + "</div>"
+            html_content = f"<pre>{html.escape(diag_text)}</pre>"
+            html_content += "<p><em>Note: Install 'markdown' package for better formatting</em></p>"
+        except Exception as e:
+            # Fallback on any error
+            import html
+            html_content = f"<pre>{html.escape(diag_text)}</pre>"
+            html_content += f"<p><em>Error rendering markdown: {str(e)}</em></p>"
 
         full_html = f"""
         <html>
         <head>
             <style>
             body {{
-                font-family: Consolas, 'Courier New', monospace; /* Better for preformatted text */
-                background-color: #f8f8f8;
-                color: #333;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+                background-color: #f5f7fa;
+                color: #2c3e50;
                 margin: 0;
                 padding: 0;
+                line-height: 1.7;
             }}
             .diag-container {{
-                margin: 15px;
-                padding: 10px;
-            }}
-            .diag-section {{
+                max-width: 1400px;
+                margin: 0 auto;
                 background-color: #ffffff;
-                border: 1px solid #e0e0e0;
-                border-radius: 4px;
-                padding: 12px 15px;
-                margin-bottom: 12px;
-                box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
-                overflow-x: auto; /* Add scroll if content is too wide */
-            }}
-            .diag-section pre {{
-                white-space: pre-wrap;
-                word-wrap: break-word;
-                font-size: 10pt; /* Slightly smaller for density */
-                line-height: 1.4;
-                margin: 0;
-                color: #444;
+                padding: 40px 50px;
+                border-radius: 12px;
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+                min-height: 100vh;
             }}
             h1 {{
-                text-align: center;
+                text-align: left;
                 color: #1a5f9e;
-                border-bottom: 2px solid #d0d0d0;
-                padding-bottom: 8px;
-                margin: 20px 15px 25px 15px;
-                font-family: Arial, sans-serif;
+                border-bottom: 4px solid #1a5f9e;
+                padding-bottom: 20px;
+                margin: 0 0 25px 0;
+                font-size: 32px;
+                font-weight: 700;
+                letter-spacing: -0.5px;
+            }}
+            h2 {{
+                color: #2c3e50;
+                border-bottom: 2px solid #e8ecf0;
+                padding-bottom: 10px;
+                margin-top: 40px;
+                margin-bottom: 20px;
+                font-size: 24px;
+                font-weight: 600;
+                padding-top: 10px;
+            }}
+            h3 {{
+                color: #34495e;
+                margin-top: 30px;
+                margin-bottom: 15px;
+                font-size: 20px;
+                font-weight: 600;
+            }}
+            h4 {{
+                color: #555;
+                margin-top: 25px;
+                margin-bottom: 12px;
+                font-size: 18px;
+                font-weight: 600;
+            }}
+            p {{
+                margin: 12px 0;
+                color: #444;
+                line-height: 1.8;
+            }}
+            pre {{
+                background-color: #f8f9fa;
+                border: 1px solid #e9ecef;
+                border-left: 4px solid #1a5f9e;
+                border-radius: 6px;
+                padding: 16px;
+                overflow-x: auto;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                font-size: 13px;
+                line-height: 1.6;
+                color: #2c3e50;
+                margin: 15px 0;
+            }}
+            code {{
+                background-color: #f1f3f5;
+                padding: 3px 8px;
+                border-radius: 4px;
+                font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+                font-size: 13px;
+                color: #d63384;
+                font-weight: 500;
+            }}
+            pre code {{
+                background-color: transparent;
+                padding: 0;
+                color: #2c3e50;
                 font-weight: normal;
+            }}
+            table {{
+                border-collapse: collapse;
+                width: 100%;
+                margin: 20px 0;
+                background-color: #fff;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+                border-radius: 8px;
+                overflow: hidden;
+            }}
+            th {{
+                background: linear-gradient(135deg, #1a5f9e 0%, #0d4a7a 100%);
+                color: #fff;
+                padding: 14px 16px;
+                text-align: left;
+                font-weight: 600;
+                font-size: 14px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                border: none;
+            }}
+            td {{
+                padding: 12px 16px;
+                border-bottom: 1px solid #e9ecef;
+                color: #495057;
+                font-size: 14px;
+            }}
+            tr:last-child td {{
+                border-bottom: none;
+            }}
+            tr:nth-child(even) {{
+                background-color: #f8f9fa;
+            }}
+            tr:hover {{
+                background-color: #e7f3ff;
+                transition: background-color 0.2s;
+            }}
+            ul, ol {{
+                margin: 15px 0;
+                padding-left: 35px;
+            }}
+            li {{
+                margin: 8px 0;
+                color: #495057;
+                line-height: 1.7;
+            }}
+            li strong {{
+                color: #2c3e50;
+            }}
+            blockquote {{
+                border-left: 5px solid #1a5f9e;
+                margin: 20px 0;
+                padding: 15px 25px;
+                background: linear-gradient(to right, #f0f7ff 0%, #ffffff 100%);
+                color: #555;
+                border-radius: 0 6px 6px 0;
+                font-style: italic;
+            }}
+            hr {{
+                border: none;
+                border-top: 3px solid #e0e6ed;
+                margin: 35px 0;
+                height: 0;
+            }}
+            strong {{
+                color: #2c3e50;
+                font-weight: 600;
+            }}
+            em {{
+                color: #6c757d;
+                font-style: italic;
+            }}
+            /* Enhanced styling for status indicators */
+            .success, .success code {{
+                color: #28a745;
+                font-weight: 600;
+            }}
+            .warning, .warning code {{
+                color: #ffc107;
+                font-weight: 600;
+            }}
+            .error, .error code {{
+                color: #dc3545;
+                font-weight: 600;
+            }}
+            /* Better spacing for sections */
+            h2 + p, h3 + p {{
+                margin-top: 10px;
+            }}
+            /* Code block improvements */
+            code {{
+                word-break: break-word;
+            }}
+            /* Table improvements */
+            table th:first-child,
+            table td:first-child {{
+                padding-left: 20px;
+            }}
+            table th:last-child,
+            table td:last-child {{
+                padding-right: 20px;
+            }}
+            /* Status column styling */
+            td:last-child {{
+                font-weight: 500;
+            }}
+            /* Project name styling in tables */
+            td strong {{
+                color: #1a5f9e;
+                font-size: 15px;
+            }}
+            /* List item styling for analysis sections - enhanced visibility */
+            ul li {{
+                padding: 10px 15px;
+                margin: 8px 0;
+                border-radius: 6px;
+                transition: background-color 0.2s;
+            }}
+            ul li:hover {{
+                background-color: #f8f9fa;
             }}
             </style>
         </head>
         <body>
-            <h1>Diagnostics Report</h1>
-            {html_content}
+            <div class="diag-container">
+                {html_content}
+            </div>
         </body>
         </html>
         """
