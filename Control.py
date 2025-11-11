@@ -27,7 +27,7 @@ import re
 from datetime import datetime, timedelta
 from typing import List, Dict, Any, Optional
 
-from PyQt5.QtWidgets import QFileDialog
+from PyQt5.QtWidgets import QFileDialog, QMessageBox
 from algorithm import run_allocation_algorithm
 from Model import ReaDataModel, EmployeeModel, ProjectModel
 from View import ReaDataView
@@ -316,6 +316,73 @@ class Controller:
         )
         self.logger.warning(f"CSV loading failed: {error_message}")
 
+    def _parse_previous_report_costs(self, path: str) -> Dict[str, float]:
+        """Return previous actual costs per project from a diagnostics .txt or run-output .json.
+
+        Args:
+            path: File path selected in the concatenate dialog. Supports .txt (diagnostics) or .json (run output).
+
+        Returns:
+            Dict[str, float]: Mapping {project_name: previous_actual_isk} used to seed cumulative totals.
+        """
+        lower = path.lower()
+        if lower.endswith(".json"):
+            with open(path, "r", encoding="utf-8") as f:
+                data = json.load(f)
+
+            candidates: List[Dict[str, float]] = []
+
+            if isinstance(data, dict):
+                if isinstance(data.get("final_costs"), dict):
+                    candidates.append(data["final_costs"])
+                if isinstance(data.get("project_costs"), dict):
+                    candidates.append(data["project_costs"])
+                if "results" in data and isinstance(data["results"], dict):
+                    rc = data["results"]
+                    if isinstance(rc.get("final_costs"), dict):
+                        candidates.append(rc["final_costs"])
+                    if isinstance(rc.get("project_costs"), dict):
+                        candidates.append(rc["project_costs"])
+
+            merged: Dict[str, float] = {}
+            for cand in candidates:
+                for k, v in cand.items():
+                    try:
+                        merged[k] = float(v)
+                    except Exception:
+                        continue
+
+            if not merged:
+                raise ValueError("No project cost mapping found in JSON. Expected keys like 'final_costs' or 'project_costs'.")
+
+            return merged
+
+        with open(path, "r", encoding="utf-8") as f:
+            lines = f.readlines()
+
+        prev_costs: Dict[str, float] = {}
+        in_table = False
+        for line in lines:
+            if "Project Costs (Actual vs Target)" in line:
+                in_table = True
+                continue
+            if in_table:
+                if not line.strip():
+                    break
+                parts = [p.strip() for p in line.split("|")]
+                if len(parts) >= 3 and parts[0] and parts[1]:
+                    name = parts[0]
+                    try:
+                        actual = float(parts[1].replace(",", "").replace("ISK", "").strip())
+                        prev_costs[name] = actual
+                    except Exception:
+                        pass
+
+        if not prev_costs:
+            raise ValueError("Could not parse previous costs from diagnostics text file.")
+
+        return prev_costs
+
     @handle_exceptions(show_dialog=True)
     def generate_output(self, checked=False):
         """
@@ -353,10 +420,59 @@ class Controller:
         start_date, end_date = self.date_ranges[-1]
         all_topics = self.model.research_topics
         
+        initial_costs = {}
+        reply = QMessageBox.question(
+            self.view,
+            "Concatenate with Previous Run?",
+            "Do you want to concatenate costs from a previous report?\n\n"
+            "This will add the costs from a previous run to the current calculation, "
+            "allowing you to continue from where you left off.",
+            QMessageBox.Yes | QMessageBox.No,
+            QMessageBox.No
+        )
+        
+        if reply == QMessageBox.Yes:
+            import os
+            reports_dir = AppConfig.REPORTS_DIR
+            default_path = os.path.join(os.getcwd(), reports_dir) if os.path.exists(os.path.join(os.getcwd(), reports_dir)) else os.getcwd()
+            
+            report_file, _ = QFileDialog.getOpenFileName(
+                self.view,
+                "Select Previous Report to Concatenate",
+                default_path,
+                "Diagnostics (*.txt);;Run Output (*.json);;All Files (*)"
+            )
+            
+            if report_file:
+                initial_costs = self._parse_previous_report_costs(report_file)
+                if initial_costs:
+                    self._initial_costs_used = dict(initial_costs)
+                    cost_summary = "\n".join([f"  - {name}: {cost:,.0f} ISK" for name, cost in initial_costs.items()])
+                    ErrorHandler.show_info(
+                        self.view,
+                        "Previous Costs Loaded",
+                        f"Successfully loaded costs from previous report:\n\n{cost_summary}\n\n"
+                        f"These costs will be added to the current allocation."
+                    )
+                    self.logger.info(f"Concatenating with previous report: {report_file}")
+                    print(f"[CONCATENATION] Starting from previous costs:")
+                    for proj_name, cost in initial_costs.items():
+                        print(f"[CONCATENATION]   {proj_name}: {cost:,.0f} ISK")
+                else:
+                    self._initial_costs_used = {}
+                    ErrorHandler.show_warning(
+                        self.view,
+                        "No Costs Found",
+                        "The selected report does not contain project costs. "
+                        "Starting from zero."
+                    )
+        
         self.logger.info(
             f"Starting allocation algorithm: {start_date} to {end_date}, "
             f"{len(self.employees)} employees, {len(self.projects)} projects"
         )
+        if initial_costs:
+            self.logger.info(f"Concatenating with {len(initial_costs)} previous project costs")
         
         self.algorithm_worker = AlgorithmWorker(
             run_allocation_algorithm,
@@ -364,7 +480,8 @@ class Controller:
             self.projects,
             start_date,
             end_date,
-            all_topics
+            all_topics,
+            initial_costs
         )
         self.algorithm_worker.progress_updated.connect(self._on_algorithm_progress)
         self.algorithm_worker.finished_success.connect(self._on_algorithm_complete)
@@ -419,21 +536,34 @@ class Controller:
         for proj in self.projects:
             proj_name = proj.name if proj.name else "Unnamed"
             actual_cost = final_costs.get(proj_name, 0.0)
+            initial_costs = getattr(self, "_initial_costs_used", {})
+            period_cost = actual_cost - initial_costs.get(proj_name, 0.0)
             try:
-                target_cost = float(proj.grant_min)
+                target_contractual = float(proj.grant_contractual or 0.0)
+                target_min = float(proj.grant_min or 0.0)
             except Exception:
-                target_cost = 0.0
+                target_contractual = 0.0
+                target_min = 0.0
 
-            diff = actual_cost - target_cost
-            diff_pct = (diff / target_cost * 100) if target_cost > 0 else 0
+            # Compare against contractual target (what algorithm optimizes for)
+            diff_contractual = actual_cost - target_contractual
+            diff_pct_contractual = (diff_contractual / target_contractual * 100) if target_contractual > 0 else 0
+            
+            # Also show minimum target for reference
+            diff_min = actual_cost - target_min
+            diff_pct_min = (diff_min / target_min * 100) if target_min > 0 else 0
 
             print(f"Project: {proj_name}")
             print(f"  Actual Cost : {actual_cost:10.2f}")
-            print(f"  Target Cost : {target_cost:10.2f}")
-            if actual_cost > target_cost:
-                print(f"  >>> WARNING: Over Budget by {diff:10.2f} ({diff_pct:6.2f}%)")
+            print(f"  Contractual Target : {target_contractual:10.2f} (optimization target)")
+            if target_min != target_contractual:
+                print(f"  Minimum Target : {target_min:10.2f} (reference)")
+            if actual_cost > target_contractual:
+                print(f"  >>> WARNING: Over Contractual Budget by {diff_contractual:10.2f} ({diff_pct_contractual:6.2f}%)")
             else:
-                print(f"  Budget Status: OK")
+                print(f"  Contractual Budget Status: OK")
+            if target_min != target_contractual and actual_cost < target_min:
+                print(f"  >>> NOTE: Below Minimum Target by {abs(diff_min):10.2f} ({abs(diff_pct_min):6.2f}%)")
             print("-" * 60)
         print("======================================================================\n")
 
@@ -449,7 +579,7 @@ class Controller:
 
         # Generate comprehensive diagnostics with metadata, analysis, and formatting
         start_date, end_date = self.date_ranges[-1]
-        report_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        report_time = datetime.now().strftime("%Y-%m-%d at %H:%M:%S")
         
         diagnostics = []
         
@@ -495,7 +625,7 @@ class Controller:
             proj_name = proj.name if proj.name else "Unnamed"
             actual_cost = final_costs.get(proj_name, 0.0)
             try:
-                target_cost = float(proj.grant_contractual or proj.grant_min or 0.0)
+                target_cost = float(proj.grant_contractual or 0.0)
             except Exception:
                 target_cost = 0.0
             total_cost_target += target_cost
@@ -769,7 +899,8 @@ class Controller:
             computed_cost = total_direct_cost + overhead_cost
 
             try:
-                rel_dev = ((computed_cost / float(proj.grant_min) - 1) * 100) if float(proj.grant_min) > 0 else None
+                target_contractual = float(proj.grant_contractual or 0.0)
+                rel_dev = ((computed_cost / target_contractual - 1) * 100) if target_contractual > 0 else None
             except:
                 rel_dev = None
 
@@ -779,7 +910,12 @@ class Controller:
             print(f"  Direct Cost (R&D + Non-R&D): {total_direct_cost:.2f}")
             if overhead_cost > 0:
                 print(f"  Overhead Cost (Rate {proj.operational_overhead:.2f}): {overhead_cost:.2f}")
-            print(f"  Computed Total Cost (Direct + Overhead): {computed_cost:.2f} | Target Cost: {proj.grant_min}")
+            target_contractual = float(proj.grant_contractual or 0.0)
+            target_min = float(proj.grant_min or 0.0)
+            target_display = f"{target_contractual:.2f} (contractual)"
+            if target_min != target_contractual:
+                target_display += f" / {target_min:.2f} (minimum)"
+            print(f"  Computed Total Cost (Direct + Overhead): {computed_cost:.2f} | Target Cost: {target_display}")
             if rel_dev is not None:
                 print(f"  Relative Cost Deviation: {rel_dev:.2f} %")
             print("-------------------------------------------------------------")

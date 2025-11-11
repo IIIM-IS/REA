@@ -39,7 +39,7 @@ class AlgorithmWorker(QThread):
     finished_error = pyqtSignal(str)
     
     def __init__(self, algorithm_func: Callable, employees: List, projects: List,
-                 start_date: str, end_date: str, all_topics: List):
+                 start_date: str, end_date: str, all_topics: List, initial_costs: Dict[str, float] = None):
         """
         Initialize algorithm worker.
         
@@ -50,6 +50,7 @@ class AlgorithmWorker(QThread):
             start_date: Start date string
             end_date: End date string
             all_topics: List of all research topics
+            initial_costs: Dictionary of project names to initial costs for concatenation
         """
         super().__init__()
         self.algorithm_func = algorithm_func
@@ -58,6 +59,7 @@ class AlgorithmWorker(QThread):
         self.start_date = start_date
         self.end_date = end_date
         self.all_topics = all_topics
+        self.initial_costs = initial_costs or {}
         self.logger = get_logger()
         self._is_cancelled = False
     
@@ -76,7 +78,8 @@ class AlgorithmWorker(QThread):
                 projects_arg=self.projects,
                 start_date=self.start_date,
                 end_date=self.end_date,
-                all_topics_arg=self.all_topics
+                all_topics_arg=self.all_topics,
+                initial_costs=self.initial_costs
             )
             
             if self._is_cancelled:
