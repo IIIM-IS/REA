@@ -21,17 +21,17 @@ Data models for REA application.
 Contains model classes for employees, projects, and the main data model.
 """
 
-import pandas as pd
+import pandas as pd  # pyright: ignore[reportMissingImports]
 import os
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import List, Dict, Optional, Tuple, Any
 
 from config import ResearchTopics, CSVConfig, DateConfig
-from validators import DataValidator, DateValidator
+from validators import DataValidator
 from utils import DateManager, DataCompressor
 from logger import get_logger
-from error_handling import ValidationError, FileOperationError
+from error_handling import FileOperationError
 
 
 class ReaDataModel:
@@ -437,10 +437,9 @@ class EmployeeModel:
                 ("02-01-2025", "02-15-2025", "Junior", 90.0)
               ]
         """
-        sorted_dates = sorted(
-            self.salary_levels.keys(),
-            key=lambda d: DateManager.parse_date(d)
-        )
+        date_parse_results = [(d, DateManager.parse_date(d)) for d in self.salary_levels.keys()]
+        date_parse_results.sort(key=lambda x: x[1] if x[1] is not None else datetime.min)
+        sorted_dates = [d for d, _ in date_parse_results]
         
         if not sorted_dates:
             return []

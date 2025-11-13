@@ -85,32 +85,31 @@ class DateConfig:
 
 
 class AlgorithmConfig:
-    """
-    Configuration for the allocation algorithm.
-    
-    Contains solver settings, penalty weights, and optimization parameters.
-    """
     MAX_ITERATIONS_ECOS = 20_000
     MAX_ITERATIONS_SCS = 20_000
     MAX_ITERATIONS_CLARABEL = 10_000
-    
+
     TOLERANCE_ABSOLUTE = 1e-7
     TOLERANCE_RELATIVE = 1e-7
     TOLERANCE_FEASIBILITY = 1e-7
     TOLERANCE_SCS = 5e-4
-    
-    BIG_SLACK_PENALTY = 1e4
+
+    BIG_SLACK_PENALTY = 1e5
     LAMBDA_SMOOTH = 1e-3
-    LAMBDA_TOPIC = 1e-2
+    LAMBDA_TOPIC = 5e-3
     BETA_COST_DEVIATION = 1e-2
     GAMMA_NONRND_FRACTION = 1e-5
     REGULARIZATION_LAMBDA = 1e-6
-    
+
     HUBER_M_FACTOR = 0.1
-    
+
     ROUNDING_DECIMALS = 2
     ZERO_THRESHOLD = 1e-7
     ALLOCATION_TOLERANCE = 1e-2
+
+    ALPHA_OVERSHOOT = 5.0
+    ALPHA_UNDERSHOOT = 1.0
+    GLOBAL_BUDGET_BAND = 0.03
 
 
 class UIConfig:

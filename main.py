@@ -16,8 +16,8 @@
 # from the authors.
 # -----------------------------------------------------------------------------
 
-from PyQt5.QtCore import QCoreApplication
-from PyQt5.QtWidgets import QApplication
+from PyQt5.QtCore import QCoreApplication  # pyright: ignore[reportMissingImports]
+from PyQt5.QtWidgets import QApplication  # pyright: ignore[reportMissingImports]
 import sys
 from Model import ReaDataModel
 from View import ReaDataView

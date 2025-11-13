@@ -1,0 +1,328 @@
+[CONCATENATION] Starting allocation with previous costs:
+[CONCATENATION]   EURIDICE: 11,739,343 ISK
+[CONCATENATION]   ICE-ID: 7,481,843 ISK
+[CONCATENATION]   FRESH-ID: 7,481,843 ISK
+[CONCATENATION]   AI-STYLIST: 7,481,843 ISK
+
+================= DEBUG INFO: HOURS & SALARY (Free Employees) =================
+Employee 'Jeff Thompson': total hours = 346,  total cost = 2111475
+Employee 'Kristinn R. Thórisson': total hours = 532,  total cost = 2908125
+Employee 'Goncalo Carvalho': total hours = 1776,  total cost = 7550000
+Employee 'Mário Correia': total hours = 1019,  total cost = 2974688
+Employee 'Arash Sheikhlar': total hours = 0,  total cost = 0
+Employee 'Marta Abad Torrent': total hours = 1075,  total cost = 2735547
+
+ALL FREE EMPLOYEES COMBINED: total R&D hours = 4748
+ALL FREE EMPLOYEES COMBINED: total NonR&D hours = 0
+ALL FREE EMPLOYEES COMBINED: total hours = 4748
+ALL FREE EMPLOYEES COMBINED:  total cost = 18279834
+===============================================================================
+
+
+================= DEBUG INFO: HOURS & SALARY (Locked Employees) =================
+No locked employees for this breakdown.
+===============================================================================
+
+
+================= DEBUG INFO: HOURS & SALARY (ALL Employees) =================
+ALL EMPLOYEES COMBINED: total R&D hours = 4748
+ALL EMPLOYEES COMBINED: total NonR&D hours = 0
+ALL EMPLOYEES COMBINED: total hours = 4748
+ALL EMPLOYEES COMBINED:  total cost = 18279834
+===============================================================================
+
+
+================= DEBUG INFO: PROJECT TARGETS & LOCKED CONTRIBUTIONS =================
+Project 'EURIDICE': Target Cost = 0
+  No employees directly locked to Project 'EURIDICE'.
+  ----------------------------------------------------------
+Project 'ICE-ID': Target Cost = 0
+  No employees directly locked to Project 'ICE-ID'.
+  ----------------------------------------------------------
+Project 'FRESH-ID': Target Cost = 0
+  No employees directly locked to Project 'FRESH-ID'.
+  ----------------------------------------------------------
+Project 'AI-STYLIST': Target Cost = 1428157
+  No employees directly locked to Project 'AI-STYLIST'.
+  ----------------------------------------------------------
+Project 'TRACKWELL': Target Cost = 0
+  No employees directly locked to Project 'TRACKWELL'.
+  ----------------------------------------------------------
+====================================================================================
+
+
+================= DEBUG INFO: HOURS & COSTS PER PROJECT (Employee Availability) =================
+Project 'EURIDICE': Target Cost = 0
+  Employee Contributions (based on their total available hours):
+    - Jeff Thompson: Total Avail. Hours = 346 (R&D: 346, NonR&D: 0), Cost of these hours = 2111475
+    - Kristinn R. Thórisson: Total Avail. Hours = 532 (R&D: 532, NonR&D: 0), Cost of these hours = 2908125
+    - Goncalo Carvalho: Total Avail. Hours = 1776 (R&D: 1776, NonR&D: 0), Cost of these hours = 7550000
+    - Mário Correia: Total Avail. Hours = 1019 (R&D: 1019, NonR&D: 0), Cost of these hours = 2974688
+    - Arash Sheikhlar: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Marta Abad Torrent: Total Avail. Hours = 1075 (R&D: 1075, NonR&D: 0), Cost of these hours = 2735547
+  Overall  Pool for 'EURIDICE' (sum of all employees' total avail. hours):
+    Total Hours = 4748 (R&D: 4748, NonR&D: 0)
+    Associated Cost = 18279834
+  -----------------------------------------------------------------------------------
+Project 'ICE-ID': Target Cost = 0
+  Employee Contributions (based on their total available hours):
+    - Jeff Thompson: Total Avail. Hours = 346 (R&D: 346, NonR&D: 0), Cost of these hours = 2111475
+    - Kristinn R. Thórisson: Total Avail. Hours = 532 (R&D: 532, NonR&D: 0), Cost of these hours = 2908125
+    - Goncalo Carvalho: Total Avail. Hours = 1776 (R&D: 1776, NonR&D: 0), Cost of these hours = 7550000
+    - Mário Correia: Total Avail. Hours = 1019 (R&D: 1019, NonR&D: 0), Cost of these hours = 2974688
+    - Arash Sheikhlar: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Marta Abad Torrent: Total Avail. Hours = 1075 (R&D: 1075, NonR&D: 0), Cost of these hours = 2735547
+  Overall  Pool for 'ICE-ID' (sum of all employees' total avail. hours):
+    Total Hours = 4748 (R&D: 4748, NonR&D: 0)
+    Associated Cost = 18279834
+  -----------------------------------------------------------------------------------
+Project 'FRESH-ID': Target Cost = 0
+  Employee Contributions (based on their total available hours):
+    - Jeff Thompson: Total Avail. Hours = 346 (R&D: 346, NonR&D: 0), Cost of these hours = 2111475
+    - Kristinn R. Thórisson: Total Avail. Hours = 532 (R&D: 532, NonR&D: 0), Cost of these hours = 2908125
+    - Goncalo Carvalho: Total Avail. Hours = 1776 (R&D: 1776, NonR&D: 0), Cost of these hours = 7550000
+    - Mário Correia: Total Avail. Hours = 1019 (R&D: 1019, NonR&D: 0), Cost of these hours = 2974688
+    - Arash Sheikhlar: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Marta Abad Torrent: Total Avail. Hours = 1075 (R&D: 1075, NonR&D: 0), Cost of these hours = 2735547
+  Overall  Pool for 'FRESH-ID' (sum of all employees' total avail. hours):
+    Total Hours = 4748 (R&D: 4748, NonR&D: 0)
+    Associated Cost = 18279834
+  -----------------------------------------------------------------------------------
+Project 'AI-STYLIST': Target Cost = 1428157
+  Employee Contributions (based on their total available hours):
+    - Jeff Thompson: Total Avail. Hours = 346 (R&D: 346, NonR&D: 0), Cost of these hours = 2111475
+    - Kristinn R. Thórisson: Total Avail. Hours = 532 (R&D: 532, NonR&D: 0), Cost of these hours = 2908125
+    - Goncalo Carvalho: Total Avail. Hours = 1776 (R&D: 1776, NonR&D: 0), Cost of these hours = 7550000
+    - Mário Correia: Total Avail. Hours = 1019 (R&D: 1019, NonR&D: 0), Cost of these hours = 2974688
+    - Arash Sheikhlar: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Marta Abad Torrent: Total Avail. Hours = 1075 (R&D: 1075, NonR&D: 0), Cost of these hours = 2735547
+  Overall  Pool for 'AI-STYLIST' (sum of all employees' total avail. hours):
+    Total Hours = 4748 (R&D: 4748, NonR&D: 0)
+    Associated Cost = 18279834
+  -----------------------------------------------------------------------------------
+Project 'TRACKWELL': Target Cost = 0
+  Employee Contributions (based on their total available hours):
+    - Jeff Thompson: Total Avail. Hours = 346 (R&D: 346, NonR&D: 0), Cost of these hours = 2111475
+    - Kristinn R. Thórisson: Total Avail. Hours = 532 (R&D: 532, NonR&D: 0), Cost of these hours = 2908125
+    - Goncalo Carvalho: Total Avail. Hours = 1776 (R&D: 1776, NonR&D: 0), Cost of these hours = 7550000
+    - Mário Correia: Total Avail. Hours = 1019 (R&D: 1019, NonR&D: 0), Cost of these hours = 2974688
+    - Arash Sheikhlar: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Marta Abad Torrent: Total Avail. Hours = 1075 (R&D: 1075, NonR&D: 0), Cost of these hours = 2735547
+  Overall  Pool for 'TRACKWELL' (sum of all employees' total avail. hours):
+    Total Hours = 4748 (R&D: 4748, NonR&D: 0)
+    Associated Cost = 18279834
+  -----------------------------------------------------------------------------------
+==============================================================================================
+
+
+================= DEBUG INFO: PER PROJECT, PER SALARY BRACKET (Summary) =================
+Project: EURIDICE
+  L6 (3,672 ISK/hr): Marta Abad Torrent
+  L5 (4,453 ISK/hr): Mário Correia
+  L3 (6,250 ISK/hr): Arash Sheikhlar, Goncalo Carvalho
+  L2 (7,344 ISK/hr): Kristinn R. Thórisson
+  L1 (8,985 ISK/hr): Jeff Thompson
+---------------------------------------------------------------------------
+Project: ICE-ID
+  L6 (3,672 ISK/hr): Marta Abad Torrent
+  L5 (4,453 ISK/hr): Mário Correia
+  L3 (6,250 ISK/hr): Arash Sheikhlar, Goncalo Carvalho
+  L2 (7,344 ISK/hr): Kristinn R. Thórisson
+  L1 (8,985 ISK/hr): Jeff Thompson
+---------------------------------------------------------------------------
+Project: FRESH-ID
+  L6 (3,672 ISK/hr): Marta Abad Torrent
+  L5 (4,453 ISK/hr): Mário Correia
+  L3 (6,250 ISK/hr): Arash Sheikhlar, Goncalo Carvalho
+  L2 (7,344 ISK/hr): Kristinn R. Thórisson
+  L1 (8,985 ISK/hr): Jeff Thompson
+---------------------------------------------------------------------------
+Project: AI-STYLIST
+  L6 (3,672 ISK/hr): Marta Abad Torrent
+  L5 (4,453 ISK/hr): Mário Correia
+  L3 (6,250 ISK/hr): Arash Sheikhlar, Goncalo Carvalho
+  L2 (7,344 ISK/hr): Kristinn R. Thórisson
+  L1 (8,985 ISK/hr): Jeff Thompson
+---------------------------------------------------------------------------
+Project: TRACKWELL
+  L6 (3,672 ISK/hr): Marta Abad Torrent
+  L5 (4,453 ISK/hr): Mário Correia
+  L3 (6,250 ISK/hr): Arash Sheikhlar, Goncalo Carvalho
+  L2 (7,344 ISK/hr): Kristinn R. Thórisson
+  L1 (8,985 ISK/hr): Jeff Thompson
+---------------------------------------------------------------------------
+========================================================================================
+
+--- Average Non-Zero Target Cost (for scaling penalties): 7427500.00 ---
+
+=== COST-CAPACITY VS. PROJECT LOWER-BOUNDS ===
+Max cost that *could* be spent this period : 18,279,834 ISK
+    from free   employees : 18,279,834
+    from locked employees : 0
+  – EURIDICE     needs ≥ 10,000,000  (target=10,000,000)
+  – ICE-ID       needs ≥ 3,500,000  (target=3,500,000)
+  – FRESH-ID     needs ≥ 7,300,000  (target=7,300,000)
+  – AI-STYLIST   needs ≥ 8,910,000  (target=8,910,000)
+  – TRACKWELL    needs ≥ 0  (target=0)
+===========================================================
+
+Solving with OSQP … ⠁===============================================================================
+                                     CVXPY                                     
+                                     v1.6.0                                    
+===============================================================================
+-------------------------------------------------------------------------------
+                                  Compilation                                  
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+                                Numerical solver                               
+-------------------------------------------------------------------------------
+Solving with OSQP finished in   0.48s  (status: None)
+Solving with ECOS … ⠂===============================================================================
+                                     CVXPY                                     
+                                     v1.6.0                                    
+===============================================================================
+-------------------------------------------------------------------------------
+                                  Compilation                                  
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+                                Numerical solver                               
+-------------------------------------------------------------------------------
+Solving with ECOS finished in   0.40s  (status: None)
+Solving with SCS … ⠄===============================================================================
+                                     CVXPY                                     
+                                     v1.6.0                                    
+===============================================================================
+-------------------------------------------------------------------------------
+                                  Compilation                                  
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+                                Numerical solver                               
+-------------------------------------------------------------------------------
+Solving with SCS finished in   0.43s  (status: None)
+Solving with CLARABEL … ⡀===============================================================================
+                                     CVXPY                                     
+                                     v1.6.0                                    
+===============================================================================
+-------------------------------------------------------------------------------
+                                  Compilation                                  
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+                                Numerical solver                               
+-------------------------------------------------------------------------------
+Solving with CLARABEL finished in   0.44s  (status: None)
+Solving with default selection … ⢀Solving with default selection finished  (status: unbounded)
+⚠️  Solver returned unbounded — continuing with last iterate (slacks will show).
+ERROR: Solver status 'unbounded', but variables have no values. Falling back to residual-target-weighted feasible allocation.
+
+--- Enforcing Exact Hour Balance Constraints ---
+--- Continuous Solution Constraint Verification (Free Employees) ---
+Total Available R&D (Free Emps):   4748.0000
+Total Allocated R&D (After Normalization):  4748.0000
+Total Available NonR&D (Free Emps):0.0000
+Total Allocated NonR&D (After Normalization):0.0000
+Maximum per-employee/day R&D violation: 0.00e+00
+Maximum per-employee/day NonR&D violation: 0.00e+00
+✓ Hour balance constraints exactly satisfied (within numerical precision)
+-----------------------------------------------------------
+
+
+================= DEBUG INFO: PER PROJECT, PER EMPLOYEE, PER SALARY BRACKET (ALLOCATED HOURS) =================
+Project: EURIDICE
+Project: ICE-ID
+Project: FRESH-ID
+Project: AI-STYLIST
+  Employee: Jeff Thompson
+    @0.00 ISK/hr → 111.00 h  (R&D 111.00 h, Non-R&D 0.00 h)
+    @8,985.00 ISK/hr → 235.00 h  (R&D 235.00 h, Non-R&D 0.00 h)
+  Employee: Kristinn R. Thórisson
+    @0.00 ISK/hr → 136.00 h  (R&D 136.00 h, Non-R&D 0.00 h)
+    @7,343.75 ISK/hr → 396.00 h  (R&D 396.00 h, Non-R&D 0.00 h)
+  Employee: Goncalo Carvalho
+    @0.00 ISK/hr → 568.00 h  (R&D 568.00 h, Non-R&D 0.00 h)
+    @6,250.00 ISK/hr → 1208.00 h  (R&D 1208.00 h, Non-R&D 0.00 h)
+  Employee: Mário Correia
+    @0.00 ISK/hr → 351.00 h  (R&D 351.00 h, Non-R&D 0.00 h)
+    @4,453.12 ISK/hr → 668.00 h  (R&D 668.00 h, Non-R&D 0.00 h)
+  Employee: Marta Abad Torrent
+    @0.00 ISK/hr → 330.00 h  (R&D 330.00 h, Non-R&D 0.00 h)
+    @3,671.88 ISK/hr → 745.00 h  (R&D 745.00 h, Non-R&D 0.00 h)
+Project: TRACKWELL
+----------------------------------------------------------------
+================================================================
+
+
+================= DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values) ==================
+Overall R&D      : Total available = 4748 hrs, Total allocated = 4748 hrs
+Overall Non-R&D  : Total available = 0 hrs, Total allocated = 0 hrs
+✓ Hour balance constraints exactly satisfied
+  R&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
+  NonR&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
+  Max per-employee/day violations: R&D=0.0000, NonR&D=0.0000
+===========================================================================================
+[CONCATENATION] Project 'EURIDICE' starting from previous cost: 11,739,343 ISK
+[CONCATENATION] Project 'ICE-ID' starting from previous cost: 7,481,843 ISK
+[CONCATENATION] Project 'FRESH-ID' starting from previous cost: 7,481,843 ISK
+[CONCATENATION] Project 'AI-STYLIST' starting from previous cost: 7,481,843 ISK
+[CONCATENATION] Project 'EURIDICE': Previous=11,739,343 + New (Locked+Free)=0 = Total=11,739,343 ISK
+[CONCATENATION] Project 'ICE-ID': Previous=7,481,843 + New (Locked+Free)=0 = Total=7,481,843 ISK
+[CONCATENATION] Project 'FRESH-ID': Previous=7,481,843 + New (Locked+Free)=0 = Total=7,481,843 ISK
+[CONCATENATION] Project 'AI-STYLIST': Previous=7,481,843 + New (Locked+Free)=18,279,834 = Total=25,761,677 ISK
+
+================= DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS =================
+[CONCATENATION] Project 'EURIDICE' starting from previous cost: 11,739,343 ISK
+
+[CONCATENATION] Project 'ICE-ID' starting from previous cost: 7,481,843 ISK
+
+[CONCATENATION] Project 'FRESH-ID' starting from previous cost: 7,481,843 ISK
+
+[CONCATENATION] Project 'AI-STYLIST' starting from previous cost: 7,481,843 ISK
+
+[CONCATENATION] Project 'EURIDICE': Previous=11,739,343 + New (Locked+Free)=0 = Total=11,739,343 ISK
+
+[CONCATENATION] Project 'ICE-ID': Previous=7,481,843 + New (Locked+Free)=0 = Total=7,481,843 ISK
+
+[CONCATENATION] Project 'FRESH-ID': Previous=7,481,843 + New (Locked+Free)=0 = Total=7,481,843 ISK
+
+[CONCATENATION] Project 'AI-STYLIST': Previous=7,481,843 + New (Locked+Free)=18,279,834 = Total=25,761,677 ISK
+
+(Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)
+Project 'EURIDICE':
+  Computed Cost (Rounded):   11739343 | Target Cost:          0 [Solver: 11739343]
+  Relative Cost Deviation (Solver): +inf %
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
+-------------------------------------------------------------
+Project 'ICE-ID':
+  Computed Cost (Rounded):    7481843 | Target Cost:          0 [Solver: 7481843]
+  Relative Cost Deviation (Solver): +inf %
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
+-------------------------------------------------------------
+Project 'FRESH-ID':
+  Computed Cost (Rounded):    7481843 | Target Cost:          0 [Solver: 7481843]
+  Relative Cost Deviation (Solver): +inf %
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
+-------------------------------------------------------------
+Project 'AI-STYLIST':
+  Computed Cost (Rounded):   25761677 | Target Cost:    1428157 [Solver: 25761677]
+  Relative Cost Deviation (Solver): +1703.8 %
+  Total R&D Hours (Rounded):     4748
+  Total Non-R&D Hours (Rounded):      0
+  Topic Allocations (Rounded):
+    Bridge              :   4748 hrs
+-------------------------------------------------------------
+Project 'TRACKWELL':
+  Computed Cost (Rounded):          0 | Target Cost:          0 [Solver: 0]
+  Relative Cost Deviation (Solver): +0.0 %
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
+-------------------------------------------------------------
+
+Grand Total Computed Cost (Rounded Allocations):     52464706
+Grand Total Target Cost:                              1428157
+Overall Relative Deviation (Sum of Solver Costs vs Sum of Target Costs):+3573.6 %
+==========================================================================================
+
+=== MATCH-FUND SLACKS (ISK) ===
+  AI-STYLIST     : nan ISK

@@ -1,13 +1,11 @@
-from datetime import datetime, timedelta
-
-from PyQt5.QtWidgets import (
+from PyQt5.QtWidgets import (  # pyright: ignore[reportMissingImports]
     QMainWindow, QVBoxLayout, QHBoxLayout, QTabWidget, QScrollArea, QLabel,
-    QPushButton, QWidget, QListWidget, QLineEdit, QCalendarWidget, QCheckBox,
+    QPushButton, QWidget, QLineEdit, QCalendarWidget, QCheckBox,
     QComboBox
 )
 
-from PyQt5.QtCore import Qt, pyqtSignal
-from PyQt5.QtWidgets import QTextEdit
+from PyQt5.QtCore import Qt, pyqtSignal  # pyright: ignore[reportMissingImports]
+from PyQt5.QtWidgets import QTextEdit  # pyright: ignore[reportMissingImports]
 
 class ReaDataView(QMainWindow):
     """
@@ -95,6 +93,7 @@ class ReaDataView(QMainWindow):
         self.run_comment_toggle_button = QPushButton("▼")
         self.run_comment_toggle_button.setFixedSize(25, 25)
         self.run_comment_toggle_button.setToolTip("Collapse or expand the run comment field. Use this to save screen space when the comment field is not needed.")
+        self.run_comment_toggle_button.setEnabled(True)
         self.run_comment_toggle_button.clicked.connect(self._toggle_run_comment)
         run_comment_header.addWidget(self.run_comment_toggle_button)
         run_comment_header.addStretch()
@@ -138,6 +137,7 @@ class ReaDataView(QMainWindow):
         calendar_layout.setContentsMargins(0, 0, 0, 0)
         self.open_calendar_button = QPushButton("Open/Close Calendar")
         self.open_calendar_button.setToolTip("Toggle the calendar widget to visually select dates. The calendar can help you pick start and end dates for your analysis period. Click to show or hide the calendar.")
+        self.open_calendar_button.setEnabled(True)
         calendar_layout.addWidget(self.open_calendar_button)
         self.main_tab_layout.addWidget(calendar_container)
 
@@ -170,6 +170,7 @@ class ReaDataView(QMainWindow):
         apply_dates_layout.setContentsMargins(0, 0, 0, 0)
         self.apply_dates_button = QPushButton("Apply dates")
         self.apply_dates_button.setToolTip("Add the date range (start and end dates) to your analysis. You can add multiple date ranges. The dates must be in MM-DD-YYYY format. The algorithm will process all date ranges you add.")
+        self.apply_dates_button.setEnabled(True)
         apply_dates_layout.addWidget(self.apply_dates_button)
         self.main_tab_layout.addWidget(apply_dates_container)
 
@@ -180,6 +181,7 @@ class ReaDataView(QMainWindow):
         timesheet_layout.setContentsMargins(0, 0, 0, 0)
         self.timesheet_button = QPushButton("TimeSheet Inputs")
         self.timesheet_button.setToolTip("Load employee timesheet CSV files from a directory. The program will extract employee work hours and research topic allocations for the specified date ranges. Make sure you have added at least one date range first. The CSV files should follow the standard timesheet format.")
+        self.timesheet_button.setEnabled(True)
         timesheet_layout.addWidget(self.timesheet_button)
         self.main_tab_layout.addWidget(timesheet_container)
 
@@ -194,6 +196,7 @@ class ReaDataView(QMainWindow):
         add_project_layout.setContentsMargins(0, 0, 0, 0)
         self.add_project_button = QPushButton("Add a New Project")
         self.add_project_button.setToolTip("Create a new project with cost targets, overhead, matching requirements, and research topic allocations. Each project will appear as a separate tab where you can configure its settings.")
+        self.add_project_button.setEnabled(True)
         add_project_layout.addWidget(self.add_project_button)
         self.main_tab_layout.addWidget(add_project_container)
 
@@ -204,6 +207,7 @@ class ReaDataView(QMainWindow):
         generate_layout.setContentsMargins(0, 0, 0, 0)
         self.generate_output_button = QPushButton("Generate Output")
         self.generate_output_button.setToolTip("Run the allocation algorithm to distribute employee hours across projects. This will optimize the allocation based on cost targets, constraints, and preferences. Results will be displayed in the Diagnostics tab. Make sure you have loaded timesheets and created at least one project.")
+        self.generate_output_button.setEnabled(True)
         generate_layout.addWidget(self.generate_output_button)
         self.main_tab_layout.addWidget(generate_container)
 
@@ -213,6 +217,7 @@ class ReaDataView(QMainWindow):
         save_state_layout.setContentsMargins(0, 0, 0, 0)
         self.save_state_button = QPushButton("Save State")
         self.save_state_button.setToolTip("Save the current project state (employees, projects, date ranges, salaries) to a JSON file. This allows you to resume work later or create backups. All project configurations and employee data will be preserved.")
+        self.save_state_button.setEnabled(True)
         save_state_layout.addWidget(self.save_state_button)
         self.main_tab_layout.addWidget(save_state_container)
 
@@ -222,6 +227,7 @@ class ReaDataView(QMainWindow):
         load_state_layout.setContentsMargins(0, 0, 0, 0)
         self.load_state_button = QPushButton("Load State")
         self.load_state_button.setToolTip("Load a previously saved project state from a JSON file. This will restore all employees, projects, date ranges, and salary information. Current data will be replaced with the loaded state.")
+        self.load_state_button.setEnabled(True)
         load_state_layout.addWidget(self.load_state_button)
         self.main_tab_layout.addWidget(load_state_container)
 
@@ -591,6 +597,7 @@ class ReaDataView(QMainWindow):
                 edit_button = QPushButton("Edit")
                 edit_button.setFixedWidth(60) # Make edit button smaller
                 edit_button.setToolTip("Edit this salary interval. You can modify the start date, end date, level label, and amount. Click to reveal the edit form.")
+                edit_button.setEnabled(True)
                 hbox.addWidget(edit_button)
 
                 # --- Hidden sub-form for editing ---
@@ -616,10 +623,12 @@ class ReaDataView(QMainWindow):
 
                 save_edit_button = QPushButton("Save")
                 save_edit_button.setToolTip("Save the changes to this salary interval. The updated values will replace the existing interval. Make sure all fields are filled correctly before saving.")
+                save_edit_button.setEnabled(True)
                 edit_layout.addWidget(save_edit_button)
 
                 cancel_edit_button = QPushButton("Cancel")
                 cancel_edit_button.setToolTip("Cancel editing and discard any changes made to this salary interval. The original values will be preserved.")
+                cancel_edit_button.setEnabled(True)
                 edit_layout.addWidget(cancel_edit_button)
 
                 layout.addLayout(hbox)
@@ -673,6 +682,7 @@ class ReaDataView(QMainWindow):
         apply_salary_button = QPushButton("Add")
         apply_salary_button.setFixedWidth(60) # Make add button smaller
         apply_salary_button.setToolTip("Add a new salary interval for this employee. Specify the salary level label, amount (in ISK), start date, and end date. Multiple intervals can be defined for different time periods to reflect salary changes.")
+        apply_salary_button.setEnabled(True)
         apply_salary_layout.addWidget(apply_salary_button)
         apply_salary_layout.addStretch()
         salary_layout.addLayout(apply_salary_layout)
@@ -837,8 +847,8 @@ class ReaDataView(QMainWindow):
                     r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
                     luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255
                     text_color = "white" if luminance < 0.5 else "black"
-                except:
-                    text_color = "black" # Default if color parsing fails
+                except Exception:
+                    text_color = "black"
 
                 # Style for non-selected colored tabs
                 color_stylesheet_parts.append(
@@ -897,7 +907,8 @@ class ReaDataView(QMainWindow):
         name_label = QLabel("Project Name:")
         name_h_layout.addWidget(name_label)
         name_input = QLineEdit()
-        if project: name_input.setText(project.name)
+        if project:
+            name_input.setText(project.name)
         name_h_layout.addWidget(name_input)
         layout.addLayout(name_h_layout)
 
@@ -906,7 +917,8 @@ class ReaDataView(QMainWindow):
         funding_label = QLabel("Funding Agency:")
         funding_h_layout.addWidget(funding_label)
         funding_input = QLineEdit()
-        if project: funding_input.setText(project.funding_agency)
+        if project:
+            funding_input.setText(project.funding_agency)
         funding_h_layout.addWidget(funding_input)
         layout.addLayout(funding_h_layout)
 
@@ -917,15 +929,21 @@ class ReaDataView(QMainWindow):
         min_input = QLineEdit()
         min_input.setPlaceholderText("Minimum")
         min_input.setToolTip("Minimum grant amount required for this project (in ISK). This is a reference value displayed in diagnostics but NOT used in the optimization algorithm. It helps track if allocations meet minimum funding requirements. The algorithm optimizes based on the Contractual amount instead.")
-        if project: min_input.setText(str(project.grant_min or '')) # Handle None
+        min_input.setEnabled(True)
+        if project:
+            min_input.setText(str(project.grant_min or ''))
         max_input = QLineEdit()
         max_input.setPlaceholderText("Maximum")
         max_input.setToolTip("Maximum grant amount allowed for this project (in ISK). This is a reference value displayed in diagnostics but NOT used in the optimization algorithm. It helps track if allocations exceed maximum funding limits. The algorithm optimizes based on the Contractual amount instead.")
-        if project: max_input.setText(str(project.grant_max or '')) # Handle None
+        max_input.setEnabled(True)
+        if project:
+            max_input.setText(str(project.grant_max or ''))
         contractual_input = QLineEdit()
         contractual_input.setPlaceholderText("Contractual")
         contractual_input.setToolTip("Contractual grant amount (in ISK) - this is the PRIMARY TARGET COST used by the optimization algorithm. The algorithm uses this value to calculate cost deviations and tries to allocate employee hours so that total project cost (direct costs + overhead) matches this target as closely as possible. This is the value that drives the optimization objective function.")
-        if project: contractual_input.setText(str(project.grant_contractual or '')) # Handle None
+        contractual_input.setEnabled(True)
+        if project:
+            contractual_input.setText(str(project.grant_contractual or ''))
 
         min_label = QLabel("Min:")
         min_label.setToolTip("Minimum grant amount required for this project (in ISK). This is a reference value displayed in diagnostics but NOT used in the optimization algorithm. It helps track if allocations meet minimum funding requirements. The algorithm optimizes based on the Contractual amount instead.")
@@ -953,6 +971,7 @@ class ReaDataView(QMainWindow):
         overhead_input = QLineEdit()
         overhead_input.setFixedWidth(80)
         overhead_input.setToolTip("Enter the overhead percentage (0-100). This is multiplied by the direct cost (employee salaries) to calculate total project cost. Formula: Total Cost = Direct Cost × (1 + Overhead/100). For example, enter 25 for 25% overhead. The algorithm uses this to ensure total allocated costs (including overhead) match the contractual target.")
+        overhead_input.setEnabled(True)
         if project and project.operational_overhead is not None:
             overhead_input.setText(str(project.operational_overhead * 100))
         rates_layout.addWidget(overhead_input)
@@ -965,6 +984,7 @@ class ReaDataView(QMainWindow):
         matching_type_combo = QComboBox()
         matching_type_combo.addItems(["Percentage", "Absolute"])
         matching_type_combo.setToolTip("Select 'Percentage' to specify matching fund as a percentage of contractual amount (e.g., 20% of contractual), or 'Absolute' to specify a fixed amount in ISK (e.g., 100000 ISK). The algorithm calculates the required total cost differently based on this choice.")
+        matching_type_combo.setEnabled(True)
         if project and project.matching_fund_type:
             index = 0 if project.matching_fund_type.lower() == "percentage" else 1
             matching_type_combo.setCurrentIndex(index)
@@ -974,7 +994,9 @@ class ReaDataView(QMainWindow):
         matching_value_input.setPlaceholderText("Value")
         matching_value_input.setFixedWidth(100)
         matching_value_input.setToolTip("Matching fund value. If type is 'Percentage', enter a number like 20 for 20% (meaning 20% of contractual amount). If type is 'Absolute', enter the amount in ISK (e.g., 100000). The algorithm uses this to calculate Required Total = Contractual + Matching, and penalizes allocations below this total.")
-        if project: matching_value_input.setText(str(project.matching_fund_value or ''))
+        matching_value_input.setEnabled(True)
+        if project:
+            matching_value_input.setText(str(project.matching_fund_value or ''))
         rates_layout.addWidget(matching_value_input)
         rates_layout.addSpacing(20)
 
@@ -985,6 +1007,7 @@ class ReaDataView(QMainWindow):
         nonrnd_input = QLineEdit()
         nonrnd_input.setFixedWidth(80)
         nonrnd_input.setToolTip("Enter the minimum non-R&D percentage (0-100). The algorithm enforces this as a soft constraint with penalty. Formula: NonR&D Hours / (R&D Hours + NonR&D Hours) ≥ Value/100. For example, enter 30 for 30% minimum. The algorithm penalizes allocations that fall below this ratio.")
+        nonrnd_input.setEnabled(True)
         if project and project.nonrnd_percentage is not None:
             nonrnd_input.setText(str(project.nonrnd_percentage * 100))
         rates_layout.addWidget(nonrnd_input)
@@ -1001,11 +1024,13 @@ class ReaDataView(QMainWindow):
         start_input = QLineEdit()
         start_input.setPlaceholderText("Start Date")
         start_input.setToolTip("Funding period start date in MM-DD-YYYY format. This is for reference and reporting only - the actual allocation uses date ranges from the INIT tab.")
-        if project: start_input.setText(project.funding_start)
+        if project:
+            start_input.setText(project.funding_start)
         end_input = QLineEdit()
         end_input.setPlaceholderText("End Date")
         end_input.setToolTip("Funding period end date in MM-DD-YYYY format. This is for reference and reporting only - the actual allocation uses date ranges from the INIT tab.")
-        if project: end_input.setText(project.funding_end)
+        if project:
+            end_input.setText(project.funding_end)
         start_funding_label = QLabel("Start:")
         start_funding_label.setToolTip("Funding period start date in MM-DD-YYYY format. This is for reference and reporting only - the actual allocation uses date ranges from the INIT tab.")
         funding_period_layout.addWidget(start_funding_label)
@@ -1043,11 +1068,13 @@ class ReaDataView(QMainWindow):
         button_layout = QHBoxLayout()
         save_project_button = QPushButton("Save Project")
         save_project_button.setToolTip("Save this project with all its settings (name, cost targets, overhead, matching requirements, funding period, and selected research topics). The project will appear as a separate tab. You must save before the project can be used in allocation calculations.")
+        save_project_button.setEnabled(True)
         button_layout.addWidget(save_project_button)
 
         delete_project_button = QPushButton("Delete Project")
         delete_project_button.setStyleSheet("color: red;") # Make delete more prominent
         delete_project_button.setToolTip("Permanently delete this project. This action cannot be undone. The project must be saved first before it can be deleted. All project settings and allocations will be removed.")
+        delete_project_button.setEnabled(True)
         button_layout.addWidget(delete_project_button)
         button_layout.addStretch(1) # Push buttons left
         layout.addLayout(button_layout)

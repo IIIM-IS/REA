@@ -1,0 +1,273 @@
+Allocation Diagnostics
+======================
+
+# 📊 Research Expenditure Allocation - Diagnostics Report
+
+**Generated:** 2025-11-12 at 22:05:14  
+
+**Reporting Period:** 01-01-2025 to 11-11-2025  
+
+**Employees:** 6  
+
+**Projects:** 5  
+
+---
+
+## 📈 Executive Summary
+
+**Allocation Status:** ✅ **Perfect Balance**  
+
+- R&D Hours: `4748.00` / `4748.00` allocated ✅  
+
+- Non-R&D Hours: `0.00` / `0.00` allocated ✅  
+
+- **Total Cost Allocated:** `18,279,834` ISK  
+
+- **Total Target Cost:** `29,710,000` ISK  
+
+- **Overall Cost Deviation:** `-38.5%`  
+
+- **Solver Status:** `fallback_feasible`  
+
+
+---
+
+## 💰 Project Cost Analysis
+
+| Project | Target Cost | Actual Cost | Deviation | Status |
+
+|---------|-------------|-------------|-----------|--------|
+
+| **EURIDICE** | `10,000,000` ISK | `11,739,343` ISK | `+17.4%` | ⚠️ ⚠️ Over Budget |
+
+| **ICE-ID** | `3,500,000` ISK | `7,481,843` ISK | `+113.8%` | ⚠️ ⚠️ Over Budget |
+
+| **FRESH-ID** | `7,300,000` ISK | `7,481,843` ISK | `+2.5%` | ✅ ✅ On Target |
+
+| **AI-STYLIST** | `8,910,000` ISK | `25,761,677` ISK | `+189.1%` | ⚠️ ⚠️ Over Budget |
+
+| **TRACKWELL** | `0` ISK | `0` ISK | `+0.0%` | ✅ ✅ On Target |
+
+
+---
+
+## 👥 Per-Employee Allocation Details
+
+### Jeff Thompson
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `346.00` hrs | `346.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+
+
+### Kristinn R. Thórisson
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `532.00` hrs | `532.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+
+
+### Goncalo Carvalho
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `1776.00` hrs | `1776.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+
+
+### Mário Correia
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `1019.00` hrs | `1019.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+
+
+### Arash Sheikhlar
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+
+
+### Marta Abad Torrent
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `1075.00` hrs | `1075.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+
+
+---
+
+## 📊 Overall Statistics
+
+| Metric | Value |
+
+|--------|-------|
+
+| **Total R&D Hours Available** | `4,748.00` hrs |
+
+| **Total R&D Hours Allocated** | `4,748.00` hrs |
+
+| **R&D Utilization Rate** | `100.0%` |
+
+| **Total Non-R&D Hours Available** | `0.00` hrs |
+
+| **Total Non-R&D Hours Allocated** | `0.00` hrs |
+
+| **Non-R&D Utilization Rate** | `0.0%` |
+
+| **Total Hours Available** | `4,748.00` hrs |
+
+| **Total Hours Allocated** | `4,748.00` hrs |
+
+| **Overall Utilization Rate** | `100.0%` |
+
+
+---
+
+## 🤖 Automatic Analysis
+
+- ✅ **Hour Balance:** Perfect - All available hours are allocated with no discrepancies.
+
+- ⚠️ **Budget Overruns:** 3 project(s) significantly over budget: EURIDICE, ICE-ID, AI-STYLIST
+
+- ⚠️ **Solver Status:** `fallback_feasible` - Review solver output for details.
+
+- ✅ **Employee Allocations:** All employees have balanced hour allocations.
+
+- ⚠️ **Cost Deviation:** Overall cost is `38.5%` under target. Review project requirements and capacity.
+
+
+---
+
+## 💡 Actionable Insights
+
+- 🟡 **Warning:** Total allocated cost is significantly below target. You may have unused capacity - consider adding more projects or reducing employee hours.
+
+- 🔴 **ICE-ID:** Over budget by `113.8%`. Review allocations or increase project budget.
+
+- 🔴 **AI-STYLIST:** Over budget by `189.1%`. Review allocations or increase project budget.
+
+
+---
+
+## 🔧 Allocation Algorithm Diagnostics
+
+
+### CONCATENATION WITH PREVIOUS RUN ---
+
+Starting from previous costs (concatenating with previous report):
+
+  EURIDICE: `11,739,343 ISK`
+
+  ICE-ID: `7,481,843 ISK`
+
+  FRESH-ID: `7,481,843 ISK`
+
+  AI-STYLIST: `7,481,843 ISK`
+
+These costs reduce the remaining targets for this run.
+
+---------=============
+
+
+
+========== FAILURE REPORT ==========
+Status  : unbounded
+Message : variables have no value
+------==
+FALLBACK: Used residual-target-weighted feasible allocation due to solver failure.
+
+### DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values)
+Overall R&D      : Total available = `4748 hrs`, Total allocated = `4748 hrs`
+Overall Non-R&D  : Total available = `0 hrs`, Total allocated = `0 hrs`
+✅ Hour balance constraints exactly satisfied
+  R&D: `0.0000 hrs` difference (within `0.01 hr` rounding tolerance)
+  NonR&D: `0.0000 hrs` difference (within `0.01 hr` rounding tolerance)
+  Max per-employee/day violations: R&D=0.0000, NonR&D=0.0000
+---------------======
+
+### DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS ---
+[CONCATENATION] Project 'EURIDICE' starting from previous cost: `11,739,343 ISK`
+
+[CONCATENATION] Project 'ICE-ID' starting from previous cost: `7,481,843 ISK`
+
+[CONCATENATION] Project 'FRESH-ID' starting from previous cost: `7,481,843 ISK`
+
+[CONCATENATION] Project 'AI-STYLIST' starting from previous cost: `7,481,843 ISK`
+
+[CONCATENATION] Project 'EURIDICE': Previous=11,739,343 + New (Locked+Free)=0 = Total=`11,739,343 ISK`
+
+[CONCATENATION] Project 'ICE-ID': Previous=7,481,843 + New (Locked+Free)=0 = Total=`7,481,843 ISK`
+
+[CONCATENATION] Project 'FRESH-ID': Previous=7,481,843 + New (Locked+Free)=0 = Total=`7,481,843 ISK`
+
+[CONCATENATION] Project 'AI-STYLIST': Previous=7,481,843 + New (Locked+Free)=18,279,834 = Total=`25,761,677 ISK`
+
+(Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)
+#### Project: EURIDICE
+  **Computed Cost:** `11739343` ISK | **Target Cost:** `0` ISK [Solver: 11739343]
+  Relative Cost Deviation (Solver): +inf %
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
+-------------------------------------------------------------
+#### Project: ICE-ID
+  **Computed Cost:** `7481843` ISK | **Target Cost:** `0` ISK [Solver: 7481843]
+  Relative Cost Deviation (Solver): +inf %
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
+-------------------------------------------------------------
+#### Project: FRESH-ID
+  **Computed Cost:** `7481843` ISK | **Target Cost:** `0` ISK [Solver: 7481843]
+  Relative Cost Deviation (Solver): +inf %
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
+-------------------------------------------------------------
+#### Project: AI-STYLIST
+  **Computed Cost:** `25761677` ISK | **Target Cost:** `1428157` ISK [Solver: 25761677]
+  Relative Cost Deviation (Solver): +`1703.8 %`
+  Total R&D Hours (Rounded):     4748
+  Total Non-R&D Hours (Rounded):      0
+  Topic Allocations (Rounded):
+    Bridge              :   `4748 hrs`
+-------------------------------------------------------------
+#### Project: TRACKWELL
+  **Computed Cost:** `0` ISK | **Target Cost:** `0` ISK [Solver: 0]
+  Relative Cost Deviation (Solver): +`0.0 %`
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
+-------------------------------------------------------------
+
+Grand Total Computed Cost (Rounded Allocations):     52464706
+Grand Total Target Cost:                              1428157
+Overall Relative Deviation (Sum of Solver Costs vs Sum of Target Costs):+`3573.6 %`
+---------------=====

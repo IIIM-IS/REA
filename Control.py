@@ -25,18 +25,18 @@ Mediates between Model and View, handling user interactions and coordinating dat
 import json
 import re
 from datetime import datetime, timedelta
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any
 
-from PyQt5.QtWidgets import QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QFileDialog, QMessageBox  # pyright: ignore[reportMissingImports]
 from algorithm import run_allocation_algorithm
 from Model import ReaDataModel, EmployeeModel, ProjectModel
 from View import ReaDataView
-from config import DateConfig, AppConfig
+from config import AppConfig
 from validators import DateValidator, NumericValidator
-from utils import DateManager, StateVersionManager, ProjectNameResolver, SalaryCalculator
+from utils import DateManager
 from logger import get_logger
 from error_handling import ErrorHandler, handle_exceptions
-from worker_threads import AlgorithmWorker, CSVLoaderWorker, StateLoaderWorker, StateSaverWorker
+from worker_threads import AlgorithmWorker, CSVLoaderWorker
 
 
 class Controller:
@@ -317,13 +317,14 @@ class Controller:
         self.logger.warning(f"CSV loading failed: {error_message}")
 
     def _parse_previous_report_costs(self, path: str) -> Dict[str, float]:
-        """Return previous actual costs per project from a diagnostics .txt or run-output .json.
+        """
+        Parse previous actual project costs from either a JSON run output or a diagnostics text file.
 
         Args:
-            path: File path selected in the concatenate dialog. Supports .txt (diagnostics) or .json (run output).
+            path: File path to a .json run output or a .txt diagnostics report.
 
         Returns:
-            Dict[str, float]: Mapping {project_name: previous_actual_isk} used to seed cumulative totals.
+            Dict[str, float]: Mapping {project_name: previous_actual_isk}.
         """
         lower = path.lower()
         if lower.endswith(".json"):
@@ -331,7 +332,6 @@ class Controller:
                 data = json.load(f)
 
             candidates: List[Dict[str, float]] = []
-
             if isinstance(data, dict):
                 if isinstance(data.get("final_costs"), dict):
                     candidates.append(data["final_costs"])
@@ -354,34 +354,63 @@ class Controller:
 
             if not merged:
                 raise ValueError("No project cost mapping found in JSON. Expected keys like 'final_costs' or 'project_costs'.")
-
             return merged
 
         with open(path, "r", encoding="utf-8") as f:
-            lines = f.readlines()
+            text = f.read()
 
         prev_costs: Dict[str, float] = {}
-        in_table = False
-        for line in lines:
-            if "Project Costs (Actual vs Target)" in line:
-                in_table = True
-                continue
-            if in_table:
-                if not line.strip():
+
+        table_anchor = "## 💰 Project Cost Analysis"
+        if table_anchor in text:
+            section = text.split(table_anchor, 1)[1]
+            rows = []
+            for line in section.splitlines():
+                if line.strip().startswith("|"):
+                    rows.append(line.strip())
+                elif rows:
                     break
-                parts = [p.strip() for p in line.split("|")]
-                if len(parts) >= 3 and parts[0] and parts[1]:
-                    name = parts[0]
-                    try:
-                        actual = float(parts[1].replace(",", "").replace("ISK", "").strip())
-                        prev_costs[name] = actual
-                    except Exception:
-                        pass
+            for row in rows:
+                parts = [p.strip() for p in row.strip("|").split("|")]
+                if len(parts) >= 5 and parts[0].lower() != "project":
+                    name = parts[0].strip("* ").strip()
+                    actual_str = parts[2]
+                    actual_num = re.sub(r"[^\d.]", "", actual_str.replace(",", ""))
+                    if actual_num:
+                        try:
+                            prev_costs[name] = float(actual_num)
+                        except Exception:
+                            pass
+
+        if not prev_costs:
+            blocks = re.split(r"^####\s*Project:\s*(.+?)\s*$", text, flags=re.MULTILINE)
+            if len(blocks) > 1:
+                for i in range(1, len(blocks), 2):
+                    name = blocks[i].strip()
+                    body = blocks[i + 1] if i + 1 < len(blocks) else ""
+                    m = re.search(r"\*\*Computed Cost:\*\*\s*`([\d,\.]+)`\s*ISK", body)
+                    if m:
+                        try:
+                            prev_costs[name] = float(m.group(1).replace(",", ""))
+                        except Exception:
+                            pass
+
+        if not prev_costs:
+            for m in re.finditer(
+                r"Project\s+'([^']+)':.*?Computed Cost\s*\(Rounded\)\s*:\s*([0-9,\.]+)",
+                text,
+                flags=re.DOTALL,
+            ):
+                name = m.group(1).strip()
+                try:
+                    prev_costs[name] = float(m.group(2).replace(",", ""))
+                except Exception:
+                    pass
 
         if not prev_costs:
             raise ValueError("Could not parse previous costs from diagnostics text file.")
-
         return prev_costs
+
 
     @handle_exceptions(show_dialog=True)
     def generate_output(self, checked=False):
@@ -455,7 +484,7 @@ class Controller:
                         f"These costs will be added to the current allocation."
                     )
                     self.logger.info(f"Concatenating with previous report: {report_file}")
-                    print(f"[CONCATENATION] Starting from previous costs:")
+                    print("[CONCATENATION] Starting from previous costs:")
                     for proj_name, cost in initial_costs.items():
                         print(f"[CONCATENATION]   {proj_name}: {cost:,.0f} ISK")
                 else:
@@ -536,8 +565,6 @@ class Controller:
         for proj in self.projects:
             proj_name = proj.name if proj.name else "Unnamed"
             actual_cost = final_costs.get(proj_name, 0.0)
-            initial_costs = getattr(self, "_initial_costs_used", {})
-            period_cost = actual_cost - initial_costs.get(proj_name, 0.0)
             try:
                 target_contractual = float(proj.grant_contractual or 0.0)
                 target_min = float(proj.grant_min or 0.0)
@@ -561,7 +588,7 @@ class Controller:
             if actual_cost > target_contractual:
                 print(f"  >>> WARNING: Over Contractual Budget by {diff_contractual:10.2f} ({diff_pct_contractual:6.2f}%)")
             else:
-                print(f"  Contractual Budget Status: OK")
+                print("  Contractual Budget Status: OK")
             if target_min != target_contractual and actual_cost < target_min:
                 print(f"  >>> NOTE: Below Minimum Target by {abs(diff_min):10.2f} ({abs(diff_pct_min):6.2f}%)")
             print("-" * 60)
@@ -603,8 +630,8 @@ class Controller:
         
         for employee in self.employees:
             overall_rnd_avail += sum(employee.research_hours.values())
-            overall_nonrnd_avail += sum(employee.nonRnD_hours.get(d, 0.0) for d in employee.research_hours)
-        
+            overall_nonrnd_avail += sum(employee.nonRnD_hours.values())
+
         for emp_name, date_dict in allocations.items():
             for date_str, project_dict in date_dict.items():
                 for proj_name, proj_info in project_dict.items():
@@ -901,7 +928,7 @@ class Controller:
             try:
                 target_contractual = float(proj.grant_contractual or 0.0)
                 rel_dev = ((computed_cost / target_contractual - 1) * 100) if target_contractual > 0 else None
-            except:
+            except Exception:
                 rel_dev = None
 
             print(f"Project '{proj_name}':")
@@ -1030,7 +1057,13 @@ class Controller:
                 for date_str, topics_map in emp_dict.get("research_topics", {}).items():
                     for topic, hrs in topics_map.items():
                         emp.research_topics[date_str][topic] = hrs
-                emp.salary_levels.update(emp_dict.get("salary_levels", {}))
+                salary_levels_data = emp_dict.get("salary_levels", {})
+                for date_str, salary_info in salary_levels_data.items():
+                    if isinstance(salary_info, dict) and "level" in salary_info and "amount" in salary_info:
+                        emp.salary_levels[date_str] = {
+                            "level": salary_info["level"],
+                            "amount": float(salary_info["amount"])
+                        }
                 self.employees.append(emp)
 
             # Projects
@@ -1075,32 +1108,32 @@ class Controller:
         """
         try:
             project_obj.grant_min = float(data["grant_min"]) if data["grant_min"] else 0
-        except:
+        except Exception:
             project_obj.grant_min = 0
 
         try:
             project_obj.grant_max = float(data["grant_max"]) if data["grant_max"] else 0
-        except:
+        except Exception:
             project_obj.grant_max = 0
 
         try:
             project_obj.grant_contractual = float(data["grant_contractual"]) if data["grant_contractual"] else 0
-        except:
+        except Exception:
             project_obj.grant_contractual = 0
 
         try:
             project_obj.operational_overhead = data["operational_overhead"]
-        except:
+        except Exception:
             project_obj.operational_overhead = 0
 
         try:
             project_obj.matching_fund_value = float(data["matching_fund_value"]) if data["matching_fund_value"] else 0
-        except:
+        except Exception:
             project_obj.matching_fund_value = 0
 
         try:
             project_obj.nonrnd_percentage = data["nonrnd_percentage"] or 0
-        except:
+        except Exception:
             project_obj.nonrnd_percentage = 0
 
         project_obj.name = data["name"]
