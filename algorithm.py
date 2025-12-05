@@ -164,10 +164,15 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
             for d in date_list:
                 r_hours = _f(emp.research_hours.get(d, 0.0), 0.0)
                 nr_hours = _f(emp.nonRnD_hours.get(d, 0.0), 0.0)
+                total_available = r_hours + nr_hours
+                hours_vec = np.array([r_hours, nr_hours])
+                hours_rounded = round_vector_preserve_sum_two_decimals_two_decimals(hours_vec, total_available)
+                r_hours_rounded = hours_rounded[0]
+                nr_hours_rounded = hours_rounded[1]
                 locked_allocs_output[emp.employee_name][d] = {
                     locked_project_name: {
-                        "topics": {bridge_topic: r_hours} if r_hours > 1e-6 else {},
-                        "nonRnD": nr_hours if nr_hours > 1e-6 else 0.0
+                        "topics": {bridge_topic: r_hours_rounded} if r_hours_rounded > 1e-6 else {},
+                        "nonRnD": nr_hours_rounded if nr_hours_rounded > 1e-6 else 0.0
                     }
                 }
                 if not locked_allocs_output[emp.employee_name][d][locked_project_name]["topics"] and locked_allocs_output[emp.employee_name][d][locked_project_name]["nonRnD"] == 0.0:
@@ -467,22 +472,56 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
     for p in projects:
         pname = p.name if p.name else ""
         prev = _f(initial_costs.get(pname, 0.0), 0.0)
-        base = _f(getattr(p, "grant_contractual", 0.0), 0.0)
+        base_grant = _f(getattr(p, "grant_contractual", 0.0), 0.0)
         mf = _f(getattr(p, "matching_fund_value", 0.0), 0.0)
         mf_type = (getattr(p, "matching_fund_type", "") or "").lower()
-        match_abs = (base * mf / 100.0) if (mf > 0.0 and mf_type == 'percentage') else mf
-        required_total_cost += max((base + match_abs) - prev, 0.0)
+        match_abs = (base_grant * mf / 100.0) if (mf > 0.0 and mf_type == 'percentage') else mf
+        overhead_val = _f(getattr(p, "operational_overhead", 0.0), 0.0)
+        if overhead_val >= 100000.0:
+            overhead_amt = overhead_val
+        else:
+            overhead_amt = 0.0
+        total_target = base_grant + match_abs + overhead_amt
+        required_total_cost += max(total_target - prev, 0.0)
 
     hard_capacity = free_cost_cap + locked_cost_cap
+    capacity_ratio = hard_capacity / max(required_total_cost, 1e-9)
+    
     if required_total_cost > hard_capacity + 1e-6:
         gap = required_total_cost - hard_capacity
+        shortfall_pct = (gap / required_total_cost * 100) if required_total_cost > 0 else 0
         print("⚠️  WARNING  ⚠️  Requested MINIMUM spend exceeds absolute capacity "
-              f"by {gap:,.0f} ISK. The optimisation will continue, "
-              "but expect large slacks in the result.\n")
+              f"by {gap:,.0f} ISK ({shortfall_pct:.1f}% shortfall).")
+        print(f"   Available capacity: {hard_capacity:,.0f} ISK")
+        print(f"   Required capacity:  {required_total_cost:,.0f} ISK")
+        print(f"   Capacity ratio:     {capacity_ratio:.1%}")
+        print("   The optimisation will continue, but expect large slacks in the result.\n")
+        diag_lines.append(f"CAPACITY ANALYSIS: Insufficient capacity - {gap:,.0f} ISK shortfall ({shortfall_pct:.1f}%). Available: {hard_capacity:,.0f} ISK, Required: {required_total_cost:,.0f} ISK.")
+    else:
+        utilization_pct = (required_total_cost / hard_capacity * 100) if hard_capacity > 0 else 0
+        print(f"✓ Capacity check: Available {hard_capacity:,.0f} ISK, Required {required_total_cost:,.0f} ISK ({utilization_pct:.1f}% utilization).\n")
+        diag_lines.append(f"CAPACITY ANALYSIS: Sufficient capacity. Available: {hard_capacity:,.0f} ISK, Required: {required_total_cost:,.0f} ISK ({utilization_pct:.1f}% utilization).")
     for p_idx, proj in enumerate(projects):
         pname = proj.name if proj.name else f"Project_{p_idx}"
         prev_spend = _f(initial_costs.get(pname, 0.0), 0.0)
-        base_target = _f(getattr(proj, "grant_contractual", 0.0), 0.0)
+        base_grant = _f(getattr(proj, "grant_contractual", 0.0), 0.0)
+        
+        match_raw = _f(getattr(proj, "matching_fund_value", 0.0), 0.0)
+        mf_type = (getattr(proj, "matching_fund_type", "") or "").lower()
+        if match_raw > 0.0:
+            match_abs = (base_grant * match_raw / 100.0) if mf_type == "percentage" else match_raw
+        else:
+            match_abs = 0.0
+        
+        overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
+        if overhead_val >= 100000.0:
+            overhead_amount = overhead_val
+        elif overhead_val > 0.0 and overhead_val < 1.0:
+            overhead_amount = 0.0
+        else:
+            overhead_amount = 0.0
+        
+        base_target = base_grant + match_abs + overhead_amount
         residual_target = max(base_target - prev_spend, 0.0)
         target_costs[pname] = residual_target
         if residual_target <= 1e-9:
@@ -505,20 +544,18 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         nonrnd_hours_proj_emp_day = Y[:, :, p_idx]
         combined_hours_proj_emp_day = rnd_hours_proj_emp_day + nonrnd_hours_proj_emp_day
         cost_expr_free = cp.sum(cp.multiply(salary_matrix, combined_hours_proj_emp_day))
-        cost_expr_total = cost_expr_free + locked_cost_const
+        direct_cost_expr = cost_expr_free + locked_cost_const
+        
+        overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
+        if overhead_val >= 100000.0:
+            overhead_cost_expr = overhead_val
+        elif overhead_val > 0.0 and overhead_val < 1.0:
+            overhead_cost_expr = direct_cost_expr * overhead_val
+        else:
+            overhead_cost_expr = 0.0
+        
+        cost_expr_total = direct_cost_expr + overhead_cost_expr
         project_cost_exprs[pname] = cost_expr_total
-        match_raw = _f(getattr(proj, "matching_fund_value", 0.0), 0.0)
-        if match_raw > 0.0:
-            mf_type = (getattr(proj, "matching_fund_type", "") or "").lower()
-            match_abs = (base_target * match_raw / 100.0) if mf_type == "percentage" else match_raw
-            required_total_remaining = max((base_target + match_abs) - prev_spend, 0.0)
-            slack_under_spend = cp.Variable(nonneg=True)
-            slacks[pname] = slack_under_spend
-            constraints.append(
-                add(f"match-fund soft ≥  ({pname})", cost_expr_total + slack_under_spend >= required_total_remaining)
-            )
-            proj_scale = max(residual_target, 1e-6)
-            cost_deviation_penalties.append(BIG_SLACK_PENALTY * slack_under_spend / proj_scale)
 
         target_val = residual_target
         over = cp.pos(cost_expr_total - target_val)
@@ -640,54 +677,166 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
     used_fallback = False
     if problem.status not in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE):
         print("⚠️  Solver returned", problem.status, "— continuing with last iterate (slacks will show).")
-    if X.value is None or Y.value is None:
-        append_failure_report(problem, "variables have no value", diag_lines)
-        print(f"ERROR: Solver status '{problem.status}', but variables have no values. Falling back to residual-target-weighted feasible allocation.")
+    
+    solver_has_values = X.value is not None and Y.value is not None
+    solver_is_optimal = problem.status in (cp.OPTIMAL, cp.OPTIMAL_INACCURATE)
+    
+    if not solver_has_values or not solver_is_optimal:
+        if not solver_has_values:
+            append_failure_report(problem, "variables have no value", diag_lines)
+            print(f"ERROR: Solver status '{problem.status}', but variables have no values. Falling back to budget-constrained topic-weighted allocation.")
+        else:
+            print(f"⚠️  Solver status '{problem.status}' is not optimal. Using fallback allocation to ensure proper target weighting.")
+            diag_lines.append(f"FALLBACK TRIGGERED: Solver status '{problem.status}' is not optimal. Using residual-target-weighted allocation instead.")
         X_val = np.zeros((num_employees, num_days, num_projects, num_topics), dtype=float)
         Y_val = np.zeros((num_employees, num_days, num_projects), dtype=float)
 
-        # Build residual targets per project (already computed above into target_costs)
         residual = np.array([max(target_costs.get(p.name if p.name else f"Project_{k}", 0.0), 0.0)
                             for k, p in enumerate(projects)], dtype=float)
-        positive = residual > 1e-9
-        num_pos = int(np.sum(positive))
+        
+        total_targets = np.zeros(num_projects, dtype=float)
+        for k, p in enumerate(projects):
+            base_grant = _f(getattr(p, "grant_contractual", 0.0), 0.0)
+            match_raw = _f(getattr(p, "matching_fund_value", 0.0), 0.0)
+            mf_type = (getattr(p, "matching_fund_type", "") or "").lower()
+            if match_raw > 0.0:
+                match_abs = (base_grant * match_raw / 100.0) if mf_type == "percentage" else match_raw
+            else:
+                match_abs = 0.0
+            overhead_val = _f(getattr(p, "operational_overhead", 0.0), 0.0)
+            if overhead_val >= 100000.0:
+                overhead_amt = overhead_val
+            else:
+                overhead_amt = 0.0
+            total_targets[k] = base_grant + match_abs + overhead_amt
+        
+        original_targets = np.array([_f(getattr(p, "grant_contractual", 0.0), 0.0) for p in projects], dtype=float)
+        prev_costs_array = np.array([_f(initial_costs.get(p.name if p.name else f"Project_{k}", 0.0), 0.0)
+                                    for k, p in enumerate(projects)], dtype=float)
 
-        # Topic mask for allowed topics
-        topic_mask = np.ones((num_projects, num_topics), dtype=float)
+        topic_weights = np.zeros((num_projects, num_topics), dtype=float)
         for p_idx, proj in enumerate(projects):
-            allowed = set(list(getattr(proj, "allowed_topics", []) or []))
-            for t_idx, t in enumerate(all_topics):
-                if allowed and (t not in allowed):
-                    topic_mask[p_idx, t_idx] = 0.0
+            research_topics_list = getattr(proj, "research_topics", []) or []
+            allowed_topics_set = set(list(getattr(proj, "allowed_topics", []) or []))
+            
+            if research_topics_list:
+                topics_to_use = [t for t in research_topics_list if t in all_topics]
+            else:
+                topics_to_use = [t for t in all_topics if t in allowed_topics_set]
+            
+            if topics_to_use:
+                weight_per_topic = 1.0 / len(topics_to_use)
+                for t_idx, topic_name in enumerate(all_topics):
+                    if topic_name in topics_to_use:
+                        topic_weights[p_idx, t_idx] = weight_per_topic
+            else:
+                for t_idx, topic_name in enumerate(all_topics):
+                    if topic_name in allowed_topics_set:
+                        topic_weights[p_idx, t_idx] = 1.0 / max(len(allowed_topics_set), 1)
 
-        # Per-project topic distribution
-        per_proj_topic = np.zeros_like(topic_mask, dtype=float)
-        row_sums = topic_mask.sum(axis=1, keepdims=True)
-        nonzero_rows = row_sums[:, 0] > 0
-        per_proj_topic[nonzero_rows] = topic_mask[nonzero_rows] / row_sums[nonzero_rows]
-
-        # Per-project weights among projects with positive residual
-        if num_pos > 0:
-            weights = np.zeros(num_projects, dtype=float)
-            weights[positive] = residual[positive] / np.sum(residual[positive])
+        project_weights = np.zeros(num_projects, dtype=float)
+        positive_residual = residual > 1e-9
+        positive_total = total_targets > 1e-9
+        
+        if np.sum(positive_residual) > 0:
+            project_weights[positive_residual] = residual[positive_residual] / np.sum(residual[positive_residual])
+            use_residual = True
+        elif np.sum(positive_total) > 0:
+            project_weights[positive_total] = total_targets[positive_total] / np.sum(total_targets[positive_total])
+            use_residual = False
         else:
-            # If every project’s residual is zero, do not allocate anything
-            weights = np.zeros(num_projects, dtype=float)
+            diag_lines.append("FALLBACK: All projects have zero targets; assigned zero allocation.")
+            use_residual = False
+
+        total_available_cost = free_cost_cap
+        total_target_cost = np.sum(residual) if use_residual else np.sum(total_targets)
+        
+        if total_target_cost > 1e-9 and total_available_cost > 1e-9:
+            capacity_ratio = min(1.0, total_available_cost / total_target_cost)
+            if capacity_ratio < 1.0:
+                diag_lines.append(f"FALLBACK: Insufficient capacity ({total_available_cost:,.0f} available vs {total_target_cost:,.0f} required). Allocations will be capped to budget limits.")
+            else:
+                diag_lines.append(f"FALLBACK: Sufficient capacity ({total_available_cost:,.0f} available vs {total_target_cost:,.0f} required).")
 
         for i in range(num_employees):
             for j in range(num_days):
-                r = float(research_hours_array[i, j])
-                if r > 1e-12 and num_pos > 0:
-                    proj_share = weights.reshape(-1, 1) * per_proj_topic
-                    X_val[i, j, :, :] = r * proj_share
-                n = float(nonrnd_hours_array[i, j])
-                if n > 1e-12 and num_pos > 0:
-                    Y_val[i, j, :] = n * weights
+                r_hours = float(research_hours_array[i, j])
+                n_hours = float(nonrnd_hours_array[i, j])
+                
+                if r_hours > 1e-12 and np.sum(project_weights) > 1e-12:
+                    for p_idx in range(num_projects):
+                        if project_weights[p_idx] > 1e-12:
+                            proj_r_share = project_weights[p_idx] * r_hours
+                            for t_idx in range(num_topics):
+                                if topic_weights[p_idx, t_idx] > 1e-12:
+                                    X_val[i, j, p_idx, t_idx] = proj_r_share * topic_weights[p_idx, t_idx]
+                
+                if n_hours > 1e-12 and np.sum(project_weights) > 1e-12:
+                    for p_idx in range(num_projects):
+                        if project_weights[p_idx] > 1e-12:
+                            Y_val[i, j, p_idx] = project_weights[p_idx] * n_hours
 
-        if num_pos == 0:
-            diag_lines.append("FALLBACK: All projects have zero residual target; assigned zero allocation.")
-        else:
-            diag_lines.append("FALLBACK: Used residual-target-weighted feasible allocation due to solver failure.")
+        if np.sum(project_weights) > 1e-12:
+            current_costs = np.zeros(num_projects, dtype=float)
+            for p_idx in range(num_projects):
+                for i in range(num_employees):
+                    for j in range(num_days):
+                        r_hours = np.sum(X_val[i, j, p_idx, :])
+                        n_hours = Y_val[i, j, p_idx]
+                        hourly_rate = salary_matrix[i, j]
+                        current_costs[p_idx] += (r_hours + n_hours) * hourly_rate
+            
+            max_costs = np.zeros(num_projects, dtype=float)
+            for p_idx, proj in enumerate(projects):
+                pname = proj.name if proj.name else f"Project_{p_idx}"
+                total_target = total_targets[p_idx]
+                prev_cost = prev_costs_array[p_idx]
+                max_total_cost = total_target
+                max_costs[p_idx] = max_total_cost
+                if max_costs[p_idx] < 1e-9:
+                    max_costs[p_idx] = float('inf')
+            
+            for p_idx in range(num_projects):
+                overhead_val = _f(getattr(projects[p_idx], "operational_overhead", 0.0), 0.0)
+                direct_cost = current_costs[p_idx]
+                prev_cost = prev_costs_array[p_idx]
+                
+                if overhead_val >= 100000.0:
+                    overhead_cost = overhead_val
+                elif overhead_val > 0.0 and overhead_val < 1.0:
+                    overhead_cost = direct_cost * overhead_val
+                else:
+                    overhead_cost = 0.0
+                
+                total_cost_with_overhead = direct_cost + overhead_cost
+                cumulative_cost = prev_cost + total_cost_with_overhead
+                max_total = max_costs[p_idx]
+                
+                if cumulative_cost > max_total + 1e-6 and max_total < float('inf'):
+                    max_new_allocation = max_total - prev_cost
+                    if max_new_allocation < 0:
+                        max_new_allocation = 0
+                    scale_factor = max_new_allocation / max(total_cost_with_overhead, 1e-9)
+                    if scale_factor < 1.0:
+                        X_val[:, :, p_idx, :] *= scale_factor
+                        Y_val[:, :, p_idx] *= scale_factor
+                        diag_lines.append(f"FALLBACK: Capped project '{projects[p_idx].name if projects[p_idx].name else p_idx}' to hard limit {max_total:,.0f} ISK total (scaled by {scale_factor:.3f}).")
+            
+            min_allocation_pct = 0.01
+            for p_idx in range(num_projects):
+                if total_targets[p_idx] > 1e-9:
+                    min_allocation = total_targets[p_idx] * min_allocation_pct
+                    direct_cost = current_costs[p_idx]
+                    if direct_cost < min_allocation - 1e-6:
+                        scale_factor = min_allocation / max(direct_cost, 1e-9)
+                        X_val[:, :, p_idx, :] *= scale_factor
+                        Y_val[:, :, p_idx] *= scale_factor
+                        diag_lines.append(f"FALLBACK: Ensured minimum allocation for '{projects[p_idx].name if projects[p_idx].name else p_idx}' ({min_allocation:,.0f} ISK minimum, {min_allocation_pct*100:.1f}% of target).")
+            
+            if use_residual:
+                diag_lines.append("FALLBACK: Used residual-target-weighted allocation with budget constraints and topic-based distribution.")
+            else:
+                diag_lines.append("FALLBACK: Used original-target-weighted allocation with budget constraints and topic-based distribution.")
 
         class DummyProblem:
             status = "fallback_feasible"
@@ -906,6 +1055,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         if pname in initial_costs:
             diag_lines.append(f"[CONCATENATION] Project '{pname}' starting from previous cost: {initial_costs[pname]:,.0f} ISK\n")
             print(f"[CONCATENATION] Project '{pname}' starting from previous cost: {initial_costs[pname]:,.0f} ISK")
+        locked_direct_cost = 0.0
         for emp in locked_employee_list:
             if locked_allocations.get(emp.employee_name) == pname:
                 for d_str in date_list:
@@ -914,7 +1064,17 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     hourly_rate = SalaryConfig.calculate_hourly_rate(base_salary)
                     r_hours = _f(emp.research_hours.get(d_str, 0.0), 0.0)
                     nr_hours = _f(emp.nonRnD_hours.get(d_str, 0.0), 0.0)
-                    final_project_costs_solver[pname] += (r_hours + nr_hours) * hourly_rate
+                    locked_direct_cost += (r_hours + nr_hours) * hourly_rate
+        
+        overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
+        if overhead_val >= 100000.0:
+            locked_overhead = overhead_val
+        elif overhead_val > 0.0 and overhead_val < 1.0:
+            locked_overhead = locked_direct_cost * overhead_val
+        else:
+            locked_overhead = 0.0
+        
+        final_project_costs_solver[pname] += locked_direct_cost + locked_overhead
     if num_employees > 0:
         for p_idx, proj in enumerate(projects):
             pname = proj.name if proj.name else f"Project_{p_idx}"
@@ -927,7 +1087,16 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     rnd_hours = np.sum(X_val[i, j, p_idx, :])
                     nonrnd_hours = Y_val[i, j, p_idx]
                     normalized_cost_free += (rnd_hours + nonrnd_hours) * hourly_rate
-            final_project_costs_solver[pname] += normalized_cost_free
+            
+            overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
+            if overhead_val >= 100000.0:
+                overhead_cost = overhead_val
+            elif overhead_val > 0.0 and overhead_val < 1.0:
+                overhead_cost = normalized_cost_free * overhead_val
+            else:
+                overhead_cost = 0.0
+            
+            final_project_costs_solver[pname] += normalized_cost_free + overhead_cost
             if pname in initial_costs:
                 total_after = final_project_costs_solver[pname]
                 previous = initial_costs[pname]
@@ -937,6 +1106,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
     for p_idx, proj in enumerate(projects):
         pname = proj.name if proj.name else f"Project_{p_idx}"
         proj_cost_rounded = initial_costs.get(pname, 0.0)
+        direct_cost = 0.0
         for emp_name_iter, daily_allocs in allocations.items():
             emp_obj = next((e for e in employees_orig if e.employee_name == emp_name_iter), None)
             if not emp_obj:
@@ -949,7 +1119,17 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     alloc_data = project_data[pname]
                     r_hours = sum(alloc_data.get("topics", {}).values())
                     nr_hours = alloc_data.get("nonRnD", 0.0)
-                    proj_cost_rounded += (r_hours + nr_hours) * hourly_rate
+                    direct_cost += (r_hours + nr_hours) * hourly_rate
+        
+        overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
+        if overhead_val >= 100000.0:
+            overhead_cost = overhead_val
+        elif overhead_val > 0.0 and overhead_val < 1.0:
+            overhead_cost = direct_cost * overhead_val
+        else:
+            overhead_cost = 0.0
+        
+        proj_cost_rounded += direct_cost + overhead_cost
         final_project_costs_rounded[pname] = proj_cost_rounded
     info_msg = "(Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)"
     diag_lines.append(info_msg)
@@ -958,11 +1138,30 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         computed_cost_rounded = final_project_costs_rounded.get(pname, 0.0)
         computed_cost_solver = final_project_costs_solver.get(pname, float('nan'))
         target_cost_val = target_costs.get(pname, 0.0)
+        base_grant = _f(getattr(proj, "grant_contractual", 0.0), 0.0)
+        previous_cost = _f(initial_costs.get(pname, 0.0), 0.0)
+        
+        match_raw = _f(getattr(proj, "matching_fund_value", 0.0), 0.0)
+        mf_type = (getattr(proj, "matching_fund_type", "") or "").lower()
+        if match_raw > 0.0:
+            match_abs = (base_grant * match_raw / 100.0) if mf_type == "percentage" else match_raw
+        else:
+            match_abs = 0.0
+        overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
+        if overhead_val >= 100000.0:
+            overhead_amt = overhead_val
+        else:
+            overhead_amt = 0.0
+        total_target = base_grant + match_abs + overhead_amt
+        
         rounded_computed_cost_rounded = round(computed_cost_rounded)
         rounded_computed_cost_solver_display = round(computed_cost_solver) if not np.isnan(computed_cost_solver) else 'N/A'
         rounded_target_cost = round(target_cost_val)
+        rounded_total_target = round(total_target)
+        rounded_base_grant = round(base_grant)
+        rounded_previous_cost = round(previous_cost)
         grand_total_cost_rounded_final += computed_cost_rounded
-        grand_target_cost += target_cost_val
+        grand_target_cost += total_target
         rel_dev_percent_solver = float('nan')
         if not np.isnan(computed_cost_solver):
             if target_cost_val > 1e-6:
@@ -973,10 +1172,23 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                 rel_dev_percent_solver = 0.0
         msg = f"Project '{pname}':"
         diag_lines.append(msg)
-        msg = f"  Computed Cost (Rounded): {rounded_computed_cost_rounded:10d} | Target Cost: {rounded_target_cost:10d} [Solver: {rounded_computed_cost_solver_display}]"
-        diag_lines.append(msg)
+        if previous_cost > 1e-6:
+            msg = f"  Grant: {rounded_base_grant:10d} ISK | Matching: {round(match_abs):10d} ISK | Overhead: {round(overhead_amt):10d} ISK | Total Target: {rounded_total_target:10d} ISK"
+            diag_lines.append(msg)
+            msg = f"  Previous Cost: {rounded_previous_cost:10d} ISK | Residual Target: {rounded_target_cost:10d} ISK"
+            diag_lines.append(msg)
+            msg = f"  Computed Cost (Rounded): {rounded_computed_cost_rounded:10d} ISK | [Solver: {rounded_computed_cost_solver_display}]"
+            diag_lines.append(msg)
+        else:
+            msg = f"  Grant: {rounded_base_grant:10d} ISK | Matching: {round(match_abs):10d} ISK | Overhead: {round(overhead_amt):10d} ISK | Total Target: {rounded_total_target:10d} ISK"
+            diag_lines.append(msg)
+            msg = f"  Computed Cost (Rounded): {rounded_computed_cost_rounded:10d} ISK | [Solver: {rounded_computed_cost_solver_display}]"
+            diag_lines.append(msg)
         if not np.isnan(rel_dev_percent_solver):
-            msg = f"  Relative Cost Deviation (Solver): {rel_dev_percent_solver:+.1f} %"
+            if target_cost_val > 1e-6:
+                msg = f"  Relative Cost Deviation vs Residual Target (Solver): {rel_dev_percent_solver:+.1f} %"
+            else:
+                msg = f"  Relative Cost Deviation vs Total Target (Solver): {((computed_cost_solver / total_target) - 1) * 100:+.1f} %" if total_target > 1e-6 else "  Relative Cost Deviation (Solver): N/A"
         else:
             msg = "  Relative Cost Deviation (Solver): N/A"
         diag_lines.append(msg)
@@ -1009,24 +1221,39 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     diag_lines.append(topic_msg)
         separator = "-------------------------------------------------------------"
         diag_lines.append(separator)
+    grand_total_original_target = sum(_f(getattr(p, "grant_contractual", 0.0), 0.0) for p in projects)
+    grand_total_previous_cost = sum(_f(initial_costs.get(p.name if p.name else f"Project_{k}", 0.0), 0.0) for k, p in enumerate(projects))
+    grand_total_residual_target = sum(target_costs.values())
+    
     rounded_grand_total_cost_final = round(grand_total_cost_rounded_final)
-    rounded_grand_target_cost = round(grand_target_cost)
+    rounded_grand_original_target = round(grand_total_original_target)
+    rounded_grand_residual_target = round(grand_total_residual_target)
+    rounded_grand_previous_cost = round(grand_total_previous_cost)
+    
     msg = f"\nGrand Total Computed Cost (Rounded Allocations): {rounded_grand_total_cost_final:12d}"
     diag_lines.append(msg)
-    msg = f"Grand Total Target Cost:                         {rounded_grand_target_cost:12d}"
-    diag_lines.append(msg)
+    if grand_total_previous_cost > 1e-6:
+        msg = f"Grand Total Original Target Cost:                  {rounded_grand_original_target:12d}"
+        diag_lines.append(msg)
+        msg = f"Grand Total Previous Cost:                         {rounded_grand_previous_cost:12d}"
+        diag_lines.append(msg)
+        msg = f"Grand Total Residual Target Cost:                 {rounded_grand_residual_target:12d}"
+        diag_lines.append(msg)
+    else:
+        msg = f"Grand Total Target Cost:                         {rounded_grand_original_target:12d}"
+        diag_lines.append(msg)
     grand_total_cost_solver_sum = sum(v for v in final_project_costs_solver.values() if not np.isnan(v))
     grand_rel_dev_percent_solver = float('nan')
-    if grand_target_cost > 1e-6:
-        grand_rel_dev_percent_solver = ((grand_total_cost_solver_sum / grand_target_cost) - 1) * 100
+    if grand_total_original_target > 1e-6:
+        grand_rel_dev_percent_solver = ((grand_total_cost_solver_sum / grand_total_original_target) - 1) * 100
     elif grand_total_cost_solver_sum > 1e-6:
         grand_rel_dev_percent_solver = float('inf')
     else:
         grand_rel_dev_percent_solver = 0.0
     if not np.isnan(grand_rel_dev_percent_solver):
-        msg = f"Overall Relative Deviation (Sum of Solver Costs vs Sum of Target Costs):{grand_rel_dev_percent_solver:+.1f} %"
+        msg = f"Overall Relative Deviation (Sum of Solver Costs vs Sum of Original Target Costs):{grand_rel_dev_percent_solver:+.1f} %"
     else:
-        msg = "Overall Relative Deviation (Sum of Solver Costs vs Sum of Target Costs): N/A"
+        msg = "Overall Relative Deviation (Sum of Solver Costs vs Sum of Original Target Costs): N/A"
     diag_lines.append(msg)
     footer = "=========================================================================================="
     diag_lines.append(footer)

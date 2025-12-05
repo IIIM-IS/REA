@@ -1,0 +1,638 @@
+================================================================================
+REAL CONCATENATION TEST: 2024 + 2025
+================================================================================
+
+✓ Successfully imported required modules
+
+Step 1: Loading 2024 state file
+--------------------------------------------------------------------------------
+✓ Loaded state file: projectStates/Euridice_LATEST.json
+  Projects: 4
+  Employees: 9
+  Date ranges: [['01-01-2024', '12-31-2024']]
+
+Step 2: Creating projects from state
+--------------------------------------------------------------------------------
+  Project 'EURIDICE': target=10,000,000, previous_spending=0
+  Project 'ICE-ID': target=3,500,000, previous_spending=0
+  Project 'FRESH-ID': target=7,300,000, previous_spending=0
+  Project 'AI-STYLIST': target=8,910,000, previous_spending=0
+
+Step 3: Creating employees from state
+--------------------------------------------------------------------------------
+✓ Loaded 9 employees from state
+  Arash Sheikhlar: 88.0 total hours
+  Marta Abad Torrent: 923.0 total hours
+  Sander Kaatee: 196.0 total hours
+
+Step 4: Loading 2025 timesheets
+--------------------------------------------------------------------------------
+2025-11-30 18:14:50 - REA - INFO - Processed timesheet for Arash Sheikhlar from Timesheet 2025 (Arash) - Arash.csv
+2025-11-30 18:14:50 - REA - INFO - Processed timesheet for Jeff Thompson from Timesheet 2025 (Jeff) - Jeff Thompson.csv
+2025-11-30 18:14:50 - REA - INFO - Processed timesheet for Kristinn R. Thórisson from Timesheet 2025 (Kris) - Kris.csv
+2025-11-30 18:14:50 - REA - INFO - Processed timesheet for Goncalo Carvalho from Timesheet 2025 (Goncalo) - Goncalo.csv
+2025-11-30 18:14:51 - REA - INFO - Processed timesheet for Mário Correia from Timesheet 2025 (Mário) - Mario.csv
+2025-11-30 18:14:51 - REA - INFO - Processed timesheet for Marta Abad Torrent from Timesheet 2025 (Marta) - Marta.csv
+2025-11-30 18:14:51 - REA - INFO - Loaded 6 employees from 6 CSV files
+✓ Loaded 6 employees from 2025 timesheets
+  Merging Arash Sheikhlar: adding 2025 hours to existing data
+  Merging Jeff Thompson: adding 2025 hours to existing data
+  Adding new employee: Kristinn R. Thórisson
+  Adding new employee: Goncalo Carvalho
+  Adding new employee: Mário Correia
+  Merging Marta Abad Torrent: adding 2025 hours to existing data
+
+Step 5: Verifying concatenation setup
+--------------------------------------------------------------------------------
+Project 'EURIDICE':
+  Full target: 10,000,000
+  Previous spending: 0
+  Remaining target: 10,000,000
+Project 'ICE-ID':
+  Full target: 3,500,000
+  Previous spending: 0
+  Remaining target: 3,500,000
+Project 'FRESH-ID':
+  Full target: 7,300,000
+  Previous spending: 0
+  Remaining target: 7,300,000
+Project 'AI-STYLIST':
+  Full target: 8,910,000
+  Previous spending: 0
+  Remaining target: 8,910,000
+
+Step 6: Running allocation algorithm
+--------------------------------------------------------------------------------
+Date range: 01-01-2025 to 12-31-2025
+Projects: 4
+Employees: 12
+Topics: 17
+
+
+================= DEBUG INFO: HOURS & SALARY (Free Employees) =================
+Employee 'Arash Sheikhlar': total hours = 100,  total cost = 0
+Employee 'Marta Abad Torrent': total hours = 1075,  total cost = 0
+Employee 'Sander Kaatee': total hours = 0,  total cost = 0
+Employee 'Jeff Thompson': total hours = 346,  total cost = 0
+Employee 'Goncalo': total hours = 0,  total cost = 0
+Employee 'Tangrui Li': total hours = 0,  total cost = 0
+Employee 'Mário Jorge Silva Correia': total hours = 0,  total cost = 0
+Employee 'Kris': total hours = 0,  total cost = 0
+Employee 'Kristinn R. Thórisson': total hours = 532,  total cost = 0
+Employee 'Goncalo Carvalho': total hours = 1776,  total cost = 0
+Employee 'Mário Correia': total hours = 1019,  total cost = 0
+
+ALL FREE EMPLOYEES COMBINED: total R&D hours = 4848
+ALL FREE EMPLOYEES COMBINED: total NonR&D hours = 0
+ALL FREE EMPLOYEES COMBINED: total hours = 4848
+ALL FREE EMPLOYEES COMBINED:  total cost = 0
+===============================================================================
+
+
+================= DEBUG INFO: HOURS & SALARY (Locked Employees) =================
+Employee 'Bridget Burger': total hours = 0,  total cost = 0
+
+ALL LOCKED EMPLOYEES COMBINED: total R&D hours = 0
+ALL LOCKED EMPLOYEES COMBINED: total NonR&D hours = 0
+ALL LOCKED EMPLOYEES COMBINED: total hours = 0,  total cost = 0
+===============================================================================
+
+
+================= DEBUG INFO: HOURS & SALARY (ALL Employees) =================
+ALL EMPLOYEES COMBINED: total R&D hours = 4848
+ALL EMPLOYEES COMBINED: total NonR&D hours = 0
+ALL EMPLOYEES COMBINED: total hours = 4848
+ALL EMPLOYEES COMBINED:  total cost = 0
+===============================================================================
+
+
+================= DEBUG INFO: PROJECT TARGETS & LOCKED CONTRIBUTIONS =================
+Project 'EURIDICE': Target Cost = 10000000 (Previous Spending: 0, Remaining Target: 10000000)
+  Locked Employee 'Bridget Burger': total hours = 0 (R&D: 0, NonR&D: 0),  cost = 0
+  Project 'EURIDICE' LOCKED TOTALS: hours = 0 (R&D: 0, NonR&D: 0), cost = 0
+  ----------------------------------------------------------
+Project 'ICE-ID': Target Cost = 3500000 (Previous Spending: 0, Remaining Target: 3500000)
+  No employees directly locked to Project 'ICE-ID'.
+  ----------------------------------------------------------
+Project 'FRESH-ID': Target Cost = 7300000 (Previous Spending: 0, Remaining Target: 7300000)
+  No employees directly locked to Project 'FRESH-ID'.
+  ----------------------------------------------------------
+Project 'AI-STYLIST': Target Cost = 8910000 (Previous Spending: 0, Remaining Target: 8910000)
+  No employees directly locked to Project 'AI-STYLIST'.
+  ----------------------------------------------------------
+====================================================================================
+
+
+================= DEBUG INFO: HOURS & COSTS PER PROJECT (Employee Availability) =================
+Project 'EURIDICE': Target Cost = 10000000 (Previous Spending: 0, Remaining Target: 10000000)
+  Employee Contributions (based on their total available hours):
+    - Arash Sheikhlar: Total Avail. Hours = 100 (R&D: 100, NonR&D: 0), Cost of these hours = 0
+    - Marta Abad Torrent: Total Avail. Hours = 1075 (R&D: 1075, NonR&D: 0), Cost of these hours = 0
+    - Sander Kaatee: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Bridget Burger (Locked to this project): Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Jeff Thompson: Total Avail. Hours = 346 (R&D: 346, NonR&D: 0), Cost of these hours = 0
+    - Goncalo: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Tangrui Li: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Mário Jorge Silva Correia: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Kris: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Kristinn R. Thórisson: Total Avail. Hours = 532 (R&D: 532, NonR&D: 0), Cost of these hours = 0
+    - Goncalo Carvalho: Total Avail. Hours = 1776 (R&D: 1776, NonR&D: 0), Cost of these hours = 0
+    - Mário Correia: Total Avail. Hours = 1019 (R&D: 1019, NonR&D: 0), Cost of these hours = 0
+  Overall  Pool for 'EURIDICE' (sum of all employees' total avail. hours):
+    Total Hours = 4848 (R&D: 4848, NonR&D: 0)
+    Associated Cost = 0
+  -----------------------------------------------------------------------------------
+Project 'ICE-ID': Target Cost = 3500000 (Previous Spending: 0, Remaining Target: 3500000)
+  Employee Contributions (based on their total available hours):
+    - Arash Sheikhlar: Total Avail. Hours = 100 (R&D: 100, NonR&D: 0), Cost of these hours = 0
+    - Marta Abad Torrent: Total Avail. Hours = 1075 (R&D: 1075, NonR&D: 0), Cost of these hours = 0
+    - Sander Kaatee: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Jeff Thompson: Total Avail. Hours = 346 (R&D: 346, NonR&D: 0), Cost of these hours = 0
+    - Goncalo: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Tangrui Li: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Mário Jorge Silva Correia: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Kris: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Kristinn R. Thórisson: Total Avail. Hours = 532 (R&D: 532, NonR&D: 0), Cost of these hours = 0
+    - Goncalo Carvalho: Total Avail. Hours = 1776 (R&D: 1776, NonR&D: 0), Cost of these hours = 0
+    - Mário Correia: Total Avail. Hours = 1019 (R&D: 1019, NonR&D: 0), Cost of these hours = 0
+  Overall  Pool for 'ICE-ID' (sum of all employees' total avail. hours):
+    Total Hours = 4848 (R&D: 4848, NonR&D: 0)
+    Associated Cost = 0
+  -----------------------------------------------------------------------------------
+Project 'FRESH-ID': Target Cost = 7300000 (Previous Spending: 0, Remaining Target: 7300000)
+  Employee Contributions (based on their total available hours):
+    - Arash Sheikhlar: Total Avail. Hours = 100 (R&D: 100, NonR&D: 0), Cost of these hours = 0
+    - Marta Abad Torrent: Total Avail. Hours = 1075 (R&D: 1075, NonR&D: 0), Cost of these hours = 0
+    - Sander Kaatee: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Jeff Thompson: Total Avail. Hours = 346 (R&D: 346, NonR&D: 0), Cost of these hours = 0
+    - Goncalo: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Tangrui Li: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Mário Jorge Silva Correia: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Kris: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Kristinn R. Thórisson: Total Avail. Hours = 532 (R&D: 532, NonR&D: 0), Cost of these hours = 0
+    - Goncalo Carvalho: Total Avail. Hours = 1776 (R&D: 1776, NonR&D: 0), Cost of these hours = 0
+    - Mário Correia: Total Avail. Hours = 1019 (R&D: 1019, NonR&D: 0), Cost of these hours = 0
+  Overall  Pool for 'FRESH-ID' (sum of all employees' total avail. hours):
+    Total Hours = 4848 (R&D: 4848, NonR&D: 0)
+    Associated Cost = 0
+  -----------------------------------------------------------------------------------
+Project 'AI-STYLIST': Target Cost = 8910000 (Previous Spending: 0, Remaining Target: 8910000)
+  Employee Contributions (based on their total available hours):
+    - Arash Sheikhlar: Total Avail. Hours = 100 (R&D: 100, NonR&D: 0), Cost of these hours = 0
+    - Marta Abad Torrent: Total Avail. Hours = 1075 (R&D: 1075, NonR&D: 0), Cost of these hours = 0
+    - Sander Kaatee: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Jeff Thompson: Total Avail. Hours = 346 (R&D: 346, NonR&D: 0), Cost of these hours = 0
+    - Goncalo: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Tangrui Li: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Mário Jorge Silva Correia: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Kris: Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Kristinn R. Thórisson: Total Avail. Hours = 532 (R&D: 532, NonR&D: 0), Cost of these hours = 0
+    - Goncalo Carvalho: Total Avail. Hours = 1776 (R&D: 1776, NonR&D: 0), Cost of these hours = 0
+    - Mário Correia: Total Avail. Hours = 1019 (R&D: 1019, NonR&D: 0), Cost of these hours = 0
+  Overall  Pool for 'AI-STYLIST' (sum of all employees' total avail. hours):
+    Total Hours = 4848 (R&D: 4848, NonR&D: 0)
+    Associated Cost = 0
+  -----------------------------------------------------------------------------------
+==============================================================================================
+
+
+================= DEBUG INFO: PER PROJECT, PER SALARY BRACKET (Summary) =================
+Project: EURIDICE
+  No salary data.
+---------------------------------------------------------------------------
+Project: ICE-ID
+  No salary data.
+---------------------------------------------------------------------------
+Project: FRESH-ID
+  No salary data.
+---------------------------------------------------------------------------
+Project: AI-STYLIST
+  No salary data.
+---------------------------------------------------------------------------
+========================================================================================
+
+--- Average Non-Zero Target Cost (for scaling penalties): 7427500.00 ---
+
+=== COST-CAPACITY VS. PROJECT LOWER-BOUNDS ===
+Max cost that *could* be spent this period : 0 ISK
+    from free   employees : 0
+    from locked employees : 0
+  – EURIDICE     needs ≥ 10,000,000  (target=10,000,000, previous=0)
+  – ICE-ID       needs ≥ 3,500,000  (target=3,500,000, previous=0)
+  – FRESH-ID     needs ≥ 7,300,000  (target=7,300,000, previous=0)
+  – AI-STYLIST   needs ≥ 8,910,000  (target=8,910,000, previous=0)
+===========================================================
+
+⚠️  WARNING  ⚠️  Requested MINIMUM spend exceeds absolute capacity by 44,200,000 ISK. The optimisation will continue, but expect large slacks in the result.
+
+Solving with SCS … ⠁(CVXPY) Nov 30 06:14:51 PM: Your problem has 305147 variables, 8037 constraints, and 0 parameters.
+(CVXPY) Nov 30 06:14:51 PM: It is compliant with the following grammars: DCP, DQCP
+(CVXPY) Nov 30 06:14:51 PM: (If you need to solve this problem multiple times, but with different data, consider using parameters.)
+(CVXPY) Nov 30 06:14:51 PM: CVXPY will first compile your problem; then, it will invoke a numerical solver to obtain a solution.
+(CVXPY) Nov 30 06:14:51 PM: Your problem is compiled with the CPP canonicalization backend.
+(CVXPY) Nov 30 06:14:51 PM: Compiling problem (target solver=SCS).
+(CVXPY) Nov 30 06:14:51 PM: Reduction chain: Dcp2Cone -> CvxAttr2Constr -> ConeMatrixStuffing -> SCS
+(CVXPY) Nov 30 06:14:51 PM: Applying reduction Dcp2Cone
+(CVXPY) Nov 30 06:14:51 PM: Applying reduction CvxAttr2Constr
+(CVXPY) Nov 30 06:14:51 PM: Applying reduction ConeMatrixStuffing
+/home/potatosalad/.local/lib/python3.12/site-packages/cvxpy/reductions/solvers/solving_chain_utils.py:41: UserWarning: The problem has an expression with dimension greater than 2. Defaulting to the SCIPY backend for canonicalization.
+  warnings.warn(UserWarning(
+(CVXPY) Nov 30 06:14:51 PM: Applying reduction SCS
+(CVXPY) Nov 30 06:14:52 PM: Finished problem compilation (took 7.425e-01 seconds).
+(CVXPY) Nov 30 06:14:52 PM: Invoking solver SCS  to obtain a solution.
+(CVXPY) Nov 30 06:14:53 PM: Problem status: infeasible
+(CVXPY) Nov 30 06:14:53 PM: Optimal value: inf
+(CVXPY) Nov 30 06:14:53 PM: Compilation took 7.425e-01 seconds
+(CVXPY) Nov 30 06:14:53 PM: Solver (including time spent in interface) took 1.181e+00 seconds
+===============================================================================
+                                     CVXPY                                     
+                                     v1.7.4                                    
+===============================================================================
+-------------------------------------------------------------------------------
+                                  Compilation                                  
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+                                Numerical solver                               
+-------------------------------------------------------------------------------
+------------------------------------------------------------------
+	       SCS v3.2.9 - Splitting Conic Solver
+	(c) Brendan O'Donoghue, Stanford University, 2012
+------------------------------------------------------------------
+problem:  variables n: 593451, constraints m: 601488
+cones: 	  z: primal zero / dual free vars: 296326
+	  l: linear vars: 305162
+settings: eps_abs: 5.0e-04, eps_rel: 5.0e-04, eps_infeas: 1.0e-07
+	  alpha: 1.50, scale: 1.00e-01, adaptive_scale: 1
+	  max_iters: 20000, normalize: 1, rho_x: 1.00e-06
+	  acceleration_lookback: 10, acceleration_interval: 10
+lin-sys:  sparse-direct-amd-qdldl
+	  nnz(A): 1708056, nnz(P): 593436
+------------------------------------------------------------------
+ iter | pri res | dua res |   gap   |   obj   |  scale  | time (s)
+------------------------------------------------------------------
+     0| 1.00e+07  1.50e+06  5.58e+13  2.79e+13  1.00e-01  1.16e+00 
+------------------------------------------------------------------
+status:  infeasible
+timings: total: 1.16e+00s = setup: 1.06e+00s + solve: 1.03e-01s
+	 lin-sys: 1.69e-02s, cones: 6.14e-03s, accel: 2.00e-08s
+------------------------------------------------------------------
+objective = inf
+------------------------------------------------------------------
+-------------------------------------------------------------------------------
+                                    Summary                                    
+-------------------------------------------------------------------------------
+Solving with SCS finished in   1.93s  (status: infeasible)
+Solving with CLARABEL … ⠂(CVXPY) Nov 30 06:14:53 PM: Your problem has 305147 variables, 8037 constraints, and 0 parameters.
+(CVXPY) Nov 30 06:14:53 PM: It is compliant with the following grammars: DCP, DQCP
+(CVXPY) Nov 30 06:14:53 PM: (If you need to solve this problem multiple times, but with different data, consider using parameters.)
+(CVXPY) Nov 30 06:14:53 PM: CVXPY will first compile your problem; then, it will invoke a numerical solver to obtain a solution.
+(CVXPY) Nov 30 06:14:53 PM: Your problem is compiled with the CPP canonicalization backend.
+(CVXPY) Nov 30 06:14:53 PM: Compiling problem (target solver=CLARABEL).
+(CVXPY) Nov 30 06:14:53 PM: Reduction chain: Dcp2Cone -> CvxAttr2Constr -> ConeMatrixStuffing -> CLARABEL
+(CVXPY) Nov 30 06:14:53 PM: Applying reduction Dcp2Cone
+(CVXPY) Nov 30 06:14:53 PM: Applying reduction CvxAttr2Constr
+(CVXPY) Nov 30 06:14:53 PM: Applying reduction ConeMatrixStuffing
+(CVXPY) Nov 30 06:14:53 PM: Applying reduction CLARABEL
+(CVXPY) Nov 30 06:14:53 PM: Finished problem compilation (took 5.520e-01 seconds).
+(CVXPY) Nov 30 06:14:53 PM: Invoking solver CLARABEL  to obtain a solution.
+===============================================================================
+                                     CVXPY                                     
+                                     v1.7.4                                    
+===============================================================================
+-------------------------------------------------------------------------------
+                                  Compilation                                  
+-------------------------------------------------------------------------------
+-------------------------------------------------------------------------------
+                                Numerical solver                               
+-------------------------------------------------------------------------------
+-------------------------------------------------------------
+           Clarabel.rs v0.11.1  -  Clever Acronym                
+
+                   (c) Paul Goulart                          
+                University of Oxford, 2022                   
+-------------------------------------------------------------
+
+problem:
+  variables     = 593451
+  constraints   = 601488
+  nnz(P)        = 593436
+  nnz(A)        = 1708056
+  cones (total) = 2
+    :        Zero = 1,  numel = 296326
+    : Nonnegative = 1,  numel = 305162
+
+settings:
+  linear algebra: direct / qdldl, precision: 64 bit (1 thread)
+  max iter = 10000, time limit = Inf,  max step = 0.990
+  tol_feas = 1.0e-8, tol_gap_abs = 1.0e-8, tol_gap_rel = 1.0e-8,
+  static reg : on, ϵ1 = 1.0e-8, ϵ2 = 4.9e-32
+  dynamic reg: on, ϵ = 1.0e-13, δ = 2.0e-7
+  iter refine: on, reltol = 1.0e-13, abstol = 1.0e-12,
+               max iter = 10, stop ratio = 5.0
+  equilibrate: on, min_scale = 1.0e-4, max_scale = 1.0e4
+               max iter = 10
+
+iter    pcost        dcost       gap       pres      dres      k/t        μ       step      
+---------------------------------------------------------------------------------------------
+(CVXPY) Nov 30 06:15:09 PM: Problem status: optimal
+(CVXPY) Nov 30 06:15:09 PM: Optimal value: 5.700e+04
+(CVXPY) Nov 30 06:15:09 PM: Compilation took 5.520e-01 seconds
+(CVXPY) Nov 30 06:15:09 PM: Solver (including time spent in interface) took 1.533e+01 seconds
+  0  +3.3003e+05  +1.1682e+12  3.54e+06  9.92e-01  1.60e-01  1.00e+00  5.62e+13   ------   
+  1  +3.8986e+05  +1.3356e+10  3.43e+04  4.22e-01  1.15e-03  2.03e+05  6.45e+11  9.89e-01  
+  2  +3.7655e+05  +1.4210e+09  3.77e+03  6.11e-02  1.36e-04  9.88e+08  8.90e+10  8.64e-01  
+  3  +3.3732e+05  +2.1921e+08  6.49e+02  1.15e-02  2.82e-05  1.66e+08  8.72e+10  6.06e-02  
+  4  +3.3045e+05  +1.3345e+07  3.94e+01  6.89e-04  1.75e-06  3.66e+06  8.22e+10  1.91e-01  
+  5  +3.3002e+05  +1.3099e+06  2.97e+00  5.19e-05  1.32e-07  3.32e+05  8.15e+10  5.00e-02  
+  6  +3.2926e+05  +1.4959e+06  3.54e+00  6.18e-05  1.57e-07  4.59e+05  8.15e+10  3.40e-04  
+  7  +8.5147e+05  +1.1484e+08  1.34e+02  3.01e-03  7.92e-06  1.09e+08  8.13e+10  1.71e-02  
+  8  +2.2772e+05  +7.5618e+06  3.22e+01  4.55e-04  1.21e-06  1.07e+08  2.32e+10  9.90e-01  
+  9  +2.7552e+05  +1.3820e+06  4.02e+00  7.62e-05  1.97e-07  6.36e+05  1.13e+10  6.13e-01  
+ 10  +4.6926e+08  -3.8117e+08  2.23e+00  2.24e-04  5.22e-07  3.02e+08  1.12e+10  5.40e-02  
+ 11  +1.7971e+08  -1.8853e+08  2.05e+00  9.73e-05  2.28e-07  3.37e+08  3.50e+09  7.23e-01  
+ 12  +4.4672e+11  -4.4736e+11  2.00e+00  8.32e-05  2.10e-07  7.60e+10  3.46e+09  1.38e-01  
+ 13  +2.1278e+11  -2.3105e+11  2.09e+00  5.69e-06  1.47e-08  9.61e+11  2.43e+08  9.44e-01  
+ 14  +1.5766e+11  -2.2034e+11  2.40e+00  8.76e-07  2.26e-09  2.60e+12  3.81e+07  8.48e-01  
+ 15  +3.7144e+13  -4.3446e+13  2.17e+00  3.48e-07  8.98e-10  9.35e+14  1.28e+07  8.94e-01  
+ 16  +2.2363e+12  -5.2790e+13  2.46e+01  4.72e-09  1.22e-11  5.87e+15  1.74e+05  9.86e-01  
+ 17  +5.8399e+10  -1.8273e+12  3.23e+01  2.49e-09  6.42e-12  2.24e+14  9.13e+04  9.90e-01  
+ 18  +5.5646e+09  -1.7409e+11  3.23e+01  2.01e-09  5.19e-12  2.13e+11  7.39e+04  4.03e-01  
+ 19  +4.3306e+07  -1.2617e+09  3.01e+01  1.92e-09  5.25e-12  7.09e+10  7.44e+04  1.63e-03  
+ 20  +3.0029e+07  -8.3772e+08  2.89e+01  1.88e-09  5.23e-12  6.70e+10  7.43e+04  3.69e-02  
+ 21  +6.9368e+06  -8.8691e+07  1.38e+01  1.89e-09  4.23e-12  4.33e+10  6.66e+04  5.14e-01  
+ 22  +5.4035e+06  -3.8103e+07  8.05e+00  1.23e-09  1.61e-12  2.93e+09  2.12e+04  8.25e-01  
+ 23  +4.0460e+06  -7.8581e+06  2.94e+00  1.05e-09  1.10e-12  1.54e+08  6.06e+03  7.57e-01  
+ 24  +2.8971e+06  -3.7028e+06  2.28e+00  1.00e-09  1.43e-12  4.82e+07  4.66e+03  3.85e-01  
+ 25  +2.0220e+06  -8.0218e+05  3.52e+00  9.12e-10  2.01e-12  9.87e+06  2.54e+03  5.40e-01  
+ 26  +6.5153e+05  -3.3879e+05  2.92e+00  1.18e-09  6.41e-12  2.00e+06  3.36e+03  4.91e-01  
+ 27  +3.7069e+05  -2.9116e+05  2.27e+00  1.20e-09  1.16e-11  1.52e+04  4.97e+03  8.89e-01  
+ 28  +6.0704e+04  -1.2009e+05  2.98e+00  3.94e-09  5.71e-11  3.97e+03  1.53e+03  7.26e-01  
+ 29  +9.7047e+04  -9.7230e+04  2.00e+00  4.59e-09  4.35e-11  4.56e+01  1.39e+03  9.59e-01  
+ 30  +5.8189e+04  -1.0120e+05  2.74e+00  6.10e-09  5.26e-11  9.87e+01  8.85e+02  5.28e-01  
+ 31  +8.1973e+04  -5.5422e+04  2.48e+00  5.18e-09  3.98e-11  1.01e+02  8.83e+02  1.87e-01  
+ 32  +7.5122e+04  +1.3946e+04  4.39e+00  5.39e-09  1.93e-11  6.08e+01  3.63e+02  7.57e-01  
+ 33  +7.2466e+04  +3.8065e+04  9.04e-01  4.72e-09  1.00e-11  8.53e+01  1.00e+02  7.76e-01  
+ 34  +5.7163e+04  +3.8656e+04  4.79e-01  2.79e-09  5.81e-12  6.29e+01  5.55e+01  8.88e-01  
+ 35  +5.7003e+04  +5.5617e+04  2.49e-02  4.56e-10  4.09e-13  6.42e+00  3.31e+00  9.50e-01  
+ 36  +5.6997e+04  +5.6932e+04  1.15e-03  2.18e-11  1.92e-14  3.74e-01  1.55e-01  9.90e-01  
+ 37  +5.6997e+04  +5.6996e+04  1.34e-05  2.54e-13  2.27e-16  4.36e-03  1.80e-03  9.89e-01  
+ 38  +5.6997e+04  +5.6997e+04  1.32e-06  3.41e-14  3.70e-17  4.19e-04  1.77e-04  9.03e-01  
+ 39  +5.6997e+04  +5.6997e+04  2.86e-07  7.88e-15  4.09e-17  9.30e-05  3.63e-05  9.48e-01  
+ 40  +5.6997e+04  +5.6997e+04  5.79e-08  1.62e-15  2.05e-17  1.83e-05  7.13e-06  9.18e-01  
+ 41  +5.6997e+04  +5.6997e+04  2.37e-09  1.22e-16  1.30e-17  6.79e-07  2.67e-07  9.69e-01  
+---------------------------------------------------------------------------------------------
+Terminated with status = Solved
+solve time = 15.055456242s
+-------------------------------------------------------------------------------
+                                    Summary                                    
+-------------------------------------------------------------------------------
+Solving with CLARABEL finished in  15.98s  (status: optimal)
+
+--- Enforcing Exact Hour Balance Constraints ---
+--- Continuous Solution Constraint Verification (Free Employees) ---
+Total Available R&D (Free Emps):   4848.0000
+Total Allocated R&D (After Normalization):  4848.0000
+Total Available NonR&D (Free Emps):0.0000
+Total Allocated NonR&D (After Normalization):0.0000
+Maximum per-employee/day R&D violation: 3.55e-15
+Maximum per-employee/day NonR&D violation: 0.00e+00
+✓ Hour balance constraints exactly satisfied (within numerical precision)
+-----------------------------------------------------------
+
+
+================= DEBUG INFO: PER PROJECT, PER EMPLOYEE, PER SALARY BRACKET (ALLOCATED HOURS) =================
+Project: EURIDICE
+  Employee: Arash Sheikhlar
+    @0.00 ISK/hr → 25.20 h  (R&D 25.20 h, Non-R&D 0.00 h)
+  Employee: Marta Abad Torrent
+    @0.00 ISK/hr → 267.43 h  (R&D 267.43 h, Non-R&D 0.00 h)
+  Employee: Jeff Thompson
+    @0.00 ISK/hr → 90.62 h  (R&D 90.62 h, Non-R&D 0.00 h)
+  Employee: Kristinn R. Thórisson
+    @0.00 ISK/hr → 135.25 h  (R&D 135.25 h, Non-R&D 0.00 h)
+  Employee: Goncalo Carvalho
+    @0.00 ISK/hr → 448.37 h  (R&D 448.37 h, Non-R&D 0.00 h)
+  Employee: Mário Correia
+    @0.00 ISK/hr → 255.39 h  (R&D 255.39 h, Non-R&D 0.00 h)
+----------------------------------------------------------------
+Project: ICE-ID
+  Employee: Arash Sheikhlar
+    @0.00 ISK/hr → 24.34 h  (R&D 24.34 h, Non-R&D 0.00 h)
+  Employee: Marta Abad Torrent
+    @0.00 ISK/hr → 267.39 h  (R&D 267.39 h, Non-R&D 0.00 h)
+  Employee: Jeff Thompson
+    @0.00 ISK/hr → 87.43 h  (R&D 87.43 h, Non-R&D 0.00 h)
+  Employee: Kristinn R. Thórisson
+    @0.00 ISK/hr → 132.91 h  (R&D 132.91 h, Non-R&D 0.00 h)
+  Employee: Goncalo Carvalho
+    @0.00 ISK/hr → 446.65 h  (R&D 446.65 h, Non-R&D 0.00 h)
+  Employee: Mário Correia
+    @0.00 ISK/hr → 253.98 h  (R&D 253.98 h, Non-R&D 0.00 h)
+----------------------------------------------------------------
+Project: FRESH-ID
+  Employee: Arash Sheikhlar
+    @0.00 ISK/hr → 25.65 h  (R&D 25.65 h, Non-R&D 0.00 h)
+  Employee: Marta Abad Torrent
+    @0.00 ISK/hr → 271.40 h  (R&D 271.40 h, Non-R&D 0.00 h)
+  Employee: Jeff Thompson
+    @0.00 ISK/hr → 83.16 h  (R&D 83.16 h, Non-R&D 0.00 h)
+  Employee: Kristinn R. Thórisson
+    @0.00 ISK/hr → 132.48 h  (R&D 132.48 h, Non-R&D 0.00 h)
+  Employee: Goncalo Carvalho
+    @0.00 ISK/hr → 438.77 h  (R&D 438.77 h, Non-R&D 0.00 h)
+  Employee: Mário Correia
+    @0.00 ISK/hr → 255.04 h  (R&D 255.04 h, Non-R&D 0.00 h)
+----------------------------------------------------------------
+Project: AI-STYLIST
+  Employee: Arash Sheikhlar
+    @0.00 ISK/hr → 24.81 h  (R&D 24.81 h, Non-R&D 0.00 h)
+  Employee: Marta Abad Torrent
+    @0.00 ISK/hr → 268.78 h  (R&D 268.78 h, Non-R&D 0.00 h)
+  Employee: Jeff Thompson
+    @0.00 ISK/hr → 84.79 h  (R&D 84.79 h, Non-R&D 0.00 h)
+  Employee: Kristinn R. Thórisson
+    @0.00 ISK/hr → 131.36 h  (R&D 131.36 h, Non-R&D 0.00 h)
+  Employee: Goncalo Carvalho
+    @0.00 ISK/hr → 442.21 h  (R&D 442.21 h, Non-R&D 0.00 h)
+  Employee: Mário Correia
+    @0.00 ISK/hr → 254.59 h  (R&D 254.59 h, Non-R&D 0.00 h)
+----------------------------------------------------------------
+================================================================
+
+
+================= DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values) ==================
+Overall R&D      : Total available = 4848 hrs, Total allocated = 4848 hrs
+Overall Non‑R&D  : Total available = 0 hrs, Total allocated = 0 hrs
+✓ Hour balance constraints exactly satisfied
+  R&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
+  NonR&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
+  Max per-employee/day violations: R&D=0.0000, NonR&D=0.0000
+===========================================================================================
+
+================= DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS =================
+(Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)
+Project 'EURIDICE':
+  Computed Cost (Rounded):          0 | Target Cost:   10000000 [Solver: 0]
+  Relative Cost Deviation (Solver): -100.0 %
+  Total R&D Hours (Rounded):     1222
+  Total Non-R&D Hours (Rounded):      0
+  Topic Allocations (Rounded):
+    Data Processing / Data Mgmt:     84 hrs
+    Training Env. / Artificial Pedagogy:     84 hrs
+    General Info. System / Methodology:     84 hrs
+    Cogn. Architecture / Hybrid Archi:     65 hrs
+    Hardware / Robot Hardware:     65 hrs
+    Visualization / UX  :     65 hrs
+    Natural Communic. / Autom. Explanation:     65 hrs
+    Multi-Agent Systems :     65 hrs
+    Self-Progr. / Seed-Progr. / Cogn. Growth:     65 hrs
+    Cumulative Learning / Transfer Learn.:     65 hrs
+    Bridge              :     65 hrs
+    Modeling / Simulation:     65 hrs
+    Spatial / Temporal Pattrn. Classification:     65 hrs
+    Reasoning / Planning:     65 hrs
+    System / Architecture Integration:     65 hrs
+    Networks / Distributed Systems:     65 hrs
+    Sense-Act Cycle / Embedded Systems:     65 hrs
+    Resource Control / Attention:     65 hrs
+-------------------------------------------------------------
+Project 'ICE-ID':
+  Computed Cost (Rounded):          0 | Target Cost:    3500000 [Solver: 0]
+  Relative Cost Deviation (Solver): -100.0 %
+  Total R&D Hours (Rounded):     1213
+  Total Non-R&D Hours (Rounded):      0
+  Topic Allocations (Rounded):
+    General Info. System / Methodology:     84 hrs
+    Reasoning / Planning:     84 hrs
+    Data Processing / Data Mgmt:     84 hrs
+    Cogn. Architecture / Hybrid Archi:     84 hrs
+    Cumulative Learning / Transfer Learn.:     63 hrs
+    Self-Progr. / Seed-Progr. / Cogn. Growth:     63 hrs
+    Spatial / Temporal Pattrn. Classification:     63 hrs
+    Hardware / Robot Hardware:     63 hrs
+    Sense-Act Cycle / Embedded Systems:     63 hrs
+    Bridge              :     63 hrs
+    System / Architecture Integration:     63 hrs
+    Resource Control / Attention:     63 hrs
+    Networks / Distributed Systems:     63 hrs
+    Multi-Agent Systems :     63 hrs
+    Training Env. / Artificial Pedagogy:     63 hrs
+    Natural Communic. / Autom. Explanation:     63 hrs
+    Visualization / UX  :     63 hrs
+    Modeling / Simulation:     63 hrs
+-------------------------------------------------------------
+Project 'FRESH-ID':
+  Computed Cost (Rounded):          0 | Target Cost:    7300000 [Solver: 0]
+  Relative Cost Deviation (Solver): -100.0 %
+  Total R&D Hours (Rounded):     1206
+  Total Non-R&D Hours (Rounded):      0
+  Topic Allocations (Rounded):
+    Networks / Distributed Systems:     84 hrs
+    Visualization / UX  :     84 hrs
+    General Info. System / Methodology:     84 hrs
+    Data Processing / Data Mgmt:     84 hrs
+    System / Architecture Integration:     84 hrs
+    Modeling / Simulation:     84 hrs
+    Bridge              :     59 hrs
+    Reasoning / Planning:     59 hrs
+    Sense-Act Cycle / Embedded Systems:     59 hrs
+    Natural Communic. / Autom. Explanation:     59 hrs
+    Self-Progr. / Seed-Progr. / Cogn. Growth:     59 hrs
+    Spatial / Temporal Pattrn. Classification:     59 hrs
+    Cumulative Learning / Transfer Learn.:     59 hrs
+    Training Env. / Artificial Pedagogy:     59 hrs
+    Multi-Agent Systems :     59 hrs
+    Resource Control / Attention:     59 hrs
+    Cogn. Architecture / Hybrid Archi:     59 hrs
+    Hardware / Robot Hardware:     59 hrs
+-------------------------------------------------------------
+Project 'AI-STYLIST':
+  Computed Cost (Rounded):          0 | Target Cost:    8910000 [Solver: 0]
+  Relative Cost Deviation (Solver): -100.0 %
+  Total R&D Hours (Rounded):     1207
+  Total Non-R&D Hours (Rounded):      0
+  Topic Allocations (Rounded):
+    Data Processing / Data Mgmt:     84 hrs
+    General Info. System / Methodology:     84 hrs
+    System / Architecture Integration:     84 hrs
+    Modeling / Simulation:     84 hrs
+    Visualization / UX  :     84 hrs
+    Sense-Act Cycle / Embedded Systems:     61 hrs
+    Natural Communic. / Autom. Explanation:     61 hrs
+    Bridge              :     61 hrs
+    Multi-Agent Systems :     61 hrs
+    Training Env. / Artificial Pedagogy:     61 hrs
+    Networks / Distributed Systems:     61 hrs
+    Cogn. Architecture / Hybrid Archi:     61 hrs
+    Reasoning / Planning:     61 hrs
+    Hardware / Robot Hardware:     61 hrs
+    Resource Control / Attention:     61 hrs
+    Spatial / Temporal Pattrn. Classification:     61 hrs
+    Cumulative Learning / Transfer Learn.:     61 hrs
+    Self-Progr. / Seed-Progr. / Cogn. Growth:     61 hrs
+-------------------------------------------------------------
+
+Grand Total Computed Cost (Rounded Allocations):            0
+Grand Total Target Cost:                             29710000
+Overall Relative Deviation (Sum of Solver Costs vs Sum of Target Costs):-100.0 %
+==========================================================================================
+
+=== MATCH-FUND SLACKS (ISK) ===
+  EURIDICE       : 15,000,000.00 ISK
+  FRESH-ID       : 13,950,000.00 ISK
+  AI-STYLIST     : 11,750,000.00 ISK
+
+✓ Algorithm completed
+  Solver status: optimal
+
+Step 7: Verifying results
+--------------------------------------------------------------------------------
+
+Project Costs (this run):
+  EURIDICE:
+    This run: 0
+    Previous: 0
+    Total: 0
+    Target: 10,000,000
+    Deviation: -100.0%
+  ICE-ID:
+    This run: 0
+    Previous: 0
+    Total: 0
+    Target: 3,500,000
+    Deviation: -100.0%
+  FRESH-ID:
+    This run: 0
+    Previous: 0
+    Total: 0
+    Target: 7,300,000
+    Deviation: -100.0%
+  AI-STYLIST:
+    This run: 0
+    Previous: 0
+    Total: 0
+    Target: 8,910,000
+    Deviation: -100.0%
+
+Hour utilization check:
+--------------------------------------------------------------------------------
+R&D hours: 4848.0 / 9534.0 = 50.8%
+Non-R&D hours: 0.0 / 715.0 = 0.0%
+
+================================================================================
+VALIDATION RESULTS
+================================================================================
+
+❌ ERRORS:
+  Hour utilization below 100%: R&D 50.8%, Non-R&D 0.0%
+  Project 'EURIDICE' has 0 spending but target is 10,000,000
+  Project 'ICE-ID' has 0 spending but target is 3,500,000
+  Project 'FRESH-ID' has 0 spending but target is 7,300,000
+  Project 'AI-STYLIST' has 0 spending but target is 8,910,000
+
+✓ No warnings
+
+================================================================================

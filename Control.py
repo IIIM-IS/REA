@@ -69,6 +69,9 @@ class Controller:
         self.csv_loader_worker = None
         self.state_loader_worker = None
         self.state_saver_worker = None
+        
+        self._initial_costs_used = {}
+        self._previous_report_path = None
 
         # ------------------ Connect signals from the View ------------------ #
         # Calendar & Date range
@@ -375,12 +378,15 @@ class Controller:
                 if len(parts) >= 5 and parts[0].lower() != "project":
                     name = parts[0].strip("* ").strip()
                     actual_str = parts[2]
-                    actual_num = re.sub(r"[^\d.]", "", actual_str.replace(",", ""))
+                    actual_num = re.sub(r"[^\d.]", "", actual_str.replace(",", "").replace("`", ""))
                     if actual_num:
                         try:
                             prev_costs[name] = float(actual_num)
                         except Exception:
                             pass
+        
+        if prev_costs:
+            return prev_costs
 
         if not prev_costs:
             blocks = re.split(r"^####\s*Project:\s*(.+?)\s*$", text, flags=re.MULTILINE)
@@ -450,6 +456,7 @@ class Controller:
         all_topics = self.model.research_topics
         
         initial_costs = {}
+        self._previous_report_path = None
         reply = QMessageBox.question(
             self.view,
             "Concatenate with Previous Run?",
@@ -476,6 +483,7 @@ class Controller:
                 initial_costs = self._parse_previous_report_costs(report_file)
                 if initial_costs:
                     self._initial_costs_used = dict(initial_costs)
+                    self._previous_report_path = report_file
                     cost_summary = "\n".join([f"  - {name}: {cost:,.0f} ISK" for name, cost in initial_costs.items()])
                     ErrorHandler.show_info(
                         self.view,
@@ -489,12 +497,15 @@ class Controller:
                         print(f"[CONCATENATION]   {proj_name}: {cost:,.0f} ISK")
                 else:
                     self._initial_costs_used = {}
+                    self._previous_report_path = None
                     ErrorHandler.show_warning(
                         self.view,
                         "No Costs Found",
                         "The selected report does not contain project costs. "
                         "Starting from zero."
                     )
+            else:
+                self._previous_report_path = None
         
         self.logger.info(
             f"Starting allocation algorithm: {start_date} to {end_date}, "
@@ -616,6 +627,9 @@ class Controller:
         diagnostics.append(f"**Reporting Period:** {start_date} to {end_date}  \n")
         diagnostics.append(f"**Employees:** {len(self.employees)}  \n")
         diagnostics.append(f"**Projects:** {len(self.projects)}  \n")
+        is_concatenating = bool(getattr(self, '_initial_costs_used', {}))
+        if is_concatenating:
+            diagnostics.append(f"**Note:** This run concatenates with previous allocations. Actual costs shown include both previous and new allocations, compared against original targets.  \n")
         diagnostics.append("---\n")
         
         # ========== EXECUTIVE SUMMARY ==========
@@ -648,24 +662,49 @@ class Controller:
                         hourly_rate = (base_salary / 160.0) * 1.25 if base_salary > 0 else 0.0
                         total_cost_allocated += (rnd_hours + nonrnd_hours) * hourly_rate
         
+        initial_costs_used = getattr(self, '_initial_costs_used', {})
         for proj in self.projects:
             proj_name = proj.name if proj.name else "Unnamed"
             actual_cost = final_costs.get(proj_name, 0.0)
             try:
-                target_cost = float(proj.grant_contractual or 0.0)
+                base_grant = float(proj.grant_contractual or 0.0)
             except Exception:
-                target_cost = 0.0
-            total_cost_target += target_cost
+                base_grant = 0.0
             
-            diff = actual_cost - target_cost
-            diff_pct = (diff / target_cost * 100) if target_cost > 0 else 0.0
-            status = "✅ On Target" if abs(diff_pct) < 5.0 else ("⚠️ Over Budget" if diff_pct > 0 else "📉 Under Budget")
+            match_raw = float(proj.matching_fund_value or 0.0)
+            mf_type = (proj.matching_fund_type or "").lower()
+            if match_raw > 0.0:
+                match_abs = (base_grant * match_raw / 100.0) if mf_type == "percentage" else match_raw
+            else:
+                match_abs = 0.0
+            
+            overhead_val = float(proj.operational_overhead or 0.0)
+            if overhead_val >= 100000.0:
+                overhead_amt = overhead_val
+            else:
+                overhead_amt = 0.0
+            
+            original_target = base_grant + match_abs + overhead_amt
+            previous_cost = float(initial_costs_used.get(proj_name, 0.0))
+            residual_target = max(original_target - previous_cost, 0.0)
+            total_cost_target += original_target
+            
+            diff_original = actual_cost - original_target
+            diff_pct_original = (diff_original / original_target * 100) if original_target > 0 else 0.0
+            diff_residual = actual_cost - previous_cost - residual_target
+            diff_pct_residual = (diff_residual / residual_target * 100) if residual_target > 1e-6 else 0.0
+            
+            status = "✅ On Target" if abs(diff_pct_original) < 5.0 else ("⚠️ Over Budget" if diff_pct_original > 0 else "📉 Under Budget")
             project_statuses.append({
                 "name": proj_name,
                 "actual": actual_cost,
-                "target": target_cost,
-                "diff": diff,
-                "diff_pct": diff_pct,
+                "original_target": original_target,
+                "residual_target": residual_target,
+                "previous_cost": previous_cost,
+                "diff": diff_original,
+                "diff_pct": diff_pct_original,
+                "diff_residual": diff_residual,
+                "diff_pct_residual": diff_pct_residual,
                 "status": status
             })
         
@@ -686,12 +725,18 @@ class Controller:
         
         # ========== PROJECT COST ANALYSIS ==========
         diagnostics.append("## 💰 Project Cost Analysis\n")
-        diagnostics.append("| Project | Target Cost | Actual Cost | Deviation | Status |\n")
-        diagnostics.append("|---------|-------------|-------------|-----------|--------|\n")
-        
-        for proj_stat in project_statuses:
-            status_icon = "✅" if abs(proj_stat["diff_pct"]) < 5.0 else ("⚠️" if proj_stat["diff_pct"] > 0 else "📉")
-            diagnostics.append(f"| **{proj_stat['name']}** | `{proj_stat['target']:,.0f}` ISK | `{proj_stat['actual']:,.0f}` ISK | `{proj_stat['diff_pct']:+.1f}%` | {status_icon} {proj_stat['status']} |\n")
+        if is_concatenating:
+            diagnostics.append("| Project | Original Target | Previous Cost | Residual Target | Actual Cost | Deviation (vs Original) | Status |\n")
+            diagnostics.append("|---------|----------------|--------------|----------------|-------------|------------------------|--------|\n")
+            for proj_stat in project_statuses:
+                status_icon = "✅" if abs(proj_stat["diff_pct"]) < 5.0 else ("⚠️" if proj_stat["diff_pct"] > 0 else "📉")
+                diagnostics.append(f"| **{proj_stat['name']}** | `{proj_stat['original_target']:,.0f}` ISK | `{proj_stat['previous_cost']:,.0f}` ISK | `{proj_stat['residual_target']:,.0f}` ISK | `{proj_stat['actual']:,.0f}` ISK | `{proj_stat['diff_pct']:+.1f}%` | {status_icon} {proj_stat['status']} |\n")
+        else:
+            diagnostics.append("| Project | Target Cost | Actual Cost | Deviation | Status |\n")
+            diagnostics.append("|---------|-------------|-------------|-----------|--------|\n")
+            for proj_stat in project_statuses:
+                status_icon = "✅" if abs(proj_stat["diff_pct"]) < 5.0 else ("⚠️" if proj_stat["diff_pct"] > 0 else "📉")
+                diagnostics.append(f"| **{proj_stat['name']}** | `{proj_stat['original_target']:,.0f}` ISK | `{proj_stat['actual']:,.0f}` ISK | `{proj_stat['diff_pct']:+.1f}%` | {status_icon} {proj_stat['status']} |\n")
         
         diagnostics.append("\n---\n")
         
@@ -811,8 +856,12 @@ class Controller:
         
         # Analyze capacity vs requirements
         cost_deviation_pct = ((total_cost_allocated / total_cost_target - 1) * 100) if total_cost_target > 0 else 0.0
+        is_concatenating = bool(getattr(self, '_initial_costs_used', {}))
         if abs(cost_deviation_pct) > 10.0:
-            analysis_points.append(f"⚠️ **Cost Deviation:** Overall cost is `{abs(cost_deviation_pct):.1f}%` {'over' if cost_deviation_pct > 0 else 'under'} target. Review project requirements and capacity.")
+            if is_concatenating:
+                analysis_points.append(f"⚠️ **Cost Deviation:** Total cost (including previous allocations) is `{abs(cost_deviation_pct):.1f}%` {'over' if cost_deviation_pct > 0 else 'under'} original target. Review project requirements and capacity.")
+            else:
+                analysis_points.append(f"⚠️ **Cost Deviation:** Overall cost is `{abs(cost_deviation_pct):.1f}%` {'over' if cost_deviation_pct > 0 else 'under'} target. Review project requirements and capacity.")
         
         for point in analysis_points:
             diagnostics.append(f"- {point}\n")
@@ -825,15 +874,29 @@ class Controller:
         insights = []
         
         # Capacity insights
+        is_concatenating = bool(getattr(self, '_initial_costs_used', {}))
         if total_cost_allocated > total_cost_target * 1.1:
-            insights.append("🔴 **Critical:** Total allocated cost exceeds target by more than 10%. Consider reducing project targets or increasing employee capacity.")
+            if is_concatenating:
+                insights.append("🔴 **Critical:** Total allocated cost (including previous allocations) exceeds original target by more than 10%. Consider reducing project targets or increasing employee capacity.")
+            else:
+                insights.append("🔴 **Critical:** Total allocated cost exceeds target by more than 10%. Consider reducing project targets or increasing employee capacity.")
         elif total_cost_allocated < total_cost_target * 0.9:
-            insights.append("🟡 **Warning:** Total allocated cost is significantly below target. You may have unused capacity - consider adding more projects or reducing employee hours.")
+            if is_concatenating:
+                insights.append("🟡 **Warning:** Total allocated cost (including previous allocations) is significantly below original target. You may have unused capacity - consider adding more projects or reducing employee hours.")
+            else:
+                insights.append("🟡 **Warning:** Total allocated cost is significantly below target. You may have unused capacity - consider adding more projects or reducing employee hours.")
         
         # Project-specific insights
         for proj_stat in project_statuses:
             if proj_stat["diff_pct"] > 20.0:
-                insights.append(f"🔴 **{proj_stat['name']}:** Over budget by `{proj_stat['diff_pct']:.1f}%`. Review allocations or increase project budget.")
+                if is_concatenating:
+                    prev_cost = getattr(self, '_initial_costs_used', {}).get(proj_stat['name'], 0.0)
+                    if prev_cost > 0:
+                        insights.append(f"🔴 **{proj_stat['name']}:** Total cost (previous + new) exceeds original target by `{proj_stat['diff_pct']:.1f}%`. Previous: {prev_cost:,.0f} ISK, New: {proj_stat['actual'] - prev_cost:,.0f} ISK. Review allocations or increase project budget.")
+                    else:
+                        insights.append(f"🔴 **{proj_stat['name']}:** Over budget by `{proj_stat['diff_pct']:.1f}%`. Review allocations or increase project budget.")
+                else:
+                    insights.append(f"🔴 **{proj_stat['name']}:** Over budget by `{proj_stat['diff_pct']:.1f}%`. Review allocations or increase project budget.")
             elif proj_stat["diff_pct"] < -20.0:
                 insights.append(f"🟡 **{proj_stat['name']}:** Under budget by `{abs(proj_stat['diff_pct']):.1f}%`. Consider allocating more hours to this project.")
         
@@ -896,6 +959,18 @@ class Controller:
                 diag_file.write("Allocation Diagnostics\n")
                 diag_file.write("======================\n\n")
                 diag_file.write(diag_text)
+                
+                if self._previous_report_path and os.path.exists(self._previous_report_path):
+                    diag_file.write("\n\n")
+                    diag_file.write("=" * 80 + "\n")
+                    diag_file.write("PREVIOUS REPORT (Concatenated)\n")
+                    diag_file.write("=" * 80 + "\n\n")
+                    try:
+                        with open(self._previous_report_path, "r", encoding="utf-8") as prev_file:
+                            prev_content = prev_file.read()
+                            diag_file.write(prev_content)
+                    except Exception as e:
+                        diag_file.write(f"[ERROR] Could not read previous report: {e}\n")
             print(f"[INFO] Diagnostics written to {filename}")
         except Exception as e:
             print(f"[ERROR] Writing diagnostics file: {e}")

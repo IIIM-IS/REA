@@ -1,0 +1,145 @@
+# 📊 Research Expenditure Allocation - Diagnostics Report
+**Generated:** 2025-12-04 at 13:22:25  
+**Reporting Period:** 01-01-2024 to 12-31-2024  
+**Employees:** 9  
+**Projects:** 4  
+---
+**Allocation Status:** ✅ **Perfect Balance**  
+- R&D Hours: `4686.00` / `4686.00` allocated ✅  
+- Non-R&D Hours: `715.00` / `715.00` allocated ✅  
+- **Total Cost Allocated:** `34,184,874` ISK  
+- **Total Target Cost:** `29,710,000` ISK  
+- **Overall Cost Deviation:** `+15.1%`  
+- **Solver Status:** `user_limit`  
+
+---
+## 💰 Project Cost Analysis
+| Project | Target Cost | Actual Cost | Deviation | Status |
+|---------|-------------|-------------|-----------|--------|
+| **EURIDICE** | `10,000,000` ISK | `12,595,912` ISK | `+26.0%` | ⚠️ ⚠️ Over Budget |
+| **ICE-ID** | `3,500,000` ISK | `4,152,149` ISK | `+18.6%` | ⚠️ ⚠️ Over Budget |
+| **FRESH-ID** | `7,300,000` ISK | `10,261,113` ISK | `+40.6%` | ⚠️ ⚠️ Over Budget |
+| **AI-STYLIST** | `8,910,000` ISK | `7,175,700` ISK | `-19.5%` | 📉 📉 Under Budget |
+
+---
+## 🔧 Algorithm Diagnostics
+
+```
+
+================= DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values) ==================
+Overall R&D      : Total available = 4686 hrs, Total allocated = 4686 hrs
+Overall Non-R&D  : Total available = 715 hrs, Total allocated = 715 hrs
+✓ Hour balance constraints exactly satisfied
+  R&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
+  NonR&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
+  Max per-employee/day violations: R&D=0.0000, NonR&D=0.0000
+===========================================================================================
+
+================= DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS =================
+(Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)
+Project 'EURIDICE':
+  Computed Cost (Rounded):   12533085 ISK | Target Cost:   10000000 ISK [Solver: 12595912]
+  Relative Cost Deviation vs Residual Target (Solver): +26.0 %
+  Total R&D Hours (Rounded):     1405
+  Total Non-R&D Hours (Rounded):    410
+  Topic Allocations (Rounded):
+    Bridge              :    131 hrs
+    Training Env. / Artificial Pedagogy:    115 hrs
+    General Info. System / Methodology:    115 hrs
+    Data Processing / Data Mgmt:    115 hrs
+    Reasoning / Planning:     66 hrs
+    Modeling / Simulation:     66 hrs
+    Cumulative Learning / Transfer Learn.:     66 hrs
+    Resource Control / Attention:     66 hrs
+    Hardware / Robot Hardware:     66 hrs
+    Visualization / UX  :     66 hrs
+    System / Architecture Integration:     66 hrs
+    Networks / Distributed Systems:     66 hrs
+    Cogn. Architecture / Hybrid Archi:     66 hrs
+    Natural Communic. / Autom. Explanation:     66 hrs
+    Self-Progr. / Seed-Progr. / Cogn. Growth:     66 hrs
+    Multi-Agent Systems :     66 hrs
+    Spatial / Temporal Pattrn. Classification:     66 hrs
+    Sense-Act Cycle / Embedded Systems:     66 hrs
+-------------------------------------------------------------
+Project 'ICE-ID':
+  Computed Cost (Rounded):    4223625 ISK | Target Cost:    3500000 ISK [Solver: 4152149]
+  Relative Cost Deviation vs Residual Target (Solver): +18.6 %
+  Total R&D Hours (Rounded):      717
+  Total Non-R&D Hours (Rounded):      0
+  Topic Allocations (Rounded):
+    Resource Control / Attention:     40 hrs
+    Multi-Agent Systems :     40 hrs
+    Self-Progr. / Seed-Progr. / Cogn. Growth:     40 hrs
+    Networks / Distributed Systems:     40 hrs
+    Visualization / UX  :     40 hrs
+    Training Env. / Artificial Pedagogy:     40 hrs
+    System / Architecture Integration:     40 hrs
+    Sense-Act Cycle / Embedded Systems:     40 hrs
+    Natural Communic. / Autom. Explanation:     40 hrs
+    Modeling / Simulation:     40 hrs
+    Hardware / Robot Hardware:     40 hrs
+    Spatial / Temporal Pattrn. Classification:     40 hrs
+    Cumulative Learning / Transfer Learn.:     40 hrs
+    Data Processing / Data Mgmt:     40 hrs
+    Bridge              :     40 hrs
+    Cogn. Architecture / Hybrid Archi:     40 hrs
+    Reasoning / Planning:     40 hrs
+    General Info. System / Methodology:     40 hrs
+-------------------------------------------------------------
+Project 'FRESH-ID':
+  Computed Cost (Rounded):   10283938 ISK | Target Cost:    7300000 ISK [Solver: 10261113]
+  Relative Cost Deviation vs Residual Target (Solver): +40.6 %
+  Total R&D Hours (Rounded):     1538
+  Total Non-R&D Hours (Rounded):    185
+  Topic Allocations (Rounded):
+    General Info. System / Methodology:    126 hrs
+    Visualization / UX  :    126 hrs
+    Bridge              :    126 hrs
+    Networks / Distributed Systems:    126 hrs
+    System / Architecture Integration:    126 hrs
+    Data Processing / Data Mgmt:    126 hrs
+    Modeling / Simulation:    126 hrs
+    Natural Communic. / Autom. Explanation:     60 hrs
+    Multi-Agent Systems :     60 hrs
+    Cumulative Learning / Transfer Learn.:     60 hrs
+    Training Env. / Artificial Pedagogy:     60 hrs
+    Reasoning / Planning:     60 hrs
+    Hardware / Robot Hardware:     60 hrs
+    Sense-Act Cycle / Embedded Systems:     60 hrs
+    Cogn. Architecture / Hybrid Archi:     60 hrs
+    Self-Progr. / Seed-Progr. / Cogn. Growth:     60 hrs
+    Resource Control / Attention:     60 hrs
+    Spatial / Temporal Pattrn. Classification:     60 hrs
+-------------------------------------------------------------
+Project 'AI-STYLIST':
+  Computed Cost (Rounded):    7144226 ISK | Target Cost:    8910000 ISK [Solver: 7175700]
+  Relative Cost Deviation vs Residual Target (Solver): -19.5 %
+  Total R&D Hours (Rounded):     1027
+  Total Non-R&D Hours (Rounded):    119
+  Topic Allocations (Rounded):
+    Data Processing / Data Mgmt:     92 hrs
+    Visualization / UX  :     92 hrs
+    Bridge              :     92 hrs
+    Modeling / Simulation:     92 hrs
+    System / Architecture Integration:     92 hrs
+    General Info. System / Methodology:     92 hrs
+    Spatial / Temporal Pattrn. Classification:     40 hrs
+    Reasoning / Planning:     40 hrs
+    Hardware / Robot Hardware:     40 hrs
+    Training Env. / Artificial Pedagogy:     39 hrs
+    Cogn. Architecture / Hybrid Archi:     39 hrs
+    Cumulative Learning / Transfer Learn.:     39 hrs
+    Natural Communic. / Autom. Explanation:     39 hrs
+    Multi-Agent Systems :     39 hrs
+    Self-Progr. / Seed-Progr. / Cogn. Growth:     39 hrs
+    Sense-Act Cycle / Embedded Systems:     39 hrs
+    Networks / Distributed Systems:     39 hrs
+    Resource Control / Attention:     39 hrs
+-------------------------------------------------------------
+
+Grand Total Computed Cost (Rounded Allocations):     34184874
+Grand Total Target Cost:                             29710000
+Overall Relative Deviation (Sum of Solver Costs vs Sum of Original Target Costs):+15.1 %
+==========================================================================================
+```

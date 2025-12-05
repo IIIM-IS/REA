@@ -1,0 +1,92 @@
+# 📊 Research Expenditure Allocation - Diagnostics Report
+**Generated:** 2025-12-04 at 14:10:35  
+**Reporting Period:** 01-01-2024 to 12-31-2024  
+**Employees:** 9  
+**Projects:** 4  
+---
+**Allocation Status:** ✅ **Perfect Balance**  
+- R&D Hours: `4686.00` / `4686.00` allocated ✅  
+- Non-R&D Hours: `715.00` / `715.00` allocated ✅  
+- **Total Cost Allocated:** `34,184,874` ISK  
+- **Total Target Cost:** `57,381,155` ISK  
+- **Overall Cost Deviation:** `-40.4%`  
+- **Solver Status:** `user_limit`  
+
+---
+## 💰 Project Cost Analysis
+| Project | Target Cost | Actual Cost | Deviation | Status |
+|---------|-------------|-------------|-----------|--------|
+| **EURIDICE** | `21,192,905` ISK | `32,343,531` ISK | `+52.6%` | ⚠️ ⚠️ Over Budget |
+| **ICE-ID** | `3,000,000` ISK | `728,075` ISK | `-75.7%` | 📉 📉 Under Budget |
+| **FRESH-ID** | `16,988,250` ISK | `557,295` ISK | `-96.7%` | 📉 📉 Under Budget |
+| **AI-STYLIST** | `16,200,000` ISK | `3,955,973` ISK | `-75.6%` | 📉 📉 Under Budget |
+
+---
+## 🔧 Algorithm Diagnostics
+
+```
+
+================= DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values) ==================
+Overall R&D      : Total available = 4686 hrs, Total allocated = 4686 hrs
+Overall Non-R&D  : Total available = 715 hrs, Total allocated = 715 hrs
+✓ Hour balance constraints exactly satisfied
+  R&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
+  NonR&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
+  Max per-employee/day violations: R&D=0.0000, NonR&D=0.0000
+===========================================================================================
+
+================= DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS =================
+(Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)
+Project 'EURIDICE':
+  Grant:   21192905 ISK | Matching:   21192905 ISK | Overhead:          0 ISK | Total Target:   42385810 ISK
+  Computed Cost (Rounded):   32346726 ISK | [Solver: 32343531]
+  Relative Cost Deviation vs Residual Target (Solver): -23.7 %
+  Total R&D Hours (Rounded):     4686
+  Total Non-R&D Hours (Rounded):    432
+  Topic Allocations (Rounded):
+    Bridge              :    276 hrs
+    Training Env. / Artificial Pedagogy:    260 hrs
+    General Info. System / Methodology:    260 hrs
+    System / Architecture Integration:    260 hrs
+    Data Processing / Data Mgmt:    260 hrs
+    Self-Progr. / Seed-Progr. / Cogn. Growth:    259 hrs
+    Sense-Act Cycle / Embedded Systems:    259 hrs
+    Visualization / UX  :    259 hrs
+    Cumulative Learning / Transfer Learn.:    259 hrs
+    Spatial / Temporal Pattrn. Classification:    259 hrs
+    Natural Communic. / Autom. Explanation:    259 hrs
+    Cogn. Architecture / Hybrid Archi:    259 hrs
+    Modeling / Simulation:    259 hrs
+    Reasoning / Planning:    259 hrs
+    Multi-Agent Systems :    259 hrs
+    Hardware / Robot Hardware:    259 hrs
+    Networks / Distributed Systems:    259 hrs
+    Resource Control / Attention:    259 hrs
+-------------------------------------------------------------
+Project 'ICE-ID':
+  Grant:    3000000 ISK | Matching:          0 ISK | Overhead:          0 ISK | Total Target:    3000000 ISK
+  Computed Cost (Rounded):     726236 ISK | [Solver: 728075]
+  Relative Cost Deviation vs Residual Target (Solver): -75.7 %
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):    113
+-------------------------------------------------------------
+Project 'FRESH-ID':
+  Grant:   16988250 ISK | Matching:    5662750 ISK | Overhead:          0 ISK | Total Target:   22651000 ISK
+  Computed Cost (Rounded):     556277 ISK | [Solver: 557295]
+  Relative Cost Deviation vs Residual Target (Solver): -97.5 %
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):     85
+-------------------------------------------------------------
+Project 'AI-STYLIST':
+  Grant:   16200000 ISK | Matching:    4680000 ISK | Overhead:    1700000 ISK | Total Target:   22580000 ISK
+  Computed Cost (Rounded):    2255634 ISK | [Solver: 3955973]
+  Relative Cost Deviation vs Residual Target (Solver): -82.5 %
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):     85
+-------------------------------------------------------------
+
+Grand Total Computed Cost (Rounded Allocations):     35884874
+Grand Total Target Cost:                             57381155
+Overall Relative Deviation (Sum of Solver Costs vs Sum of Original Target Costs):-34.5 %
+==========================================================================================
+```
