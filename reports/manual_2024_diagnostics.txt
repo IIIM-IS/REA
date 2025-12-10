@@ -1,0 +1,571 @@
+[INFO] State loaded from /home/potatosalad/Documents/projects/IIIM/REA/projectStates/with_comment.json
+[INFO] Loaded 9 employees, 5 projects.
+[INFO] State restoration complete.
+[INFO] Project 'REA' removed.
+[INFO] Project 'FRESH-ID' fields have been updated.
+[INFO] Project 'EURIDICE' fields have been updated.
+[DEBUG] Running algorithm from 01-01-2024 to 12-31-2024 with 9 employees and 4 projects.
+
+================= DEBUG INFO: HOURS & SALARY (Free Employees) =================
+Employee 'Arash Sheikhlar': total hours = 88,  total cost = 550000
+Employee 'Marta Abad Torrent': total hours = 923,  total cost = 3389141
+Employee 'Sander Kaatee': total hours = 196,  total cost = 719688
+Employee 'Jeff Thompson': total hours = 423,  total cost = 3800655
+Employee 'Goncalo': total hours = 2193,  total cost = 13706250
+Employee 'Tangrui Li': total hours = 23,  total cost = 102422
+Employee 'Mário Jorge Silva Correia': total hours = 244,  total cost = 1086562
+Employee 'Kris': total hours = 895,  total cost = 6572656
+
+ALL FREE EMPLOYEES COMBINED: total R&D hours = 4670
+ALL FREE EMPLOYEES COMBINED: total NonR&D hours = 315
+ALL FREE EMPLOYEES COMBINED: total hours = 4985
+ALL FREE EMPLOYEES COMBINED:  total cost = 29927374
+===============================================================================
+
+
+================= DEBUG INFO: HOURS & SALARY (Locked Employees) =================
+Employee 'Bridget Burger': total hours = 416,  total cost = 4257500
+
+ALL LOCKED EMPLOYEES COMBINED: total R&D hours = 16
+ALL LOCKED EMPLOYEES COMBINED: total NonR&D hours = 400
+ALL LOCKED EMPLOYEES COMBINED: total hours = 416,  total cost = 4257500
+===============================================================================
+
+
+================= DEBUG INFO: HOURS & SALARY (ALL Employees) =================
+ALL EMPLOYEES COMBINED: total R&D hours = 4686
+ALL EMPLOYEES COMBINED: total NonR&D hours = 715
+ALL EMPLOYEES COMBINED: total hours = 5401
+ALL EMPLOYEES COMBINED:  total cost = 34184874
+===============================================================================
+
+
+================= DEBUG INFO: PROJECT TARGETS & LOCKED CONTRIBUTIONS =================
+Project 'EURIDICE': Target Cost = 7000000
+  Locked Employee 'Bridget Burger': total hours = 416 (R&D: 16, NonR&D: 400),  cost = 4257500
+  Project 'EURIDICE' LOCKED TOTALS: hours = 416 (R&D: 16, NonR&D: 400), cost = 4257500
+  ----------------------------------------------------------
+Project 'ICE-ID': Target Cost = 3500000
+  No employees directly locked to Project 'ICE-ID'.
+  ----------------------------------------------------------
+Project 'FRESH-ID': Target Cost = 7300000
+  No employees directly locked to Project 'FRESH-ID'.
+  ----------------------------------------------------------
+Project 'AI-STYLIST': Target Cost = 8910000
+  No employees directly locked to Project 'AI-STYLIST'.
+  ----------------------------------------------------------
+====================================================================================
+
+
+================= DEBUG INFO: HOURS & COSTS PER PROJECT (Employee Availability) =================
+Project 'EURIDICE': Target Cost = 7000000
+  Employee Contributions (based on their total available hours):
+    - Arash Sheikhlar: Total Avail. Hours = 88 (R&D: 62, NonR&D: 26), Cost of these hours = 550000
+    - Marta Abad Torrent: Total Avail. Hours = 923 (R&D: 873, NonR&D: 50), Cost of these hours = 3389141
+    - Sander Kaatee: Total Avail. Hours = 196 (R&D: 196, NonR&D: 0), Cost of these hours = 719688
+    - Bridget Burger (Locked to this project): Total Avail. Hours = 416 (R&D: 16, NonR&D: 400), Cost of these hours = 4257500
+    - Jeff Thompson: Total Avail. Hours = 423 (R&D: 422, NonR&D: 1), Cost of these hours = 3800655
+    - Goncalo: Total Avail. Hours = 2193 (R&D: 2162, NonR&D: 31), Cost of these hours = 13706250
+    - Tangrui Li: Total Avail. Hours = 23 (R&D: 23, NonR&D: 0), Cost of these hours = 102422
+    - Mário Jorge Silva Correia: Total Avail. Hours = 244 (R&D: 244, NonR&D: 0), Cost of these hours = 1086562
+    - Kris: Total Avail. Hours = 895 (R&D: 688, NonR&D: 207), Cost of these hours = 6572656
+  Overall  Pool for 'EURIDICE' (sum of all employees' total avail. hours):
+    Total Hours = 5401 (R&D: 4686, NonR&D: 715)
+    Associated Cost = 34184874
+  -----------------------------------------------------------------------------------
+Project 'ICE-ID': Target Cost = 3500000
+  Employee Contributions (based on their total available hours):
+    - Arash Sheikhlar: Total Avail. Hours = 88 (R&D: 62, NonR&D: 26), Cost of these hours = 550000
+    - Marta Abad Torrent: Total Avail. Hours = 923 (R&D: 873, NonR&D: 50), Cost of these hours = 3389141
+    - Sander Kaatee: Total Avail. Hours = 196 (R&D: 196, NonR&D: 0), Cost of these hours = 719688
+    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 416 (R&D: 16, NonR&D: 400), Cost of these hours = 4257500
+    - Jeff Thompson: Total Avail. Hours = 423 (R&D: 422, NonR&D: 1), Cost of these hours = 3800655
+    - Goncalo: Total Avail. Hours = 2193 (R&D: 2162, NonR&D: 31), Cost of these hours = 13706250
+    - Tangrui Li: Total Avail. Hours = 23 (R&D: 23, NonR&D: 0), Cost of these hours = 102422
+    - Mário Jorge Silva Correia: Total Avail. Hours = 244 (R&D: 244, NonR&D: 0), Cost of these hours = 1086562
+    - Kris: Total Avail. Hours = 895 (R&D: 688, NonR&D: 207), Cost of these hours = 6572656
+  Overall  Pool for 'ICE-ID' (sum of all employees' total avail. hours):
+    Total Hours = 5401 (R&D: 4686, NonR&D: 715)
+    Associated Cost = 34184874
+  -----------------------------------------------------------------------------------
+Project 'FRESH-ID': Target Cost = 7300000
+  Employee Contributions (based on their total available hours):
+    - Arash Sheikhlar: Total Avail. Hours = 88 (R&D: 62, NonR&D: 26), Cost of these hours = 550000
+    - Marta Abad Torrent: Total Avail. Hours = 923 (R&D: 873, NonR&D: 50), Cost of these hours = 3389141
+    - Sander Kaatee: Total Avail. Hours = 196 (R&D: 196, NonR&D: 0), Cost of these hours = 719688
+    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 416 (R&D: 16, NonR&D: 400), Cost of these hours = 4257500
+    - Jeff Thompson: Total Avail. Hours = 423 (R&D: 422, NonR&D: 1), Cost of these hours = 3800655
+    - Goncalo: Total Avail. Hours = 2193 (R&D: 2162, NonR&D: 31), Cost of these hours = 13706250
+    - Tangrui Li: Total Avail. Hours = 23 (R&D: 23, NonR&D: 0), Cost of these hours = 102422
+    - Mário Jorge Silva Correia: Total Avail. Hours = 244 (R&D: 244, NonR&D: 0), Cost of these hours = 1086562
+    - Kris: Total Avail. Hours = 895 (R&D: 688, NonR&D: 207), Cost of these hours = 6572656
+  Overall  Pool for 'FRESH-ID' (sum of all employees' total avail. hours):
+    Total Hours = 5401 (R&D: 4686, NonR&D: 715)
+    Associated Cost = 34184874
+  -----------------------------------------------------------------------------------
+Project 'AI-STYLIST': Target Cost = 8910000
+  Employee Contributions (based on their total available hours):
+    - Arash Sheikhlar: Total Avail. Hours = 88 (R&D: 62, NonR&D: 26), Cost of these hours = 550000
+    - Marta Abad Torrent: Total Avail. Hours = 923 (R&D: 873, NonR&D: 50), Cost of these hours = 3389141
+    - Sander Kaatee: Total Avail. Hours = 196 (R&D: 196, NonR&D: 0), Cost of these hours = 719688
+    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 416 (R&D: 16, NonR&D: 400), Cost of these hours = 4257500
+    - Jeff Thompson: Total Avail. Hours = 423 (R&D: 422, NonR&D: 1), Cost of these hours = 3800655
+    - Goncalo: Total Avail. Hours = 2193 (R&D: 2162, NonR&D: 31), Cost of these hours = 13706250
+    - Tangrui Li: Total Avail. Hours = 23 (R&D: 23, NonR&D: 0), Cost of these hours = 102422
+    - Mário Jorge Silva Correia: Total Avail. Hours = 244 (R&D: 244, NonR&D: 0), Cost of these hours = 1086562
+    - Kris: Total Avail. Hours = 895 (R&D: 688, NonR&D: 207), Cost of these hours = 6572656
+  Overall  Pool for 'AI-STYLIST' (sum of all employees' total avail. hours):
+    Total Hours = 5401 (R&D: 4686, NonR&D: 715)
+    Associated Cost = 34184874
+  -----------------------------------------------------------------------------------
+==============================================================================================
+
+
+================= DEBUG INFO: PER PROJECT, PER EMPLOYEE, PER SALARY BRACKET (Employee Total Availability) =================
+Project: EURIDICE
+  Employee: Arash Sheikhlar
+    Salary Bracket (Hourly Rate: 6250.00):
+      Total Available Employee Hours in this Bracket: 88 (R&D: 62, NonR&D: 26)
+      Actual Cost of these Employee Hours: 550000
+  Employee: Marta Abad Torrent
+    Salary Bracket (Hourly Rate: 3671.88):
+      Total Available Employee Hours in this Bracket: 923 (R&D: 873, NonR&D: 50)
+      Actual Cost of these Employee Hours: 3389141
+  Employee: Sander Kaatee
+    Salary Bracket (Hourly Rate: 3671.88):
+      Total Available Employee Hours in this Bracket: 196 (R&D: 196, NonR&D: 0)
+      Actual Cost of these Employee Hours: 719688
+  Employee: Bridget Burger (Locked to this project)
+    Salary Bracket (Hourly Rate: 10234.38):
+      Total Available Employee Hours in this Bracket: 416 (R&D: 16, NonR&D: 400)
+      Actual Cost of these Employee Hours: 4257500
+  Employee: Jeff Thompson
+    Salary Bracket (Hourly Rate: 8985.00):
+      Total Available Employee Hours in this Bracket: 423 (R&D: 422, NonR&D: 1)
+      Actual Cost of these Employee Hours: 3800655
+  Employee: Goncalo
+    Salary Bracket (Hourly Rate: 6250.00):
+      Total Available Employee Hours in this Bracket: 2193 (R&D: 2162, NonR&D: 31)
+      Actual Cost of these Employee Hours: 13706250
+  Employee: Tangrui Li
+    Salary Bracket (Hourly Rate: 4453.12):
+      Total Available Employee Hours in this Bracket: 23 (R&D: 23, NonR&D: 0)
+      Actual Cost of these Employee Hours: 102422
+  Employee: Mário Jorge Silva Correia
+    Salary Bracket (Hourly Rate: 4453.12):
+      Total Available Employee Hours in this Bracket: 244 (R&D: 244, NonR&D: 0)
+      Actual Cost of these Employee Hours: 1086562
+  Employee: Kris
+    Salary Bracket (Hourly Rate: 7343.75):
+      Total Available Employee Hours in this Bracket: 895 (R&D: 688, NonR&D: 207)
+      Actual Cost of these Employee Hours: 6572656
+  -------------------------------------------------------------------------
+Project: ICE-ID
+  Employee: Arash Sheikhlar
+    Salary Bracket (Hourly Rate: 6250.00):
+      Total Available Employee Hours in this Bracket: 88 (R&D: 62, NonR&D: 26)
+      Actual Cost of these Employee Hours: 550000
+  Employee: Marta Abad Torrent
+    Salary Bracket (Hourly Rate: 3671.88):
+      Total Available Employee Hours in this Bracket: 923 (R&D: 873, NonR&D: 50)
+      Actual Cost of these Employee Hours: 3389141
+  Employee: Sander Kaatee
+    Salary Bracket (Hourly Rate: 3671.88):
+      Total Available Employee Hours in this Bracket: 196 (R&D: 196, NonR&D: 0)
+      Actual Cost of these Employee Hours: 719688
+  Employee: Bridget Burger (Locked to EURIDICE)
+    Salary Bracket (Hourly Rate: 10234.38):
+      Total Available Employee Hours in this Bracket: 416 (R&D: 16, NonR&D: 400)
+      Actual Cost of these Employee Hours: 4257500
+  Employee: Jeff Thompson
+    Salary Bracket (Hourly Rate: 8985.00):
+      Total Available Employee Hours in this Bracket: 423 (R&D: 422, NonR&D: 1)
+      Actual Cost of these Employee Hours: 3800655
+  Employee: Goncalo
+    Salary Bracket (Hourly Rate: 6250.00):
+      Total Available Employee Hours in this Bracket: 2193 (R&D: 2162, NonR&D: 31)
+      Actual Cost of these Employee Hours: 13706250
+  Employee: Tangrui Li
+    Salary Bracket (Hourly Rate: 4453.12):
+      Total Available Employee Hours in this Bracket: 23 (R&D: 23, NonR&D: 0)
+      Actual Cost of these Employee Hours: 102422
+  Employee: Mário Jorge Silva Correia
+    Salary Bracket (Hourly Rate: 4453.12):
+      Total Available Employee Hours in this Bracket: 244 (R&D: 244, NonR&D: 0)
+      Actual Cost of these Employee Hours: 1086562
+  Employee: Kris
+    Salary Bracket (Hourly Rate: 7343.75):
+      Total Available Employee Hours in this Bracket: 895 (R&D: 688, NonR&D: 207)
+      Actual Cost of these Employee Hours: 6572656
+  -------------------------------------------------------------------------
+Project: FRESH-ID
+  Employee: Arash Sheikhlar
+    Salary Bracket (Hourly Rate: 6250.00):
+      Total Available Employee Hours in this Bracket: 88 (R&D: 62, NonR&D: 26)
+      Actual Cost of these Employee Hours: 550000
+  Employee: Marta Abad Torrent
+    Salary Bracket (Hourly Rate: 3671.88):
+      Total Available Employee Hours in this Bracket: 923 (R&D: 873, NonR&D: 50)
+      Actual Cost of these Employee Hours: 3389141
+  Employee: Sander Kaatee
+    Salary Bracket (Hourly Rate: 3671.88):
+      Total Available Employee Hours in this Bracket: 196 (R&D: 196, NonR&D: 0)
+      Actual Cost of these Employee Hours: 719688
+  Employee: Bridget Burger (Locked to EURIDICE)
+    Salary Bracket (Hourly Rate: 10234.38):
+      Total Available Employee Hours in this Bracket: 416 (R&D: 16, NonR&D: 400)
+      Actual Cost of these Employee Hours: 4257500
+  Employee: Jeff Thompson
+    Salary Bracket (Hourly Rate: 8985.00):
+      Total Available Employee Hours in this Bracket: 423 (R&D: 422, NonR&D: 1)
+      Actual Cost of these Employee Hours: 3800655
+  Employee: Goncalo
+    Salary Bracket (Hourly Rate: 6250.00):
+      Total Available Employee Hours in this Bracket: 2193 (R&D: 2162, NonR&D: 31)
+      Actual Cost of these Employee Hours: 13706250
+  Employee: Tangrui Li
+    Salary Bracket (Hourly Rate: 4453.12):
+      Total Available Employee Hours in this Bracket: 23 (R&D: 23, NonR&D: 0)
+      Actual Cost of these Employee Hours: 102422
+  Employee: Mário Jorge Silva Correia
+    Salary Bracket (Hourly Rate: 4453.12):
+      Total Available Employee Hours in this Bracket: 244 (R&D: 244, NonR&D: 0)
+      Actual Cost of these Employee Hours: 1086562
+  Employee: Kris
+    Salary Bracket (Hourly Rate: 7343.75):
+      Total Available Employee Hours in this Bracket: 895 (R&D: 688, NonR&D: 207)
+      Actual Cost of these Employee Hours: 6572656
+  -------------------------------------------------------------------------
+Project: AI-STYLIST
+  Employee: Arash Sheikhlar
+    Salary Bracket (Hourly Rate: 6250.00):
+      Total Available Employee Hours in this Bracket: 88 (R&D: 62, NonR&D: 26)
+      Actual Cost of these Employee Hours: 550000
+  Employee: Marta Abad Torrent
+    Salary Bracket (Hourly Rate: 3671.88):
+      Total Available Employee Hours in this Bracket: 923 (R&D: 873, NonR&D: 50)
+      Actual Cost of these Employee Hours: 3389141
+  Employee: Sander Kaatee
+    Salary Bracket (Hourly Rate: 3671.88):
+      Total Available Employee Hours in this Bracket: 196 (R&D: 196, NonR&D: 0)
+      Actual Cost of these Employee Hours: 719688
+  Employee: Bridget Burger (Locked to EURIDICE)
+    Salary Bracket (Hourly Rate: 10234.38):
+      Total Available Employee Hours in this Bracket: 416 (R&D: 16, NonR&D: 400)
+      Actual Cost of these Employee Hours: 4257500
+  Employee: Jeff Thompson
+    Salary Bracket (Hourly Rate: 8985.00):
+      Total Available Employee Hours in this Bracket: 423 (R&D: 422, NonR&D: 1)
+      Actual Cost of these Employee Hours: 3800655
+  Employee: Goncalo
+    Salary Bracket (Hourly Rate: 6250.00):
+      Total Available Employee Hours in this Bracket: 2193 (R&D: 2162, NonR&D: 31)
+      Actual Cost of these Employee Hours: 13706250
+  Employee: Tangrui Li
+    Salary Bracket (Hourly Rate: 4453.12):
+      Total Available Employee Hours in this Bracket: 23 (R&D: 23, NonR&D: 0)
+      Actual Cost of these Employee Hours: 102422
+  Employee: Mário Jorge Silva Correia
+    Salary Bracket (Hourly Rate: 4453.12):
+      Total Available Employee Hours in this Bracket: 244 (R&D: 244, NonR&D: 0)
+      Actual Cost of these Employee Hours: 1086562
+  Employee: Kris
+    Salary Bracket (Hourly Rate: 7343.75):
+      Total Available Employee Hours in this Bracket: 895 (R&D: 688, NonR&D: 207)
+      Actual Cost of these Employee Hours: 6572656
+  -------------------------------------------------------------------------
+-------------------------------------------------------------------------------------------------------
+===========================================================================================================================
+
+--- Average Non-Zero Target Cost (for scaling penalties): 6677500.00 ---
+Attempting to solve with ECOS...
+/home/potatosalad/.local/share/virtualenvs/IIIM-qQKT6_V5/lib/python3.10/site-packages/cvxpy/reductions/solvers/solving_chain.py:418: UserWarning: The problem has an expression with dimension greater than 2. Defaulting to the SCIPY backend for canonicalization.
+  warnings.warn(UserWarning(
+/home/potatosalad/.local/share/virtualenvs/IIIM-qQKT6_V5/lib/python3.10/site-packages/cvxpy/problems/problem.py:1481: UserWarning: Solution may be inaccurate. Try another solver, adjusting the solver settings, or solve with verbose=True for more information.
+  warnings.warn(
+Optimal value: 3.764916e+03
+
+--- Continuous Solution Sanity Check (Free Employees) ---
+Total Available R&D (Free Emps):   4670.0000
+Total Allocated R&D (Continuous):  4670.0000
+Total Available NonR&D (Free Emps):315.0000
+Total Allocated NonR&D (Continuous):315.0000
+Continuous allocation sums for free employees match available hours within reasonable tolerance.
+-----------------------------------------------------------
+
+
+================= DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values) ==================
+Overall R&D      : Total available = 4686 hrs, Total allocated = 4686 hrs
+Overall Non‑R&D  : Total available = 715 hrs, Total allocated = 715 hrs
+Overall rounded allocated hours match rounded available hours.
+===========================================================================================
+
+================= DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS =================
+(Note: Costs below are based on the final rounded allocations, Solver cost in brackets)
+Project 'EURIDICE':
+  Computed Cost (Rounded):   12071403 | Target Cost:    7000000 [Solver: 12059298]
+  Relative Cost Deviation (Solver): +72.3 %
+  Total R&D Hours (Rounded):     1107
+  Total Non-R&D Hours (Rounded):    587
+  Topic Allocations (Rounded):
+    Bridge              :    289 hrs
+    Data Processing / Data Mgmt:    273 hrs
+    General Info. System / Methodology:    273 hrs
+    Training Env. / Artificial Pedagogy:    273 hrs
+-------------------------------------------------------------
+Project 'ICE-ID':
+  Computed Cost (Rounded):    4308280 | Target Cost:    3500000 [Solver: 4307681]
+  Relative Cost Deviation (Solver): +23.1 %
+  Total R&D Hours (Rounded):      735
+  Total Non-R&D Hours (Rounded):      1
+  Topic Allocations (Rounded):
+    Reasoning / Planning:    147 hrs
+    Cogn. Architecture / Hybrid Archi:    147 hrs
+    Bridge              :    147 hrs
+    Data Processing / Data Mgmt:    147 hrs
+    General Info. System / Methodology:    147 hrs
+-------------------------------------------------------------
+Project 'FRESH-ID':
+  Computed Cost (Rounded):    8101158 | Target Cost:    7300000 [Solver: 8105153]
+  Relative Cost Deviation (Solver): +11.0 %
+  Total R&D Hours (Rounded):     1348
+  Total Non-R&D Hours (Rounded):     16
+  Topic Allocations (Rounded):
+    Networks / Distributed Systems:    193 hrs
+    Bridge              :    193 hrs
+    System / Architecture Integration:    193 hrs
+    Modeling / Simulation:    193 hrs
+    Data Processing / Data Mgmt:    193 hrs
+    General Info. System / Methodology:    193 hrs
+    Visualization / UX  :    193 hrs
+-------------------------------------------------------------
+Project 'AI-STYLIST':
+  Computed Cost (Rounded):    9704034 | Target Cost:    8910000 [Solver: 9712742]
+  Relative Cost Deviation (Solver): +9.0 %
+  Total R&D Hours (Rounded):     1496
+  Total Non-R&D Hours (Rounded):    111
+  Topic Allocations (Rounded):
+    System / Architecture Integration:    249 hrs
+    Bridge              :    249 hrs
+    Modeling / Simulation:    249 hrs
+    Visualization / UX  :    249 hrs
+    Data Processing / Data Mgmt:    249 hrs
+    General Info. System / Methodology:    249 hrs
+-------------------------------------------------------------
+
+Grand Total Computed Cost (Rounded Allocations):     34184874
+Grand Total Target Cost:                             26710000
+Overall Relative Deviation (Sum of Solver Costs vs Sum of Target Costs):+28.0 %
+==========================================================================================
+Algorithm finished.
+Iterations used (if any): N/A
+
+================= PROJECT COSTS (Actual vs. Target) =================
+Project: EURIDICE
+  Actual Cost : 12059298.33
+  Target Cost : 7000000.00
+  >>> WARNING: Over Budget by 5059298.33 ( 72.28%)
+------------------------------------------------------------
+Project: ICE-ID
+  Actual Cost : 4307681.09
+  Target Cost : 3500000.00
+  >>> WARNING: Over Budget by  807681.09 ( 23.08%)
+------------------------------------------------------------
+Project: FRESH-ID
+  Actual Cost : 8105152.71
+  Target Cost : 7300000.00
+  >>> WARNING: Over Budget by  805152.71 ( 11.03%)
+------------------------------------------------------------
+Project: AI-STYLIST
+  Actual Cost : 9712741.62
+  Target Cost : 8910000.00
+  >>> WARNING: Over Budget by  802741.62 (  9.01%)
+------------------------------------------------------------
+======================================================================
+
+
+Diagnostics:
+=== Per-Employee Allocation Diagnostics ===
+
+
+Employee: Arash Sheikhlar
+--------------------------------------------------
+--------------------------------------------------
+Summary for Arash Sheikhlar:
+  Total R&D      : Available =  62.00 hrs, Allocated =  62.00 hrs
+  Total Non‑R&D  : Available =  26.00 hrs, Allocated =  26.00 hrs
+==================================================
+
+Employee: Marta Abad Torrent
+--------------------------------------------------
+--------------------------------------------------
+Summary for Marta Abad Torrent:
+  Total R&D      : Available = 873.00 hrs, Allocated = 873.00 hrs
+  Total Non‑R&D  : Available =  50.00 hrs, Allocated =  50.00 hrs
+==================================================
+
+Employee: Sander Kaatee
+--------------------------------------------------
+--------------------------------------------------
+Summary for Sander Kaatee:
+  Total R&D      : Available = 196.00 hrs, Allocated = 196.00 hrs
+  Total Non‑R&D  : Available =   0.00 hrs, Allocated =   0.00 hrs
+==================================================
+
+Employee: Bridget Burger
+--------------------------------------------------
+--------------------------------------------------
+Summary for Bridget Burger:
+  Total R&D      : Available =  16.00 hrs, Allocated =  16.00 hrs
+  Total Non‑R&D  : Available = 400.00 hrs, Allocated = 400.00 hrs
+==================================================
+
+Employee: Jeff Thompson
+--------------------------------------------------
+--------------------------------------------------
+Summary for Jeff Thompson:
+  Total R&D      : Available = 422.00 hrs, Allocated = 422.00 hrs
+  Total Non‑R&D  : Available =   1.00 hrs, Allocated =   1.00 hrs
+==================================================
+
+Employee: Goncalo
+--------------------------------------------------
+--------------------------------------------------
+Summary for Goncalo:
+  Total R&D      : Available = 2162.00 hrs, Allocated = 2162.00 hrs
+  Total Non‑R&D  : Available =  31.00 hrs, Allocated =  31.00 hrs
+==================================================
+
+Employee: Tangrui Li
+--------------------------------------------------
+--------------------------------------------------
+Summary for Tangrui Li:
+  Total R&D      : Available =  23.00 hrs, Allocated =  23.00 hrs
+  Total Non‑R&D  : Available =   0.00 hrs, Allocated =   0.00 hrs
+==================================================
+
+Employee: Mário Jorge Silva Correia
+--------------------------------------------------
+--------------------------------------------------
+Summary for Mário Jorge Silva Correia:
+  Total R&D      : Available = 244.00 hrs, Allocated = 244.00 hrs
+  Total Non‑R&D  : Available =   0.00 hrs, Allocated =   0.00 hrs
+==================================================
+
+Employee: Kris
+--------------------------------------------------
+--------------------------------------------------
+Summary for Kris:
+  Total R&D      : Available = 688.00 hrs, Allocated = 688.00 hrs
+  Total Non‑R&D  : Available = 207.00 hrs, Allocated = 207.00 hrs
+==================================================
+
+
+=== Overall Allocations ===
+
+Overall R&D      : Total available = 4686.00 hrs, Total allocated = 4686.00 hrs
+
+Overall Non‑R&D  : Total available = 715.00 hrs, Total allocated = 715.00 hrs
+
+=== Allocation Algorithm Diagnostics ===
+
+================= DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values) ==================
+Overall R&D      : Total available = 4686 hrs, Total allocated = 4686 hrs
+Overall Non‑R&D  : Total available = 715 hrs, Total allocated = 715 hrs
+Overall rounded allocated hours match rounded available hours.
+===========================================================================================
+
+================= DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS =================
+(Note: Costs below are based on the final rounded allocations, Solver cost in brackets)
+Project 'EURIDICE':
+  Computed Cost (Rounded):   12071403 | Target Cost:    7000000 [Solver: 12059298]
+  Relative Cost Deviation (Solver): +72.3 %
+  Total R&D Hours (Rounded):     1107
+  Total Non-R&D Hours (Rounded):    587
+  Topic Allocations (Rounded):
+    Bridge              :    289 hrs
+    Data Processing / Data Mgmt:    273 hrs
+    General Info. System / Methodology:    273 hrs
+    Training Env. / Artificial Pedagogy:    273 hrs
+-------------------------------------------------------------
+Project 'ICE-ID':
+  Computed Cost (Rounded):    4308280 | Target Cost:    3500000 [Solver: 4307681]
+  Relative Cost Deviation (Solver): +23.1 %
+  Total R&D Hours (Rounded):      735
+  Total Non-R&D Hours (Rounded):      1
+  Topic Allocations (Rounded):
+    Reasoning / Planning:    147 hrs
+    Cogn. Architecture / Hybrid Archi:    147 hrs
+    Bridge              :    147 hrs
+    Data Processing / Data Mgmt:    147 hrs
+    General Info. System / Methodology:    147 hrs
+-------------------------------------------------------------
+Project 'FRESH-ID':
+  Computed Cost (Rounded):    8101158 | Target Cost:    7300000 [Solver: 8105153]
+  Relative Cost Deviation (Solver): +11.0 %
+  Total R&D Hours (Rounded):     1348
+  Total Non-R&D Hours (Rounded):     16
+  Topic Allocations (Rounded):
+    Networks / Distributed Systems:    193 hrs
+    Bridge              :    193 hrs
+    System / Architecture Integration:    193 hrs
+    Modeling / Simulation:    193 hrs
+    Data Processing / Data Mgmt:    193 hrs
+    General Info. System / Methodology:    193 hrs
+    Visualization / UX  :    193 hrs
+-------------------------------------------------------------
+Project 'AI-STYLIST':
+  Computed Cost (Rounded):    9704034 | Target Cost:    8910000 [Solver: 9712742]
+  Relative Cost Deviation (Solver): +9.0 %
+  Total R&D Hours (Rounded):     1496
+  Total Non-R&D Hours (Rounded):    111
+  Topic Allocations (Rounded):
+    System / Architecture Integration:    249 hrs
+    Bridge              :    249 hrs
+    Modeling / Simulation:    249 hrs
+    Visualization / UX  :    249 hrs
+    Data Processing / Data Mgmt:    249 hrs
+    General Info. System / Methodology:    249 hrs
+-------------------------------------------------------------
+
+Grand Total Computed Cost (Rounded Allocations):     34184874
+Grand Total Target Cost:                             26710000
+Overall Relative Deviation (Sum of Solver Costs vs Sum of Target Costs):+28.0 %
+==========================================================================================
+[INFO] Diagnostics written to output_diagnostics.txt
+
+Detailed Project Cost Breakdown:
+Project 'EURIDICE':
+  Total R&D Hours: 1107.44
+  Total Non-R&D Hours: 587.14
+  Direct Cost (R&D + Non-R&D): 12071402.69
+  Overhead Cost (Rate 0.07): 844998.19
+  Computed Total Cost: 12071402.69 | Target Cost: 7000000.0
+  Relative Cost Deviation: 72.45 %
+-------------------------------------------------------------
+Project 'ICE-ID':
+  Total R&D Hours: 734.63
+  Total Non-R&D Hours: 1.39
+  Direct Cost (R&D + Non-R&D): 4308279.74
+  Overhead Cost (Rate 0.00): 0.00
+  Computed Total Cost: 4308279.74 | Target Cost: 3500000.0
+  Relative Cost Deviation: 23.09 %
+-------------------------------------------------------------
+Project 'FRESH-ID':
+  Total R&D Hours: 1348.32
+  Total Non-R&D Hours: 15.51
+  Direct Cost (R&D + Non-R&D): 8101157.57
+  Overhead Cost (Rate 0.22): 1782254.67
+  Computed Total Cost: 8101157.57 | Target Cost: 7300000.0
+  Relative Cost Deviation: 10.97 %
+-------------------------------------------------------------
+Project 'AI-STYLIST':
+  Total R&D Hours: 1495.61
+  Total Non-R&D Hours: 110.96
+  Direct Cost (R&D + Non-R&D): 9704033.74
+  Overhead Cost (Rate 0.20): 1940806.75
+  Computed Total Cost: 9704033.74 | Target Cost: 8910000.0
+  Relative Cost Deviation: 8.91 %
+-------------------------------------------------------------
+================================================================
+

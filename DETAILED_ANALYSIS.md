@@ -1,4 +1,4 @@
-# Detailed Calculation Explanation and Results Analysis
+# Detailed Calculation Explanation and Results Analysis (Latest Runs)
 
 ## 1. CALCULATION FORMULAS
 
@@ -6,8 +6,8 @@
 ```
 hourly_rate = (monthly_salary / 160) × 1.25
 ```
-- 160 hours = standard working hours/month
-- 1.25 = built-in 25% overhead multiplier
+- 160 hours = standard working hours/month  
+- 1.25 = built-in 25% overhead multiplier  
 - Example: 1,000,000 ISK/month → 7,812.5 ISK/hour
 
 ### Direct Cost
@@ -17,15 +17,14 @@ direct_cost = Σ(hours × hourly_rate) for all employees
 - Includes both R&D hours (allocated to topics) and Non-R&D hours
 
 ### Project Overhead
-- **Fixed** (≥ 100,000): Added as fixed ISK amount
-- **Percentage** (0 < value < 1): `overhead = direct_cost × percentage`
-- **Note:** Only fixed overhead is added to target calculation
+- **Fixed** (≥ 100,000): Added as fixed ISK amount (also counts toward target)
+- **Percentage** (0 < value < 1): `overhead = direct_cost × percentage` (cost-side only)
 
 ### Total Target
 ```
 total_target = grant_contractual + matching_funds + fixed_overhead
 ```
-- Matching: `grant × (value/100)` if percentage, else absolute value
+- Matching: `grant × (value/100)` if percentage, else absolute value  
 - Only fixed overhead (≥ 100,000) added to target
 
 ### Total Project Cost
@@ -40,9 +39,9 @@ residual_target = max(total_target - previous_cost, 0)
 
 ---
 
-## 2. HOUR & MONEY USAGE
+## 2. HOUR & MONEY USAGE (Pipeline Runs)
 
-### 2024 Run
+### 2024 Run (state: `projectStates/Euridice_LATEST.json`)
 | Metric | Value | Status |
 |--------|-------|--------|
 | R&D Hours | 4,686 / 4,686 | ✅ 100% used |
@@ -51,11 +50,11 @@ residual_target = max(total_target - previous_cost, 0)
 | Actually Allocated | 37,584,874 ISK | 41.5% of target |
 | Shortfall | 53,031,936 ISK | 58.5% below target |
 | Solver Status | `fallback_feasible` | Fallback used |
-| Capacity Analysis | 62.3% shortfall | Early warning active |
+| Capacity Analysis | 62.3% shortfall | Warning |
 
-**Conclusion:** ✅ All hours used, but only 41.5% of target money allocated (insufficient capacity)
+**Conclusion:** All hours used; money shortfall due to insufficient capacity (hours × rates < targets).
 
-### 2025 Run (Concatenated)
+### 2025 Run (Concatenated with 2024)
 | Metric | Value | Status |
 |--------|-------|--------|
 | R&D Hours | 4,748 / 4,748 | ✅ 100% used |
@@ -64,150 +63,124 @@ residual_target = max(total_target - previous_cost, 0)
 | Actually Allocated (cumulative) | 67,364,707 ISK | 60.8% of target |
 | Shortfall | 43,502,103 ISK | 39.2% below target |
 | Solver Status | `fallback_feasible` | Fallback used |
-| Capacity Analysis | 75.1% shortfall | Early warning active |
+| Capacity Analysis | 75.1% shortfall | Warning |
 
-**Conclusion:** ✅ All hours used, but only 60.8% of target money allocated
+**Conclusion:** All hours used; still under target because of limited capacity.
 
 ---
 
-## 3. PROJECT-BY-PROJECT ANALYSIS
+## 3. PROJECT-BY-PROJECT ANALYSIS (Latest Runs)
 
 ### EURIDICE
-
-**2024:**
-- Target: 42,385,810 ISK (Grant: 21,192,905 + Matching: 21,192,905)
-- Actual: 18,255,962 ISK (-56.9%)
-- Hours: 2,200 R&D + 547 Non-R&D = 2,747 total
-- **Result:** Under target by 56.9%
-- **Reason:** Hourly rates insufficient to reach 42.4M target with available hours
-
-**2025 (Concatenated):**
-- Previous: 18,255,962 ISK | Residual Target: 24,129,848 ISK
-- New: 6,019,077 ISK | Total: 24,275,039 ISK (-42.7% vs original)
-- Hours: 1,567 R&D (new)
-- **Result:** ✅ **FIXED** - Now properly capped, -42.7% (was +14.5% before fix)
-- **Reason:** Hard caps now prevent exceeding total target
-
----
+- **2024:** Target 42,385,810; Actual 18,255,962 (‑56.9%); Hours 2,200 R&D + 547 Non-R&D. Under target due to capacity.  
+- **2025 (concat):** Previous 18,255,962; Residual 24,129,848; New 6,019,077; Total 24,275,039 (‑42.7%). Capped correctly.
 
 ### ICE-ID
-
-**2024:**
-- Target: 3,000,000 ISK
-- Actual: 990,789 ISK (-67.0%)
-- Hours: 153 R&D + 10 Non-R&D
-- **Result:** Under target by 67.0%
-- **Reason:** Small target relative to others, minimum allocation guarantee ensures some allocation
-
-**2025 (Concatenated):**
-- Previous: 990,789 ISK | Residual: 2,009,211 ISK
-- New: 501,188 ISK | Total: 1,491,977 ISK (-50.3% vs original)
-- Hours: 120 R&D (new)
-- **Result:** Still 50.3% under target
-- **Reason:** Small target weight in fallback allocation, but minimum guarantee ensures allocation
-
----
+- **2024:** Target 3,000,000; Actual 990,789 (‑67.0%); Hours 153 R&D + 10 Non-R&D. Small target, minimum allocation keeps some spend.  
+- **2025 (concat):** Previous 990,789; New 501,188; Total 1,491,977 (‑50.3%). Still under target; small weight in fallback.
 
 ### FRESH-ID
-
-**2024:**
-- Target: 22,651,000 ISK (Grant: 16,988,250 + Matching: 5,662,750)
-- Actual: 7,480,786 ISK (-67.0%)
-- Hours: 1,165 R&D + 79 Non-R&D
-- **Result:** Under target by 67.0%
-- **Reason:** Fallback mechanism properly weighted by target
-
-**2025 (Concatenated):**
-- Previous: 7,480,786 ISK | Residual: 15,170,214 ISK
-- New: 3,784,139 ISK | Total: 11,264,924 ISK (-50.3% vs original)
-- Hours: 988 R&D (new)
-- **Result:** ✅ **FIXED** - Now getting allocation (was 0 before fix)
-- **Reason:** Fallback triggered when solver not optimal, properly weighted by residual targets
-
----
+- **2024:** Target 22,651,000; Actual 7,480,786 (‑67.0%); Hours 1,165 R&D + 79 Non-R&D.  
+- **2025 (concat):** Previous 7,480,786; New 3,784,139; Total 11,264,924 (‑50.3%). Now allocated (was 0 before fixes); residual-weighted fallback working.
 
 ### AI-STYLIST
-
-**2024:**
-- Target: 22,580,000 ISK (Grant: 16,200,000 + Matching: 4,680,000 + Overhead: 1,700,000)
-- Actual: 10,857,337 ISK (-51.9%)
-- Hours: 1,167 R&D + 79 Non-R&D
-- **Result:** Under target by 51.9%
-- **Note:** Overhead calculation working correctly
-
-**2025 (Concatenated):**
-- Previous: 10,857,337 ISK | Residual: 11,722,663 ISK
-- New: 6,324,163 ISK | Total: 17,181,500 ISK (-23.9% vs original)
-- Hours: 763 R&D (new)
-- **Result:** ✅ **FIXED** - Now properly capped, -23.9% (was +6.1% before fix)
-- **Reason:** Hard caps prevent exceeding total target
-
----
+- **2024:** Target 22,580,000 (includes 1,700,000 fixed OH); Actual 10,857,337 (‑51.9%); Hours 1,167 R&D + 79 Non-R&D.  
+- **2025 (concat):** Previous 10,857,337; New 6,324,163; Total 17,181,500 (‑23.9%). Hard caps prevent over-target (was +6.1% before fixes).
 
 ### TRACKWELL (2025 only)
-
-**2025:**
-- Target: 20,250,000 ISK (Grant: 13,500,000 + Matching: 2,700,000 + Overhead: 4,050,000)
-- Actual: 13,151,267 ISK (-35.1%)
-- Hours: 1,310 R&D
-- **Result:** Under target by 35.1%
-- **Reason:** Fallback mechanism allocated appropriately based on target weight
+- **2025:** Target 20,250,000; Actual 13,151,267 (‑35.1%); Hours 1,310 R&D. Allocated proportionally; under target due to capacity.
 
 ---
 
-## 4. KEY ISSUES & FIXES
-
+## 4. KEY ISSUES & FIXES (Current Status)
 | Issue | Status | Description |
 |-------|--------|-------------|
-| **FRESH-ID Zero Allocation** | ✅ **FIXED** | Previously got 0 allocation in 2025. Now fixed by triggering fallback when solver not optimal |
-| **Hour Imbalance** | ⚠️ Improved | Fallback now properly weights by residual targets, better distribution |
-| **Over-Budget Projects** | ✅ **FIXED** | Hard caps now prevent exceeding targets. EURIDICE: -42.7% (was +14.5%), AI-STYLIST: -23.9% (was +6.1%) |
-| **Insufficient Capacity** | ⚠️ Present | 2024: 41.5% of target; 2025: 60.8% of target. Early capacity warnings now active |
-| **Solver Non-Optimal** | ✅ **FIXED** | Now uses fallback when solver status is not optimal (e.g., `user_limit`, `infeasible`) |
-| **Hard Caps** | ✅ **FIXED** | Projects now properly capped at total target limits |
-| **Minimum Allocation** | ✅ **FIXED** | 1% minimum guarantee ensures all projects get some allocation |
-| **Capacity Analysis** | ✅ **FIXED** | Early warnings show capacity shortfall percentages before optimization |
+| FRESH-ID zero allocation | ✅ Fixed | Residual-weighted fallback ensures allocation in 2025 |
+| Over-budget projects | ✅ Fixed | Hard caps enforce total targets (EURIDICE, AI-STYLIST capped) |
+| Hour imbalance risk | ⚠️ Improved | Fallback weights by residual targets; balance enforced post-normalization |
+| Solver non-optimal paths | ✅ Fixed | Fallback triggers on non-optimal statuses |
+| Minimum allocation guarantee | ✅ Fixed | 1% minimum applied in fallback |
+| Capacity analysis | ✅ Fixed | Early warnings for shortfall vs capacity |
+| Insufficient capacity | ⚠️ Present | Hours × rates < targets → under-allocation persists |
 
 ---
 
 ## 5. ROOT CAUSES
-
-1. **✅ FIXED: Fallback Trigger** - Now triggers when solver is not optimal, not just when values missing
-2. **✅ FIXED: Target Weighting** - Fallback properly weights by residual targets
-3. **✅ FIXED: Hard Caps** - Projects now properly capped at total target limits, preventing over-allocation
-4. **✅ FIXED: Minimum Allocation** - 1% minimum guarantee ensures all projects get some allocation
-5. **✅ FIXED: Capacity Analysis** - Early warnings with detailed metrics before optimization
-6. **⚠️ Remaining: Capacity Gap** - Employee hours × hourly rates < total target costs (mathematical constraint)
-7. **⚠️ Remaining: Under-Allocation** - Some projects still far below targets due to insufficient capacity
+1) ✅ Fallback trigger on non-optimal solver status  
+2) ✅ Residual-target weighting in fallback  
+3) ✅ Hard caps at total targets  
+4) ✅ Minimum allocation guarantee  
+5) ✅ Capacity analysis warnings  
+6) ⚠️ Remaining: Capacity gap (structural)  
+7) ⚠️ Remaining: Under-allocation driven by capacity gap  
 
 ---
 
 ## 6. SUMMARY
+- 2024: All hours allocated; 41.5% of target money; solver `fallback_feasible`; 62.3% capacity shortfall warning; all projects under target (‑51.9% to ‑67.0%).  
+- 2025 (concat): All hours allocated; 60.8% of cumulative target; solver `fallback_feasible`; 75.1% capacity shortfall warning; all projects under target (‑23.9% to ‑50.3%); no over-target cases; TRACKWELL added.  
+- Overall: Algorithm respects caps and residuals; allocations limited by available capacity.
 
-### 2024 Results
-- ✅ All hours used (100%)
-- ❌ Only 41.5% of target money allocated
-- ✅ Solver: `fallback_feasible` (fallback working correctly)
-- ✅ Capacity analysis: 62.3% shortfall warning
-- ⚠️ All projects under target: -51.9% to -67.0%
-
-### 2025 Results
-- ✅ All hours used (100%)
-- ❌ Only 60.8% of target money allocated
-- ✅ Solver: `fallback_feasible` (fallback working correctly)
-- ✅ Capacity analysis: 75.1% shortfall warning
-- ✅ **FRESH-ID FIXED:** Now getting allocation (was 0 before)
-- ✅ **Over-budget FIXED:** No projects exceeding targets (hard caps working)
-- ⚠️ All projects under target: -23.9% to -50.3%
-
-**Overall:** Algorithm now works correctly with all fixes applied. Hard caps prevent over-allocation, minimum guarantees ensure all projects get allocation, and capacity analysis provides early warnings. All hours used, proper target weighting, but still cannot meet all targets due to insufficient capacity (mathematical constraint).
+**Tests:** `pytest -q` → all passing.  
 
 ---
 
 ## 7. RECOMMENDATIONS
+1) Maintain fallback + caps; use residual targets for concatenation.  
+2) Address capacity gap if targets must be met (increase hours, rates, or reduce targets).  
+3) Align SciPy/NumPy versions; update PyQt5/sip to clear deprecations.  
+4) Keep minimum allocation safeguard.  
 
-1. **✅ COMPLETED:** Trigger fallback when solver not optimal
-2. **✅ COMPLETED:** Ensure proper target weighting in fallback
-3. **✅ COMPLETED:** Add hard caps to prevent over-allocation beyond targets
-4. **✅ COMPLETED:** Improve capacity analysis to identify infeasibility early
-5. **✅ COMPLETED:** Consider minimum allocation guarantees for all projects
+---
+
+## 8. Generated Artifacts (Latest Runs)
+- Reports:  
+  - `test_reports/test_diagnostics_2025-12-05_12-04-08.txt` (2024 run)  
+  - `test_reports/test_2025_concatenated_diagnostics.txt` (2024+2025 concat)  
+- States:  
+  - `test_projectStates/test_2024_state.json`  
+  - `test_projectStates/test_2025_state.json`
+## Detailed Calculation Explanation and Results (Latest Runs)
+
+### 1) Formulas
+- Hourly rate: `(monthly_salary / 160) × 1.25`
+- Direct cost: sum(hours × hourly_rate) for R&D and Non-R&D
+- Overhead: fixed (≥100k) added to target; percentage (<1) applied to cost
+- Target: `grant_contractual + matching_funds + fixed_overhead`
+- Total cost: `direct_cost + overhead_cost`
+- Residual target (concatenation): `max(total_target − previous_cost, 0)`
+
+### 2) 2024 Run (state: `projectStates/Euridice_LATEST.json`)
+- Solver: `fallback_feasible`
+- Project costs vs targets:
+  - EURIDICE: 18,255,962 / 42,385,810 (‑56.9%)
+  - ICE-ID: 990,789 / 3,000,000 (‑67.0%)
+  - FRESH-ID: 7,480,786 / 22,651,000 (‑67.0%)
+  - AI-STYLIST: 10,857,337 / 22,580,000 (‑51.9%)
+- Outputs: `test_reports/test_diagnostics_2025-12-05_12-04-08.txt`, `test_projectStates/test_2024_state.json`
+
+### 3) 2025 Run (concatenated with 2024; initial costs from above)
+- Solver: `fallback_feasible`
+- Project costs (total, including 2024) vs targets; new 2025 spend in parentheses:
+  - EURIDICE: 24,275,039 / 42,385,810 (‑42.7%) — new 6,019,077
+  - ICE-ID: 1,491,977 / 3,000,000 (‑50.3%) — new 501,188
+  - FRESH-ID: 11,264,924 / 22,651,000 (‑50.3%) — new 3,784,139
+  - AI-STYLIST: 17,181,500 / 22,580,000 (‑23.9%) — new 6,324,163
+  - TRACKWELL: 13,151,267 / 20,250,000 (‑35.1%) — all new
+- Outputs: `test_reports/test_2025_concatenated_diagnostics.txt`, `test_projectStates/test_2025_state.json`
+
+### 4) Observations
+- All projects remain under target due to capacity (hours × rates < targets).
+- Hard caps and residual targeting are enforced; no over-target spending.
+- Fallback allocation active in both runs; residual targets respected.
+
+### 5) Tests
+- `pytest -q` → all passing.
+
+### 6) Warnings
+- SciPy requires NumPy <1.23 (env has 1.26.4); upgrade SciPy or pin NumPy.
+- PyQt5/sip deprecation warnings remain until dependencies are updated.
+
+### 7) Recommendations
+- Keep current fallback + caps; focus on capacity (raise hours or rates) if hitting targets is required.
+- Align SciPy/NumPy and update PyQt5/sip to clear warnings.

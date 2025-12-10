@@ -1084,7 +1084,8 @@ class Controller:
                 "other_cost": proj.other_cost,
                 "research_topics": proj.research_topics[:],
                 "nonrnd_percentage": proj.nonrnd_percentage,
-                "color": proj.color  # Save the project tab color
+                "previous_spending": getattr(proj, "previous_spending", 0.0),
+                "color": proj.color
             }
             projects_list.append(proj_dict)
         state_data["projects"] = projects_list
@@ -1165,7 +1166,8 @@ class Controller:
                 proj.other_cost = proj_dict.get("other_cost", 0)
                 proj.research_topics = proj_dict.get("research_topics", [])
                 proj.nonrnd_percentage = proj_dict.get("nonrnd_percentage", 0)
-                proj.color = proj_dict.get("color", "")  # Load the project tab color
+                proj.previous_spending = proj_dict.get("previous_spending", 0.0)
+                proj.color = proj_dict.get("color", "")
                 self.projects.append(proj)
                 self.view.projects.append(proj)
                 self.view.create_project_subsection_from_project(proj)

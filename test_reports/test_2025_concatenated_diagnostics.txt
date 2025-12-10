@@ -1,5 +1,5 @@
 # 📊 Research Expenditure Allocation - Diagnostics Report
-**Generated:** 2025-12-04 at 15:12:40  
+**Generated:** 2025-12-05 at 12:04:24  
 **Reporting Period:** 01-01-2025 to 11-11-2025  
 **Employees:** 6  
 **Projects:** 5  
@@ -45,7 +45,11 @@ These costs reduce the remaining targets for this run.
 
 
 CAPACITY ANALYSIS: Insufficient capacity - 55,002,102 ISK shortfall (75.1%). Available: 18,279,834 ISK, Required: 73,281,936 ISK.
-FALLBACK TRIGGERED: Solver status 'user_limit' is not optimal. Using residual-target-weighted allocation instead.
+
+========== FAILURE REPORT ==========
+Status  : unbounded
+Message : variables have no value
+====================================
 FALLBACK: Insufficient capacity (18,279,834 available vs 73,281,936 required). Allocations will be capped to budget limits.
 FALLBACK: Used residual-target-weighted allocation with budget constraints and topic-based distribution.
 

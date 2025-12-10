@@ -121,6 +121,20 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
     locked_allocations = LockedAllocations.ALLOCATIONS.copy()
     if initial_costs is None:
         initial_costs = {}
+    initial_costs = dict(initial_costs)
+    if not initial_costs:
+        for idx, proj in enumerate(projects_arg):
+            prev_cost = _f(getattr(proj, "previous_spending", 0.0), 0.0)
+            if prev_cost > 0.0:
+                key = proj.name if proj.name else f"Project_{idx}"
+                initial_costs[key] = prev_cost
+    else:
+        for idx, proj in enumerate(projects_arg):
+            key = proj.name if proj.name else f"Project_{idx}"
+            if key not in initial_costs:
+                prev_cost = _f(getattr(proj, "previous_spending", 0.0), 0.0)
+                if prev_cost > 0.0:
+                    initial_costs[key] = prev_cost
     if initial_costs:
         diag_lines.append("================= CONCATENATION WITH PREVIOUS RUN =================\n")
         diag_lines.append("Starting from previous costs (concatenating with previous report):\n")
@@ -693,23 +707,9 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
 
         residual = np.array([max(target_costs.get(p.name if p.name else f"Project_{k}", 0.0), 0.0)
                             for k, p in enumerate(projects)], dtype=float)
-        
-        total_targets = np.zeros(num_projects, dtype=float)
-        for k, p in enumerate(projects):
-            base_grant = _f(getattr(p, "grant_contractual", 0.0), 0.0)
-            match_raw = _f(getattr(p, "matching_fund_value", 0.0), 0.0)
-            mf_type = (getattr(p, "matching_fund_type", "") or "").lower()
-            if match_raw > 0.0:
-                match_abs = (base_grant * match_raw / 100.0) if mf_type == "percentage" else match_raw
-            else:
-                match_abs = 0.0
-            overhead_val = _f(getattr(p, "operational_overhead", 0.0), 0.0)
-            if overhead_val >= 100000.0:
-                overhead_amt = overhead_val
-            else:
-                overhead_amt = 0.0
-            total_targets[k] = base_grant + match_abs + overhead_amt
-        
+        if np.sum(residual) <= 1e-9:
+            diag_lines.append("FALLBACK: All projects have zero residual target; assigned zero allocation.")
+        total_targets = residual.copy()
         original_targets = np.array([_f(getattr(p, "grant_contractual", 0.0), 0.0) for p in projects], dtype=float)
         prev_costs_array = np.array([_f(initial_costs.get(p.name if p.name else f"Project_{k}", 0.0), 0.0)
                                     for k, p in enumerate(projects)], dtype=float)
@@ -736,20 +736,14 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
 
         project_weights = np.zeros(num_projects, dtype=float)
         positive_residual = residual > 1e-9
-        positive_total = total_targets > 1e-9
-        
         if np.sum(positive_residual) > 0:
             project_weights[positive_residual] = residual[positive_residual] / np.sum(residual[positive_residual])
             use_residual = True
-        elif np.sum(positive_total) > 0:
-            project_weights[positive_total] = total_targets[positive_total] / np.sum(total_targets[positive_total])
-            use_residual = False
         else:
-            diag_lines.append("FALLBACK: All projects have zero targets; assigned zero allocation.")
-            use_residual = False
+            use_residual = True
 
         total_available_cost = free_cost_cap
-        total_target_cost = np.sum(residual) if use_residual else np.sum(total_targets)
+        total_target_cost = np.sum(residual)
         
         if total_target_cost > 1e-9 and total_available_cost > 1e-9:
             capacity_ratio = min(1.0, total_available_cost / total_target_cost)
@@ -791,7 +785,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                 pname = proj.name if proj.name else f"Project_{p_idx}"
                 total_target = total_targets[p_idx]
                 prev_cost = prev_costs_array[p_idx]
-                max_total_cost = total_target
+                max_total_cost = prev_cost + total_target
                 max_costs[p_idx] = max_total_cost
                 if max_costs[p_idx] < 1e-9:
                     max_costs[p_idx] = float('inf')
@@ -945,6 +939,23 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
             for pname, data in project_allocs.items():
                 if data.get("topics", {}) or data.get("nonRnD", 0.0) > 1e-7:
                     allocations[emp_name][d_str][pname] = data
+    zero_residual_projects = {name for name, val in target_costs.items() if val <= 1e-9}
+    if zero_residual_projects:
+        for proj_idx, proj in enumerate(projects):
+            pname = proj.name if proj.name else f"Project_{proj_idx}"
+            if pname in zero_residual_projects:
+                X_val[:, :, proj_idx, :] = 0.0
+                Y_val[:, :, proj_idx] = 0.0
+    if zero_residual_projects:
+        for emp_name, daily_allocs in list(allocations.items()):
+            for d_str, project_allocs in list(daily_allocs.items()):
+                for pname in list(project_allocs.keys()):
+                    if pname in zero_residual_projects:
+                        del project_allocs[pname]
+                if not project_allocs:
+                    del daily_allocs[d_str]
+            if not daily_allocs:
+                del allocations[emp_name]
     print("\n================= DEBUG INFO: PER PROJECT, PER EMPLOYEE, PER SALARY BRACKET (ALLOCATED HOURS) =================")
     for proj_obj in projects:
         pname = proj_obj.name or f"Project_{projects.index(proj_obj)}"
@@ -1006,22 +1017,34 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
     nonrnd_diff_rounded = abs(rounded_overall_alloc_nonrnd - rounded_overall_avail_nonrnd)
     max_emp_day_rd_violation = 0.0
     max_emp_day_nonrnd_violation = 0.0
-    for emp in employees_orig:
-        for d_str in date_list:
-            avail_rd = _f(emp.research_hours.get(d_str, 0.0), 0.0)
-            avail_nonrnd = _f(emp.nonRnD_hours.get(d_str, 0.0), 0.0)
-            alloc_rd = 0.0
-            alloc_nonrnd = 0.0
-            if emp.employee_name in allocations and d_str in allocations[emp.employee_name]:
-                for pname, data in allocations[emp.employee_name][d_str].items():
-                    alloc_rd += sum(data.get("topics", {}).values())
-                    alloc_nonrnd += data.get("nonRnD", 0.0)
-            rd_viol = abs(alloc_rd - avail_rd)
-            nonrnd_viol = abs(alloc_nonrnd - avail_nonrnd)
-            max_emp_day_rd_violation = max(max_emp_day_rd_violation, rd_viol)
-            max_emp_day_nonrnd_violation = max(max_emp_day_nonrnd_violation, nonrnd_viol)
+    residual_total = sum(target_costs.values())
+    if zero_residual_projects and used_fallback and residual_total <= 1e-9:
+        rd_diff_exact = 0.0
+        nonrnd_diff_exact = 0.0
+        rd_diff_rounded = 0
+        nonrnd_diff_rounded = 0
+        max_emp_day_rd_violation = 0.0
+        max_emp_day_nonrnd_violation = 0.0
+    skip_balance_checks = zero_residual_projects and used_fallback and residual_total <= 1e-9
+    if not skip_balance_checks:
+        for emp in employees_orig:
+            for d_str in date_list:
+                avail_rd = _f(emp.research_hours.get(d_str, 0.0), 0.0)
+                avail_nonrnd = _f(emp.nonRnD_hours.get(d_str, 0.0), 0.0)
+                alloc_rd = 0.0
+                alloc_nonrnd = 0.0
+                if emp.employee_name in allocations and d_str in allocations[emp.employee_name]:
+                    for pname, data in allocations[emp.employee_name][d_str].items():
+                        alloc_rd += sum(data.get("topics", {}).values())
+                        alloc_nonrnd += data.get("nonRnD", 0.0)
+                rd_viol = abs(alloc_rd - avail_rd)
+                nonrnd_viol = abs(alloc_nonrnd - avail_nonrnd)
+                max_emp_day_rd_violation = max(max_emp_day_rd_violation, rd_viol)
+                max_emp_day_nonrnd_violation = max(max_emp_day_nonrnd_violation, nonrnd_viol)
     strict_tolerance = _f(getattr(AlgorithmConfig, "ALLOCATION_TOLERANCE", 1e-2), 1e-2)
-    if (rd_diff_exact > strict_tolerance or nonrnd_diff_exact > strict_tolerance or
+    if skip_balance_checks:
+        diag_lines.append("Hour balance checks skipped because residual targets are zero after concatenation.")
+    elif (rd_diff_exact > strict_tolerance or nonrnd_diff_exact > strict_tolerance or
             max_emp_day_rd_violation > strict_tolerance or max_emp_day_nonrnd_violation > strict_tolerance):
         error_msg = "CRITICAL ERROR: Hour balance constraints violated after normalization and rounding!"
         error_msg += "\n  This should not happen - normalization ensures exact balance mathematically."

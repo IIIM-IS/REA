@@ -500,7 +500,7 @@ class ProjectModel:
                  matching_fund_type: str = "Percentage", matching_fund_value: float = 0,
                  operational_overhead: float = 0, 
                  travel_cost: float = 0, equipment_cost: float = 0, other_cost: float = 0, 
-                 nonrnd_percentage: float = 0):
+                 nonrnd_percentage: float = 0, previous_spending: float = 0.0):
         """
         Initialize a project model.
         
@@ -522,6 +522,7 @@ class ProjectModel:
             equipment_cost: Equipment costs
             other_cost: Other costs
             nonrnd_percentage: Minimum non-R&D percentage (as decimal)
+            previous_spending: Amount already spent in earlier periods
         """
         self.id = None
         self.name = name
@@ -541,6 +542,7 @@ class ProjectModel:
         self.equipment_cost = equipment_cost
         self.other_cost = other_cost
         self.nonrnd_percentage = nonrnd_percentage
+        self.previous_spending = previous_spending
         self.color = None
         self.research_topics = []
         self.allowed_topics = []
