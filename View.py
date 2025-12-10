@@ -940,7 +940,7 @@ class ReaDataView(QMainWindow):
             max_input.setText(str(project.grant_max or ''))
         contractual_input = QLineEdit()
         contractual_input.setPlaceholderText("Contractual")
-        contractual_input.setToolTip("Contractual grant amount (in ISK) - this is the PRIMARY TARGET COST used by the optimization algorithm. The algorithm uses this value to calculate cost deviations and tries to allocate employee hours so that total project cost (direct costs + overhead) matches this target as closely as possible. This is the value that drives the optimization objective function.")
+        contractual_input.setToolTip("Contractual grant amount (in ISK). If no period or lifetime target is provided, this value becomes the period target used by the solver for cost matching and penalties.")
         contractual_input.setEnabled(True)
         if project:
             contractual_input.setText(str(project.grant_contractual or ''))
@@ -956,7 +956,7 @@ class ReaDataView(QMainWindow):
         grant_layout.addWidget(max_input)
         
         contractual_label = QLabel("Contractual:")
-        contractual_label.setToolTip("Contractual grant amount (in ISK) - this is the PRIMARY TARGET COST used by the optimization algorithm. The algorithm uses this value to calculate cost deviations and tries to allocate employee hours so that total project cost (direct costs + overhead) matches this target as closely as possible. This is the value that drives the optimization objective function.")
+        contractual_label.setToolTip("Contractual grant amount (in ISK). If no period or lifetime target is provided, this value becomes the period target used by the solver for cost matching and penalties.")
         grant_layout.addWidget(contractual_label)
         grant_layout.addWidget(contractual_input)
         layout.addLayout(grant_layout)
@@ -966,11 +966,11 @@ class ReaDataView(QMainWindow):
 
         # --- Overhead ---
         overhead_label = QLabel("Overhead (%):")
-        overhead_label.setToolTip("Operational overhead rate as a percentage (0-100). This is multiplied by the direct cost (employee salaries) to calculate total project cost. Formula: Total Cost = Direct Cost × (1 + Overhead/100). For example, 25% means if direct costs are 1000 ISK, total cost is 1250 ISK. The algorithm uses this to ensure total allocated costs (including overhead) match the contractual target.")
+        overhead_label.setToolTip("Operational overhead. In the solver, values ≥ 100000 are treated as a fixed ISK overhead. Values > 1 are treated as a percentage (v%) of direct costs. Values between 0 and 1 are treated as zero overhead.")
         rates_layout.addWidget(overhead_label)
         overhead_input = QLineEdit()
         overhead_input.setFixedWidth(80)
-        overhead_input.setToolTip("Enter the overhead percentage (0-100). This is multiplied by the direct cost (employee salaries) to calculate total project cost. Formula: Total Cost = Direct Cost × (1 + Overhead/100). For example, enter 25 for 25% overhead. The algorithm uses this to ensure total allocated costs (including overhead) match the contractual target.")
+        overhead_input.setToolTip("Enter overhead. The solver interprets >1 as percent (v%), and ≥100000 as fixed ISK. Values between 0 and 1 are ignored. Current UI stores this as a fraction, so enter whole percentages (e.g., 25 for 25%).")
         overhead_input.setEnabled(True)
         if project and project.operational_overhead is not None:
             overhead_input.setText(str(project.operational_overhead * 100))
@@ -979,11 +979,11 @@ class ReaDataView(QMainWindow):
 
         # --- Matching fund ---
         matching_label = QLabel("Matching Fund:")
-        matching_label.setToolTip("Matching fund requirement: additional funding that must be allocated beyond the contractual target. The algorithm enforces this as a soft constraint (with penalty if violated). Required Total = Contractual + Matching Fund. If Percentage: Matching = Contractual × (Value/100). If Absolute: Matching = Value (ISK). The algorithm penalizes allocations that fall below this total requirement.")
+        matching_label.setToolTip("Matching fund requirement added on top of the contractual value. The solver computes matching from the contractual amount (not lifetime/period) and penalizes allocations that fall short of Contractual + Matching.")
         rates_layout.addWidget(matching_label)
         matching_type_combo = QComboBox()
         matching_type_combo.addItems(["Percentage", "Absolute"])
-        matching_type_combo.setToolTip("Select 'Percentage' to specify matching fund as a percentage of contractual amount (e.g., 20% of contractual), or 'Absolute' to specify a fixed amount in ISK (e.g., 100000 ISK). The algorithm calculates the required total cost differently based on this choice.")
+        matching_type_combo.setToolTip("Choose how to apply matching on the contractual amount: Percentage (e.g., 20% of contractual) or Absolute (fixed ISK).")
         matching_type_combo.setEnabled(True)
         if project and project.matching_fund_type:
             index = 0 if project.matching_fund_type.lower() == "percentage" else 1
@@ -993,7 +993,7 @@ class ReaDataView(QMainWindow):
         matching_value_input = QLineEdit()
         matching_value_input.setPlaceholderText("Value")
         matching_value_input.setFixedWidth(100)
-        matching_value_input.setToolTip("Matching fund value. If type is 'Percentage', enter a number like 20 for 20% (meaning 20% of contractual amount). If type is 'Absolute', enter the amount in ISK (e.g., 100000). The algorithm uses this to calculate Required Total = Contractual + Matching, and penalizes allocations below this total.")
+        matching_value_input.setToolTip("Matching value applied to the contractual amount. Percentage: enter whole percent (e.g., 20). Absolute: enter ISK (e.g., 100000). Solver target = Contractual + Matching.")
         matching_value_input.setEnabled(True)
         if project:
             matching_value_input.setText(str(project.matching_fund_value or ''))
@@ -1002,11 +1002,11 @@ class ReaDataView(QMainWindow):
 
         # --- Max non-R&D ---
         nonrnd_label = QLabel("Min Non-R&D (%):")
-        nonrnd_label.setToolTip("Minimum percentage (0-100) of total hours that must be allocated to non-R&D activities for this project. The algorithm enforces this as a soft constraint with penalty. Formula: NonR&D Hours / (R&D Hours + NonR&D Hours) ≥ Value/100. For example, 30% means at least 30% of allocated hours must be non-R&D work. The algorithm penalizes deviations from this target ratio.")
+        nonrnd_label.setToolTip("Minimum percentage (0-100) of total hours that must be non-R&D. The solver uses the fractional form (value/100) as a soft constraint.")
         rates_layout.addWidget(nonrnd_label)
         nonrnd_input = QLineEdit()
         nonrnd_input.setFixedWidth(80)
-        nonrnd_input.setToolTip("Enter the minimum non-R&D percentage (0-100). The algorithm enforces this as a soft constraint with penalty. Formula: NonR&D Hours / (R&D Hours + NonR&D Hours) ≥ Value/100. For example, enter 30 for 30% minimum. The algorithm penalizes allocations that fall below this ratio.")
+        nonrnd_input.setToolTip("Enter 0-100. The solver uses value/100 as the minimum non-R&D share; deviations are penalized.")
         nonrnd_input.setEnabled(True)
         if project and project.nonrnd_percentage is not None:
             nonrnd_input.setText(str(project.nonrnd_percentage * 100))

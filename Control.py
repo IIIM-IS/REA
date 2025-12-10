@@ -679,12 +679,10 @@ class Controller:
                 match_abs = 0.0
             
             overhead_val = float(proj.operational_overhead or 0.0)
-            if overhead_val >= 100000.0:
-                overhead_amt = overhead_val
-            else:
-                overhead_amt = 0.0
+            overhead_pct = overhead_val / 100.0 if overhead_val > 1.0 else max(overhead_val, 0.0)
+            overhead_pct = max(0.0, min(overhead_pct, 1.0))
             
-            original_target = base_grant + match_abs + overhead_amt
+            original_target = max((base_grant + match_abs) * (1.0 - overhead_pct), 0.0)
             previous_cost = float(initial_costs_used.get(proj_name, 0.0))
             residual_target = max(original_target - previous_cost, 0.0)
             total_cost_target += original_target

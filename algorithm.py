@@ -6,6 +6,7 @@ import sys
 import io
 import time
 from datetime import datetime, timedelta
+from typing import Any
 from config import SalaryConfig, AlgorithmConfig, LockedAllocations, ResearchTopics
 
 """
@@ -65,6 +66,76 @@ def _pct(x, default: float = 0.0) -> float:
     v = _f(x, default)
     v = max(0.0, v)
     return v / 100.0
+
+
+def _matching_amount(base_grant: float, match_raw: float, match_type: str) -> float:
+    """
+    Calculate the absolute matching amount for a grant based on matching type.
+
+    Args:
+        base_grant: Base grant value in ISK.
+        match_raw: Matching value supplied by the user.
+        match_type: Matching type indicator, percentage or absolute.
+
+    Returns:
+        Matching amount in ISK.
+    """
+    if match_raw <= 0.0:
+        return 0.0
+    if match_type == "percentage":
+        return base_grant * match_raw / 100.0
+    return match_raw
+
+
+def _overhead_fraction(overhead_val: float) -> float:
+    """
+    Convert an overhead input into a fraction of the target to subtract.
+
+    Args:
+        overhead_val: Overhead input interpreted as percentage or absolute percent.
+
+    Returns:
+        Fraction in [0.0, 1.0] representing the portion to subtract.
+    """
+    if overhead_val <= 0.0:
+        return 0.0
+    fraction = overhead_val / 100.0 if overhead_val > 1.0 else overhead_val
+    return max(0.0, min(fraction, 1.0))
+
+
+def _adjusted_target(base_grant: float, match_abs: float, overhead_val: float) -> float:
+    """
+    Compute target after applying matching and subtracting overhead percentage.
+
+    Args:
+        base_grant: Base grant value in ISK.
+        match_abs: Absolute matching amount in ISK.
+        overhead_val: Overhead input interpreted as percentage.
+
+    Returns:
+        Target value after overhead deduction.
+    """
+    overhead_pct = _overhead_fraction(overhead_val)
+    base_target = base_grant + match_abs
+    return max(base_target * (1.0 - overhead_pct), 0.0)
+
+
+def _project_adjusted_target(proj: Any) -> float:
+    """
+    Calculate a project's target including matching and overhead reduction.
+
+    Args:
+        proj: Project object containing grant, matching, and overhead settings.
+
+    Returns:
+        Target value after applying matching and overhead deduction.
+    """
+    base_grant = _f(getattr(proj, "grant_contractual", 0.0), 0.0)
+    match_raw = _f(getattr(proj, "matching_fund_value", 0.0), 0.0)
+    mf_type = (getattr(proj, "matching_fund_type", "") or "").lower()
+    overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
+    match_abs = _matching_amount(base_grant, match_raw, mf_type)
+    return _adjusted_target(base_grant, match_abs, overhead_val)
 
 
 def round_vector_preserve_sum_two_decimals_two_decimals(v, target_total):
@@ -313,7 +384,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         for proj in projects:
             proj_name = proj.name if proj.name else "Unnamed Project"
             prev = _f(initial_costs.get(proj_name, 0.0), 0.0)
-            base = _f(getattr(proj, "grant_contractual", 0.0), 0.0)
+            base = _project_adjusted_target(proj)
             target_cost = max(base - prev, 0.0)
             print(f"Project '{proj_name}': Target Cost = {round(target_cost):d}")
 
@@ -358,7 +429,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         for proj in projects:
             proj_name_display = proj.name if proj.name else "Unnamed Project"
             prev_disp = _f(initial_costs.get(proj_name_display, 0.0), 0.0)
-            base_disp = _f(getattr(proj, "grant_contractual", 0.0), 0.0)
+            base_disp = _project_adjusted_target(proj)
             target_cost_display = max(base_disp - prev_disp, 0.0)
             print(f"Project '{proj_name_display}': Target Cost = {round(target_cost_display):d}")
 
@@ -438,7 +509,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         add("Non-R&D balance all emp/day (HARD)",
             cp.sum(Y, axis=2) == nonrnd_hours_array)
     )
-    all_target_costs_vals = [_f(getattr(p, "grant_contractual", 0.0), 0.0) for p in projects]
+    all_target_costs_vals = [_project_adjusted_target(p) for p in projects]
     non_zero_targets = [tc for tc in all_target_costs_vals if tc > 1e-6]
     avg_target_cost = np.mean(non_zero_targets) if non_zero_targets else 1.0
     avg_target_cost = max(avg_target_cost, 1e-6)
@@ -451,7 +522,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                 add(f"Topic whitelist (soft) proj={proj.name or p_idx}",
                     cp.sum(X[:, :, p_idx, disallowed_topic_indices]) <= slack_topics)
             )
-            proj_target = max(_f(getattr(proj, "grant_contractual", 0.0), 0.0), 1e-6)
+            proj_target = max(_project_adjusted_target(proj), 1e-6)
             cost_deviation_penalties.append(BIG_SLACK_PENALTY * slack_topics / proj_target)
     project_cost_exprs = {}
     target_costs = {}
@@ -461,7 +532,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
     smooth_penalty = cp.sum_squares(X[:, 1:, :, :] - X[:, :-1, :, :])
     topic_penalty = 0
     slacks = {}
-    all_target_costs_vals = [_f(getattr(p, "grant_contractual", 0.0), 0.0) for p in projects]
+    all_target_costs_vals = [_project_adjusted_target(p) for p in projects]
     non_zero_targets = [tc for tc in all_target_costs_vals if tc > 1e-6]
     avg_target_cost = np.mean(non_zero_targets) if non_zero_targets else 1.0
     avg_target_cost = max(avg_target_cost, 1e-6)
@@ -479,7 +550,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
     print(f"    from free   employees : {free_cost_cap:,.0f}")
     print(f"    from locked employees : {locked_cost_cap:,.0f}")
     for p in projects:
-        need = _f(getattr(p, "grant_contractual", 0.0), 0.0)
+        need = _project_adjusted_target(p)
         print(f"  – {p.name:<12s} needs ≥ {need:,.0f}  (target={need:,.0f})")
     print("===========================================================\n")
     required_total_cost = 0.0
@@ -489,13 +560,9 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         base_grant = _f(getattr(p, "grant_contractual", 0.0), 0.0)
         mf = _f(getattr(p, "matching_fund_value", 0.0), 0.0)
         mf_type = (getattr(p, "matching_fund_type", "") or "").lower()
-        match_abs = (base_grant * mf / 100.0) if (mf > 0.0 and mf_type == 'percentage') else mf
+        match_abs = _matching_amount(base_grant, mf, mf_type)
         overhead_val = _f(getattr(p, "operational_overhead", 0.0), 0.0)
-        if overhead_val >= 100000.0:
-            overhead_amt = overhead_val
-        else:
-            overhead_amt = 0.0
-        total_target = base_grant + match_abs + overhead_amt
+        total_target = _adjusted_target(base_grant, match_abs, overhead_val)
         required_total_cost += max(total_target - prev, 0.0)
 
     hard_capacity = free_cost_cap + locked_cost_cap
@@ -519,23 +586,11 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         pname = proj.name if proj.name else f"Project_{p_idx}"
         prev_spend = _f(initial_costs.get(pname, 0.0), 0.0)
         base_grant = _f(getattr(proj, "grant_contractual", 0.0), 0.0)
-        
         match_raw = _f(getattr(proj, "matching_fund_value", 0.0), 0.0)
         mf_type = (getattr(proj, "matching_fund_type", "") or "").lower()
-        if match_raw > 0.0:
-            match_abs = (base_grant * match_raw / 100.0) if mf_type == "percentage" else match_raw
-        else:
-            match_abs = 0.0
-        
+        match_abs = _matching_amount(base_grant, match_raw, mf_type)
         overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
-        if overhead_val >= 100000.0:
-            overhead_amount = overhead_val
-        elif overhead_val > 0.0 and overhead_val < 1.0:
-            overhead_amount = 0.0
-        else:
-            overhead_amount = 0.0
-        
-        base_target = base_grant + match_abs + overhead_amount
+        base_target = _adjusted_target(base_grant, match_abs, overhead_val)
         residual_target = max(base_target - prev_spend, 0.0)
         target_costs[pname] = residual_target
         if residual_target <= 1e-9:
@@ -710,7 +765,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         if np.sum(residual) <= 1e-9:
             diag_lines.append("FALLBACK: All projects have zero residual target; assigned zero allocation.")
         total_targets = residual.copy()
-        original_targets = np.array([_f(getattr(p, "grant_contractual", 0.0), 0.0) for p in projects], dtype=float)
+        original_targets = np.array([_project_adjusted_target(p) for p in projects], dtype=float)
         prev_costs_array = np.array([_f(initial_costs.get(p.name if p.name else f"Project_{k}", 0.0), 0.0)
                                     for k, p in enumerate(projects)], dtype=float)
 
@@ -1166,16 +1221,10 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         
         match_raw = _f(getattr(proj, "matching_fund_value", 0.0), 0.0)
         mf_type = (getattr(proj, "matching_fund_type", "") or "").lower()
-        if match_raw > 0.0:
-            match_abs = (base_grant * match_raw / 100.0) if mf_type == "percentage" else match_raw
-        else:
-            match_abs = 0.0
+        match_abs = _matching_amount(base_grant, match_raw, mf_type)
         overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
-        if overhead_val >= 100000.0:
-            overhead_amt = overhead_val
-        else:
-            overhead_amt = 0.0
-        total_target = base_grant + match_abs + overhead_amt
+        overhead_pct = _overhead_fraction(overhead_val)
+        total_target = _adjusted_target(base_grant, match_abs, overhead_val)
         
         rounded_computed_cost_rounded = round(computed_cost_rounded)
         rounded_computed_cost_solver_display = round(computed_cost_solver) if not np.isnan(computed_cost_solver) else 'N/A'
@@ -1196,14 +1245,14 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         msg = f"Project '{pname}':"
         diag_lines.append(msg)
         if previous_cost > 1e-6:
-            msg = f"  Grant: {rounded_base_grant:10d} ISK | Matching: {round(match_abs):10d} ISK | Overhead: {round(overhead_amt):10d} ISK | Total Target: {rounded_total_target:10d} ISK"
+            msg = f"  Grant: {rounded_base_grant:10d} ISK | Matching: {round(match_abs):10d} ISK | Overhead (%): {overhead_pct * 100:10.2f} | Total Target: {rounded_total_target:10d} ISK"
             diag_lines.append(msg)
             msg = f"  Previous Cost: {rounded_previous_cost:10d} ISK | Residual Target: {rounded_target_cost:10d} ISK"
             diag_lines.append(msg)
             msg = f"  Computed Cost (Rounded): {rounded_computed_cost_rounded:10d} ISK | [Solver: {rounded_computed_cost_solver_display}]"
             diag_lines.append(msg)
         else:
-            msg = f"  Grant: {rounded_base_grant:10d} ISK | Matching: {round(match_abs):10d} ISK | Overhead: {round(overhead_amt):10d} ISK | Total Target: {rounded_total_target:10d} ISK"
+            msg = f"  Grant: {rounded_base_grant:10d} ISK | Matching: {round(match_abs):10d} ISK | Overhead (%): {overhead_pct * 100:10.2f} | Total Target: {rounded_total_target:10d} ISK"
             diag_lines.append(msg)
             msg = f"  Computed Cost (Rounded): {rounded_computed_cost_rounded:10d} ISK | [Solver: {rounded_computed_cost_solver_display}]"
             diag_lines.append(msg)
@@ -1244,7 +1293,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     diag_lines.append(topic_msg)
         separator = "-------------------------------------------------------------"
         diag_lines.append(separator)
-    grand_total_original_target = sum(_f(getattr(p, "grant_contractual", 0.0), 0.0) for p in projects)
+    grand_total_original_target = sum(_project_adjusted_target(p) for p in projects)
     grand_total_previous_cost = sum(_f(initial_costs.get(p.name if p.name else f"Project_{k}", 0.0), 0.0) for k, p in enumerate(projects))
     grand_total_residual_target = sum(target_costs.values())
     
