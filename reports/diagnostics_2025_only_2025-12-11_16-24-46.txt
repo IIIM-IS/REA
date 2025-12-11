@@ -1,0 +1,86 @@
+CAPACITY ANALYSIS: Insufficient capacity - 47,473,727 ISK shortfall (56.8%). Available: 36,099,243 ISK, Required: 83,572,970 ISK.
+FALLBACK TRIGGERED: Solver status 'user_limit' is not optimal. Using residual-target-weighted allocation instead.
+FALLBACK: Insufficient capacity (35,307,056 available vs 83,572,970 required). Allocations will be capped to budget limits.
+FALLBACK: Used residual-target-weighted allocation with budget constraints and topic-based distribution.
+
+================= DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values) ==================
+Overall R&D      : Total available = 5750 hrs, Total allocated = 5750 hrs
+Overall Non-R&D  : Total available = 434 hrs, Total allocated = 434 hrs
+✓ Hour balance constraints exactly satisfied
+  R&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
+  NonR&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
+  Max per-employee/day violations: R&D=0.0000, NonR&D=0.0000
+===========================================================================================
+
+================= DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS =================
+(Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)
+Project 'EURIDICE':
+  Grant:   21192905 ISK | Matching:   21192905 ISK | Overhead (%):       0.00 | Total Target:   42385810 ISK
+  Computed Cost (Rounded):   18736351 ISK | [Solver: 18698912]
+  Relative Cost Deviation vs Residual Target (Solver): -55.9 %
+  Total R&D Hours (Rounded):     2923
+  Total Non-R&D Hours (Rounded):    259
+  Topic Allocations (Rounded):
+    General Info. System / Methodology:    974 hrs
+    Data Processing / Data Mgmt:    974 hrs
+    Training Env. / Artificial Pedagogy:    974 hrs
+-------------------------------------------------------------
+Project 'ICE-ID':
+  Grant:    3000000 ISK | Matching:          0 ISK | Overhead (%):       0.00 | Total Target:    3000000 ISK
+  Computed Cost (Rounded):    1280403 ISK | [Solver: 1267409]
+  Relative Cost Deviation vs Residual Target (Solver): -57.8 %
+  Total R&D Hours (Rounded):      208
+  Total Non-R&D Hours (Rounded):     13
+  Topic Allocations (Rounded):
+    General Info. System / Methodology:     53 hrs
+    Cogn. Architecture / Hybrid Archi:     53 hrs
+    Data Processing / Data Mgmt:     51 hrs
+    Reasoning / Planning:     51 hrs
+-------------------------------------------------------------
+Project 'FRESH-ID':
+  Grant:   12081000 ISK | Matching:    2548000 ISK | Overhead (%):      16.00 | Total Target:   12288360 ISK
+  Computed Cost (Rounded):    6061252 ISK | [Solver: 6022095]
+  Relative Cost Deviation vs Residual Target (Solver): -51.0 %
+  Total R&D Hours (Rounded):      851
+  Total Non-R&D Hours (Rounded):     52
+  Topic Allocations (Rounded):
+    General Info. System / Methodology:    142 hrs
+    Networks / Distributed Systems:    142 hrs
+    System / Architecture Integration:    142 hrs
+    Data Processing / Data Mgmt:    142 hrs
+    Visualization / UX  :    142 hrs
+    Modeling / Simulation:    142 hrs
+-------------------------------------------------------------
+Project 'AI-STYLIST':
+  Grant:    8740000 ISK | Matching:    1840000 ISK | Overhead (%):      14.00 | Total Target:    9098800 ISK
+  Computed Cost (Rounded):    4321736 ISK | [Solver: 4382124]
+  Relative Cost Deviation vs Residual Target (Solver): -51.8 %
+  Total R&D Hours (Rounded):      618
+  Total Non-R&D Hours (Rounded):     39
+  Topic Allocations (Rounded):
+    General Info. System / Methodology:    126 hrs
+    System / Architecture Integration:    123 hrs
+    Data Processing / Data Mgmt:    123 hrs
+    Visualization / UX  :    123 hrs
+    Modeling / Simulation:    123 hrs
+-------------------------------------------------------------
+Project 'TRACKWELL':
+  Grant:   14400000 ISK | Matching:    2400000 ISK | Overhead (%):       0.00 | Total Target:   16800000 ISK
+  Computed Cost (Rounded):    7066275 ISK | [Solver: 7097493]
+  Relative Cost Deviation vs Residual Target (Solver): -57.8 %
+  Total R&D Hours (Rounded):     1149
+  Total Non-R&D Hours (Rounded):     71
+  Topic Allocations (Rounded):
+    General Info. System / Methodology:    165 hrs
+    System / Architecture Integration:    165 hrs
+    Data Processing / Data Mgmt:    165 hrs
+    Spatial / Temporal Pattrn. Classification:    165 hrs
+    Visualization / UX  :    165 hrs
+    Multi-Agent Systems :    163 hrs
+    Modeling / Simulation:    163 hrs
+-------------------------------------------------------------
+
+Grand Total Computed Cost (Rounded Allocations):     37466017
+Grand Total Target Cost:                             83572970
+Overall Relative Deviation (Sum of Solver Costs vs Sum of Original Target Costs):-55.2 %
+==========================================================================================
