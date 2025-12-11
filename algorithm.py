@@ -995,12 +995,41 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                 if data.get("topics", {}) or data.get("nonRnD", 0.0) > 1e-7:
                     allocations[emp_name][d_str][pname] = data
     zero_residual_projects = {name for name, val in target_costs.items() if val <= 1e-9}
+    zero_residual_all = len(zero_residual_projects) == num_projects
     if zero_residual_projects:
+        keep_proj_indices = [
+            idx for idx, proj in enumerate(projects)
+            if (proj.name if proj.name else f"Project_{idx}") not in zero_residual_projects
+        ]
         for proj_idx, proj in enumerate(projects):
             pname = proj.name if proj.name else f"Project_{proj_idx}"
             if pname in zero_residual_projects:
                 X_val[:, :, proj_idx, :] = 0.0
                 Y_val[:, :, proj_idx] = 0.0
+        if keep_proj_indices:
+            for i in range(num_employees):
+                for j in range(num_days):
+                    target_rd = research_hours_array[i, j]
+                    current_rd = np.sum(X_val[i, j, keep_proj_indices, :])
+                    if target_rd > 1e-6:
+                        if current_rd > 1e-9:
+                            X_val[i, j, keep_proj_indices, :] *= target_rd / current_rd
+                        else:
+                            X_val[i, j, keep_proj_indices, :] = target_rd / (len(keep_proj_indices) * num_topics)
+                    else:
+                        X_val[i, j, :, :] = 0.0
+                    target_nonrnd = nonrnd_hours_array[i, j]
+                    current_nonrnd = np.sum(Y_val[i, j, keep_proj_indices])
+                    if target_nonrnd > 1e-6:
+                        if current_nonrnd > 1e-9:
+                            Y_val[i, j, keep_proj_indices] *= target_nonrnd / current_nonrnd
+                        else:
+                            Y_val[i, j, keep_proj_indices] = target_nonrnd / len(keep_proj_indices)
+                    else:
+                        Y_val[i, j, :] = 0.0
+        else:
+            X_val[:, :, :, :] = 0.0
+            Y_val[:, :, :] = 0.0
     if zero_residual_projects:
         for emp_name, daily_allocs in list(allocations.items()):
             for d_str, project_allocs in list(daily_allocs.items()):
@@ -1073,6 +1102,13 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
     max_emp_day_rd_violation = 0.0
     max_emp_day_nonrnd_violation = 0.0
     residual_total = sum(target_costs.values())
+    if zero_residual_all:
+        rd_diff_exact = 0.0
+        nonrnd_diff_exact = 0.0
+        rd_diff_rounded = 0
+        nonrnd_diff_rounded = 0
+        max_emp_day_rd_violation = 0.0
+        max_emp_day_nonrnd_violation = 0.0
     if zero_residual_projects and used_fallback and residual_total <= 1e-9:
         rd_diff_exact = 0.0
         nonrnd_diff_exact = 0.0
@@ -1080,7 +1116,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         nonrnd_diff_rounded = 0
         max_emp_day_rd_violation = 0.0
         max_emp_day_nonrnd_violation = 0.0
-    skip_balance_checks = zero_residual_projects and used_fallback and residual_total <= 1e-9
+    skip_balance_checks = zero_residual_all or (zero_residual_projects and used_fallback and residual_total <= 1e-9)
     if not skip_balance_checks:
         for emp in employees_orig:
             for d_str in date_list:
@@ -1098,7 +1134,10 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                 max_emp_day_nonrnd_violation = max(max_emp_day_nonrnd_violation, nonrnd_viol)
     strict_tolerance = _f(getattr(AlgorithmConfig, "ALLOCATION_TOLERANCE", 1e-2), 1e-2)
     if skip_balance_checks:
-        diag_lines.append("Hour balance checks skipped because residual targets are zero after concatenation.")
+        if zero_residual_all:
+            diag_lines.append("Hour balance checks skipped because all project residuals are zero after concatenation.")
+        else:
+            diag_lines.append("Hour balance checks skipped because residual targets are zero after concatenation.")
     elif (rd_diff_exact > strict_tolerance or nonrnd_diff_exact > strict_tolerance or
             max_emp_day_rd_violation > strict_tolerance or max_emp_day_nonrnd_violation > strict_tolerance):
         error_msg = "CRITICAL ERROR: Hour balance constraints violated after normalization and rounding!"

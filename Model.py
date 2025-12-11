@@ -186,6 +186,7 @@ class ReaDataModel:
             }
         """
         daily_hours = {}
+        nonrnd_rows = self._identify_nonrnd_rows(df)
         
         for col_index in in_range_columns:
             date_str = self._parse_date_from_column(df, col_index)
@@ -195,7 +196,7 @@ class ReaDataModel:
             research_hours = self._extract_cell_value(df, CSVConfig.RESEARCH_HOURS_ROW, col_index)
             meeting_iiim = self._extract_cell_value(df, CSVConfig.MEETING_IIIM_ROW, col_index)
             meeting_other = self._extract_cell_value(df, CSVConfig.MEETING_OTHER_ROW, col_index)
-            nonrnd_hours = self._extract_cell_value(df, CSVConfig.NONRND_HOURS_ROW, col_index)
+            nonrnd_hours = self._extract_nonrnd_hours(df, col_index, nonrnd_rows)
             
             total_meeting_hours = meeting_iiim + meeting_other
             
@@ -248,6 +249,83 @@ class ReaDataModel:
             return float(value)
         except (ValueError, TypeError, IndexError):
             return 0.0
+    
+    def _extract_nonrnd_hours(self, df: pd.DataFrame, col_index: int, nonrnd_rows: Dict[str, int]) -> float:
+        """
+        Extract non-R&D hours for a specific column, handling labeled totals and subrows.
+        
+        Args:
+            df: Pandas dataframe from the CSV
+            col_index: Column index to read
+            nonrnd_rows: Identified row indices for NRD totals and section start
+            
+        Returns:
+            Non-R&D hours value for the column
+        """
+        total_row = nonrnd_rows.get("total_row")
+        if total_row is not None:
+            total_val = self._extract_cell_value(df, total_row, col_index)
+            if total_val > 0:
+                return total_val
+        
+        start_row = nonrnd_rows.get("section_start")
+        if start_row is None:
+            return 0.0
+        
+        end_row_val = nonrnd_rows.get("section_end")
+        end_row = start_row + 5 if end_row_val is None else end_row_val
+        end_row = min(end_row, df.shape[0] - 1)
+        
+        summed = 0.0
+        for row_idx in range(start_row, end_row + 1):
+            summed += self._extract_cell_value(df, row_idx, col_index)
+        
+        return summed
+    
+    def _identify_nonrnd_rows(self, df: pd.DataFrame) -> Dict[str, int]:
+        """
+        Identify the rows associated with non-R&D hours, including totals and subsection start.
+        
+        Args:
+            df: Pandas dataframe from the CSV
+            
+        Returns:
+            Dictionary containing indices for the NRD total row and section boundaries
+        """
+        label_primary = {
+            "OTHER HOURS (NON-R&D; NRD)",
+            "OTHER HOURS (NON-R&D: NRD)",
+            "OTHER HOURS (NON-R&D NRD)",
+            "OTHER HOURS (NON-R&D)",
+        }
+        label_total = {"NRD HOURS TOTAL"}
+        columns_to_check = [1, 2]
+        
+        section_start = None
+        total_row = None
+        
+        for row_idx in range(df.shape[0]):
+            for col_idx in columns_to_check:
+                if col_idx >= df.shape[1]:
+                    continue
+                cell_value = df.iloc[row_idx, col_idx]
+                if pd.isna(cell_value):
+                    continue
+                cell_text = str(cell_value).strip().upper()
+                if total_row is None and cell_text in label_total:
+                    total_row = row_idx
+                if section_start is None and cell_text in label_primary:
+                    section_start = row_idx
+            if section_start is not None and total_row is not None:
+                break
+        
+        section_end = total_row - 1 if total_row is not None and section_start is not None else None
+        
+        return {
+            "section_start": section_start if section_start is not None else CSVConfig.NONRND_HOURS_ROW,
+            "section_end": section_end if section_end is not None else None,
+            "total_row": total_row,
+        }
 
     def _extract_research_topics(self, df: pd.DataFrame, in_range_columns: List[int]) -> Dict[str, Dict[str, float]]:
         """
