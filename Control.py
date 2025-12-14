@@ -577,30 +577,41 @@ class Controller:
             proj_name = proj.name if proj.name else "Unnamed"
             actual_cost = final_costs.get(proj_name, 0.0)
             try:
-                target_contractual = float(proj.grant_contractual or 0.0)
+                base_grant = float(proj.grant_contractual or 0.0)
                 target_min = float(proj.grant_min or 0.0)
             except Exception:
-                target_contractual = 0.0
+                base_grant = 0.0
                 target_min = 0.0
-
-            # Compare against contractual target (what algorithm optimizes for)
-            diff_contractual = actual_cost - target_contractual
-            diff_pct_contractual = (diff_contractual / target_contractual * 100) if target_contractual > 0 else 0
             
-            # Also show minimum target for reference
+            match_raw = float(proj.matching_fund_value or 0.0)
+            mf_type = (proj.matching_fund_type or "").lower()
+            if match_raw > 0.0:
+                match_abs = (base_grant * match_raw / 100.0) if mf_type == "percentage" else match_raw
+            else:
+                match_abs = 0.0
+            
+            overhead_val = float(proj.operational_overhead or 0.0)
+            overhead_pct = overhead_val / 100.0 if overhead_val > 1.0 else max(overhead_val, 0.0)
+            overhead_pct = max(0.0, min(overhead_pct, 1.0))
+            
+            total_target = max((base_grant + match_abs) * (1.0 - overhead_pct), 0.0)
+
+            diff_total = actual_cost - total_target
+            diff_pct_total = (diff_total / total_target * 100) if total_target > 0 else 0
+            
             diff_min = actual_cost - target_min
             diff_pct_min = (diff_min / target_min * 100) if target_min > 0 else 0
 
             print(f"Project: {proj_name}")
             print(f"  Actual Cost : {actual_cost:10.2f}")
-            print(f"  Contractual Target : {target_contractual:10.2f} (optimization target)")
-            if target_min != target_contractual:
+            print(f"  Total Target : {total_target:10.2f} (optimization target)")
+            if target_min > 0 and target_min != total_target:
                 print(f"  Minimum Target : {target_min:10.2f} (reference)")
-            if actual_cost > target_contractual:
-                print(f"  >>> WARNING: Over Contractual Budget by {diff_contractual:10.2f} ({diff_pct_contractual:6.2f}%)")
+            if actual_cost > total_target:
+                print(f"  >>> WARNING: Over Total Budget by {diff_total:10.2f} ({diff_pct_total:6.2f}%)")
             else:
-                print("  Contractual Budget Status: OK")
-            if target_min != target_contractual and actual_cost < target_min:
+                print("  Total Budget Status: OK")
+            if target_min > 0 and target_min != total_target and actual_cost < target_min:
                 print(f"  >>> NOTE: Below Minimum Target by {abs(diff_min):10.2f} ({abs(diff_pct_min):6.2f}%)")
             print("-" * 60)
         print("======================================================================\n")
@@ -992,15 +1003,25 @@ class Controller:
                     sal = (float(emp.salary_levels.get(date_str, {}).get("amount", 0.0)) / 160.0) * 1.25
                     total_direct_cost += (rnd_hours + nonrnd_hours) * sal
 
-            overhead_cost = 0.0
-            if proj.operational_overhead is not None:
-                overhead_cost = proj.operational_overhead * total_direct_cost
+            computed_cost = total_direct_cost
 
-            computed_cost = total_direct_cost + overhead_cost
+            base_grant = float(proj.grant_contractual or 0.0)
+            match_raw = float(proj.matching_fund_value or 0.0)
+            mf_type = (proj.matching_fund_type or "").lower()
+            if match_raw > 0.0:
+                match_abs = (base_grant * match_raw / 100.0) if mf_type == "percentage" else match_raw
+            else:
+                match_abs = 0.0
+            
+            overhead_val = float(proj.operational_overhead or 0.0)
+            overhead_pct = overhead_val / 100.0 if overhead_val > 1.0 else max(overhead_val, 0.0)
+            overhead_pct = max(0.0, min(overhead_pct, 1.0))
+            
+            total_target = max((base_grant + match_abs) * (1.0 - overhead_pct), 0.0)
+            target_min = float(proj.grant_min or 0.0)
 
             try:
-                target_contractual = float(proj.grant_contractual or 0.0)
-                rel_dev = ((computed_cost / target_contractual - 1) * 100) if target_contractual > 0 else None
+                rel_dev = ((computed_cost / total_target - 1) * 100) if total_target > 0 else None
             except Exception:
                 rel_dev = None
 
@@ -1008,14 +1029,10 @@ class Controller:
             print(f"  Total R&D Hours: {total_rnd_hours:.2f}")
             print(f"  Total Non-R&D Hours: {total_nonrnd_hours:.2f}")
             print(f"  Direct Cost (R&D + Non-R&D): {total_direct_cost:.2f}")
-            if overhead_cost > 0:
-                print(f"  Overhead Cost (Rate {proj.operational_overhead:.2f}): {overhead_cost:.2f}")
-            target_contractual = float(proj.grant_contractual or 0.0)
-            target_min = float(proj.grant_min or 0.0)
-            target_display = f"{target_contractual:.2f} (contractual)"
-            if target_min != target_contractual:
+            target_display = f"{total_target:.2f} (total)"
+            if target_min > 0 and target_min != total_target:
                 target_display += f" / {target_min:.2f} (minimum)"
-            print(f"  Computed Total Cost (Direct + Overhead): {computed_cost:.2f} | Target Cost: {target_display}")
+            print(f"  Computed Total Cost: {computed_cost:.2f} | Target Cost: {target_display}")
             if rel_dev is not None:
                 print(f"  Relative Cost Deviation: {rel_dev:.2f} %")
             print("-------------------------------------------------------------")

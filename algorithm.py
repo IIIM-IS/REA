@@ -615,26 +615,17 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         cost_expr_free = cp.sum(cp.multiply(salary_matrix, combined_hours_proj_emp_day))
         direct_cost_expr = cost_expr_free + locked_cost_const
         
-        overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
-        if overhead_val >= 100000.0:
-            overhead_cost_expr = overhead_val
-        elif overhead_val > 0.0 and overhead_val < 1.0:
-            overhead_cost_expr = direct_cost_expr * overhead_val
-        else:
-            overhead_cost_expr = 0.0
-        
-        cost_expr_total = direct_cost_expr + overhead_cost_expr
-        project_cost_exprs[pname] = cost_expr_total
+        project_cost_exprs[pname] = direct_cost_expr
 
         target_val = residual_target
-        over = cp.pos(cost_expr_total - target_val)
-        under = cp.pos(target_val - cost_expr_total)
+        over = cp.pos(direct_cost_expr - target_val)
+        under = cp.pos(target_val - direct_cost_expr)
         cost_deviation_penalties.append(
             _f(getattr(AlgorithmConfig, "ALPHA_OVERSHOOT", 5.0), 5.0) * over / max(avg_target_cost, 1e-6)
             + _f(getattr(AlgorithmConfig, "ALPHA_UNDERSHOOT", 1.0), 1.0) * under / max(avg_target_cost, 1e-6)
         )
         slack_over_cap = cp.Variable(nonneg=True, name=f"slack_over_cap_{pname}")
-        constraints.append(add(f"soft upper budget cap ({pname})", cost_expr_total <= target_val + slack_over_cap))
+        constraints.append(add(f"soft upper budget cap ({pname})", direct_cost_expr <= target_val + slack_over_cap))
         cost_deviation_penalties.append(BIG_SLACK_PENALTY * slack_over_cap / max(target_val, 1e-6))
         desired_frac = _pct(getattr(proj, 'nonrnd_percentage', 0.0), 0.0)
         if 0.0 <= desired_frac <= 1.0:
@@ -835,6 +826,19 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                         hourly_rate = salary_matrix[i, j]
                         current_costs[p_idx] += (r_hours + n_hours) * hourly_rate
             
+            locked_costs_array = np.zeros(num_projects, dtype=float)
+            for p_idx, proj in enumerate(projects):
+                pname = proj.name if proj.name else f"Project_{p_idx}"
+                for emp in locked_employee_list:
+                    if locked_allocations.get(emp.employee_name) == pname:
+                        for d_str in date_list:
+                            day_info = emp.salary_levels.get(d_str, {})
+                            base_salary = _f(day_info.get("amount", 0.0), 0.0)
+                            hourly_rate = SalaryConfig.calculate_hourly_rate(base_salary) if base_salary > 0 else 0.0
+                            r_hours = _f(emp.research_hours.get(d_str, 0.0), 0.0)
+                            nr_hours = _f(emp.nonRnD_hours.get(d_str, 0.0), 0.0)
+                            locked_costs_array[p_idx] += (r_hours + nr_hours) * hourly_rate
+            
             max_costs = np.zeros(num_projects, dtype=float)
             for p_idx, proj in enumerate(projects):
                 pname = proj.name if proj.name else f"Project_{p_idx}"
@@ -846,26 +850,19 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     max_costs[p_idx] = float('inf')
             
             for p_idx in range(num_projects):
-                overhead_val = _f(getattr(projects[p_idx], "operational_overhead", 0.0), 0.0)
-                direct_cost = current_costs[p_idx]
+                free_cost = current_costs[p_idx]
+                locked_cost = locked_costs_array[p_idx]
+                total_cost = free_cost + locked_cost
                 prev_cost = prev_costs_array[p_idx]
                 
-                if overhead_val >= 100000.0:
-                    overhead_cost = overhead_val
-                elif overhead_val > 0.0 and overhead_val < 1.0:
-                    overhead_cost = direct_cost * overhead_val
-                else:
-                    overhead_cost = 0.0
-                
-                total_cost_with_overhead = direct_cost + overhead_cost
-                cumulative_cost = prev_cost + total_cost_with_overhead
+                cumulative_cost = prev_cost + total_cost
                 max_total = max_costs[p_idx]
                 
                 if cumulative_cost > max_total + 1e-6 and max_total < float('inf'):
-                    max_new_allocation = max_total - prev_cost
+                    max_new_allocation = max_total - prev_cost - locked_cost
                     if max_new_allocation < 0:
                         max_new_allocation = 0
-                    scale_factor = max_new_allocation / max(total_cost_with_overhead, 1e-9)
+                    scale_factor = max_new_allocation / max(free_cost, 1e-9)
                     if scale_factor < 1.0:
                         X_val[:, :, p_idx, :] *= scale_factor
                         Y_val[:, :, p_idx] *= scale_factor
@@ -1183,15 +1180,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     nr_hours = _f(emp.nonRnD_hours.get(d_str, 0.0), 0.0)
                     locked_direct_cost += (r_hours + nr_hours) * hourly_rate
         
-        overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
-        if overhead_val >= 100000.0:
-            locked_overhead = overhead_val
-        elif overhead_val > 0.0 and overhead_val < 1.0:
-            locked_overhead = locked_direct_cost * overhead_val
-        else:
-            locked_overhead = 0.0
-        
-        final_project_costs_solver[pname] += locked_direct_cost + locked_overhead
+        final_project_costs_solver[pname] += locked_direct_cost
     if num_employees > 0:
         for p_idx, proj in enumerate(projects):
             pname = proj.name if proj.name else f"Project_{p_idx}"
@@ -1205,15 +1194,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     nonrnd_hours = Y_val[i, j, p_idx]
                     normalized_cost_free += (rnd_hours + nonrnd_hours) * hourly_rate
             
-            overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
-            if overhead_val >= 100000.0:
-                overhead_cost = overhead_val
-            elif overhead_val > 0.0 and overhead_val < 1.0:
-                overhead_cost = normalized_cost_free * overhead_val
-            else:
-                overhead_cost = 0.0
-            
-            final_project_costs_solver[pname] += normalized_cost_free + overhead_cost
+            final_project_costs_solver[pname] += normalized_cost_free
             if pname in initial_costs:
                 total_after = final_project_costs_solver[pname]
                 previous = initial_costs[pname]
@@ -1238,15 +1219,7 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     nr_hours = alloc_data.get("nonRnD", 0.0)
                     direct_cost += (r_hours + nr_hours) * hourly_rate
         
-        overhead_val = _f(getattr(proj, "operational_overhead", 0.0), 0.0)
-        if overhead_val >= 100000.0:
-            overhead_cost = overhead_val
-        elif overhead_val > 0.0 and overhead_val < 1.0:
-            overhead_cost = direct_cost * overhead_val
-        else:
-            overhead_cost = 0.0
-        
-        proj_cost_rounded += direct_cost + overhead_cost
+        proj_cost_rounded += direct_cost
         final_project_costs_rounded[pname] = proj_cost_rounded
     info_msg = "(Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)"
     diag_lines.append(info_msg)
