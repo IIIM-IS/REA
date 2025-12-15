@@ -68,7 +68,17 @@ class AlgorithmWorker(QThread):
         Execute the algorithm in background thread.
         """
         try:
-            self.progress_updated.emit("Starting allocation algorithm...")
+            self.progress_updated.emit("Initializing algorithm...")
+            
+            if self._is_cancelled:
+                return
+            
+            self.progress_updated.emit("Setting up constraints and variables...")
+            
+            if self._is_cancelled:
+                return
+            
+            self.progress_updated.emit("Solving optimization problem...")
             
             if self._is_cancelled:
                 return
@@ -81,6 +91,11 @@ class AlgorithmWorker(QThread):
                 all_topics_arg=self.all_topics,
                 initial_costs=self.initial_costs
             )
+            
+            if self._is_cancelled:
+                return
+            
+            self.progress_updated.emit("Processing results...")
             
             if self._is_cancelled:
                 return

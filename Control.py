@@ -27,7 +27,7 @@ import re
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
-from PyQt5.QtWidgets import QFileDialog, QMessageBox  # pyright: ignore[reportMissingImports]
+from PyQt5.QtWidgets import QFileDialog, QMessageBox, QProgressDialog  # pyright: ignore[reportMissingImports]
 from algorithm import run_allocation_algorithm
 from Model import ReaDataModel, EmployeeModel, ProjectModel
 from View import ReaDataView
@@ -523,10 +523,28 @@ class Controller:
             all_topics,
             initial_costs
         )
+        
+        self.progress_dialog = QProgressDialog("Preparing algorithm...", "Cancel", 0, 0, self.view)
+        self.progress_dialog.setWindowTitle("Running Allocation Algorithm")
+        self.progress_dialog.setWindowModality(2)
+        self.progress_dialog.setAutoClose(True)
+        self.progress_dialog.setAutoReset(True)
+        self.progress_dialog.setMinimumDuration(0)
+        self.progress_dialog.canceled.connect(self._cancel_algorithm)
+        self.progress_dialog.show()
+        
         self.algorithm_worker.progress_updated.connect(self._on_algorithm_progress)
         self.algorithm_worker.finished_success.connect(self._on_algorithm_complete)
         self.algorithm_worker.finished_error.connect(self._on_algorithm_error)
         self.algorithm_worker.start()
+    
+    def _cancel_algorithm(self):
+        """Cancel the running algorithm."""
+        if self.algorithm_worker and self.algorithm_worker.isRunning():
+            self.algorithm_worker.cancel()
+            if hasattr(self, 'progress_dialog') and self.progress_dialog:
+                self.progress_dialog.close()
+                self.progress_dialog = None
     
     def _on_algorithm_progress(self, message: str):
         """
@@ -536,6 +554,9 @@ class Controller:
             message: Progress message
         """
         self.logger.info(f"Algorithm: {message}")
+        if hasattr(self, 'progress_dialog') and self.progress_dialog:
+            self.progress_dialog.setLabelText(message)
+            self.progress_dialog.setRange(0, 0)
     
     def _on_algorithm_complete(self, result: Dict[str, Any]):
         """
@@ -544,10 +565,16 @@ class Controller:
         Args:
             result: Dictionary containing algorithm results
         """
+        if hasattr(self, 'progress_dialog') and self.progress_dialog:
+            self.progress_dialog.close()
+            self.progress_dialog = None
         self.logger.info("Algorithm completed successfully")
         self._process_algorithm_results(result)
     
     def _on_algorithm_error(self, error_message: str):
+        if hasattr(self, 'progress_dialog') and self.progress_dialog:
+            self.progress_dialog.close()
+            self.progress_dialog = None
         """
         Handle algorithm execution error.
         

@@ -27876,9 +27876,9 @@
     {
       "name": "TRACKWELL",
       "funding_agency": "",
-      "grant_min": 1200000.0,
-      "grant_max": 1200000.0,
-      "grant_contractual": 1200000.0,
+      "grant_min": 12000000.0,
+      "grant_max": 12000000.0,
+      "grant_contractual": 12000000.0,
       "funding_start": "01-01-2025",
       "funding_end": "12-31-2025",
       "currency": "Euros",

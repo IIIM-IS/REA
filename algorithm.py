@@ -621,8 +621,8 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
         over = cp.pos(direct_cost_expr - target_val)
         under = cp.pos(target_val - direct_cost_expr)
         cost_deviation_penalties.append(
-            _f(getattr(AlgorithmConfig, "ALPHA_OVERSHOOT", 5.0), 5.0) * over / max(avg_target_cost, 1e-6)
-            + _f(getattr(AlgorithmConfig, "ALPHA_UNDERSHOOT", 1.0), 1.0) * under / max(avg_target_cost, 1e-6)
+            _f(getattr(AlgorithmConfig, "ALPHA_OVERSHOOT", 5.0), 5.0) * over / max(target_val, 1e-6)
+            + _f(getattr(AlgorithmConfig, "ALPHA_UNDERSHOOT", 1.0), 1.0) * under / max(target_val, 1e-6)
         )
         slack_over_cap = cp.Variable(nonneg=True, name=f"slack_over_cap_{pname}")
         constraints.append(add(f"soft upper budget cap ({pname})", direct_cost_expr <= target_val + slack_over_cap))
@@ -1070,6 +1070,47 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                 print(f"    @{rate:,.2f} ISK/hr → {data['tot']:.2f} h  (R&D {data['rd']:.2f} h, Non-R&D {data['nrd']:.2f} h)")
     print("----------------------------------------------------------------")
     print("================================================================\n")
+    
+    print("\n================= DEBUG INFO: PER PROJECT, PER SALARY BRACKET (COST BREAKDOWN) =================")
+    for proj_obj in projects:
+        pname = proj_obj.name or f"Project_{projects.index(proj_obj)}"
+        print(f"Project: {pname}")
+        bracket_costs = {}
+        for emp_name_iter in allocations:
+            emp_obj = next((e for e in employees_orig if e.employee_name == emp_name_iter), None)
+            if not emp_obj:
+                continue
+            for d_str in date_list:
+                if d_str in allocations[emp_name_iter] and pname in allocations[emp_name_iter][d_str]:
+                    alloc_data = allocations[emp_name_iter][d_str][pname]
+                    day_info = emp_obj.salary_levels.get(d_str, {})
+                    base_salary = _f(day_info.get("amount", 0.0), 0.0)
+                    hourly_rate = SalaryConfig.calculate_hourly_rate(base_salary) if base_salary > 0 else 0.0
+                    r_hours = sum(alloc_data.get("topics", {}).values())
+                    nr_hours = alloc_data.get("nonRnD", 0.0)
+                    total_hours = r_hours + nr_hours
+                    cost = total_hours * hourly_rate
+                    rate_key = round(hourly_rate, 2)
+                    if rate_key not in bracket_costs:
+                        bracket_costs[rate_key] = {"hours": 0.0, "cost": 0.0, "rd_hours": 0.0, "nrd_hours": 0.0}
+                    bracket_costs[rate_key]["hours"] += total_hours
+                    bracket_costs[rate_key]["cost"] += cost
+                    bracket_costs[rate_key]["rd_hours"] += r_hours
+                    bracket_costs[rate_key]["nrd_hours"] += nr_hours
+        
+        if bracket_costs:
+            for rate_key in sorted(bracket_costs.keys(), reverse=True):
+                data = bracket_costs[rate_key]
+                rounded_hours = round(data["hours"])
+                rounded_cost = round(data["cost"])
+                rounded_rd = round(data["rd_hours"])
+                rounded_nrd = round(data["nrd_hours"])
+                if rounded_hours > 0:
+                    print(f"  {rate_key:,.2f} ISK/hr: {rounded_hours:6d} hrs ({rounded_rd:5d} R&D, {rounded_nrd:4d} Non-R&D) = {rounded_cost:12,.0f} ISK")
+        else:
+            print("  No allocations")
+        print("---------------------------------------------------------------------------")
+    print("========================================================================================\n")
     header = "\n================= DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values) =================="
     diag_lines.append(header)
     overall_alloc_rd = 0.0
@@ -1303,6 +1344,43 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                 if rounded_topic_hours > 0:
                     topic_msg = f"    {topic:20s}: {rounded_topic_hours:6d} hrs"
                     diag_lines.append(topic_msg)
+        
+        bracket_costs = {}
+        for emp_name_iter in allocations:
+            emp_obj = next((e for e in employees_orig if e.employee_name == emp_name_iter), None)
+            if not emp_obj:
+                continue
+            for d_str in date_list:
+                if d_str in allocations[emp_name_iter] and pname in allocations[emp_name_iter][d_str]:
+                    alloc_data = allocations[emp_name_iter][d_str][pname]
+                    day_info = emp_obj.salary_levels.get(d_str, {})
+                    base_salary = _f(day_info.get("amount", 0.0), 0.0)
+                    hourly_rate = SalaryConfig.calculate_hourly_rate(base_salary) if base_salary > 0 else 0.0
+                    r_hours = sum(alloc_data.get("topics", {}).values())
+                    nr_hours = alloc_data.get("nonRnD", 0.0)
+                    total_hours = r_hours + nr_hours
+                    cost = total_hours * hourly_rate
+                    rate_key = round(hourly_rate, 2)
+                    if rate_key not in bracket_costs:
+                        bracket_costs[rate_key] = {"hours": 0.0, "cost": 0.0, "rd_hours": 0.0, "nrd_hours": 0.0}
+                    bracket_costs[rate_key]["hours"] += total_hours
+                    bracket_costs[rate_key]["cost"] += cost
+                    bracket_costs[rate_key]["rd_hours"] += r_hours
+                    bracket_costs[rate_key]["nrd_hours"] += nr_hours
+        
+        if bracket_costs:
+            msg = "  Salary Bracket Breakdown (Rounded):"
+            diag_lines.append(msg)
+            for rate_key in sorted(bracket_costs.keys(), reverse=True):
+                data = bracket_costs[rate_key]
+                rounded_hours = round(data["hours"])
+                rounded_cost = round(data["cost"])
+                rounded_rd = round(data["rd_hours"])
+                rounded_nrd = round(data["nrd_hours"])
+                if rounded_hours > 0:
+                    bracket_msg = f"    {rate_key:,.2f} ISK/hr: {rounded_hours:6d} hrs ({rounded_rd:5d} R&D, {rounded_nrd:4d} Non-R&D) = {rounded_cost:12,d} ISK"
+                    diag_lines.append(bracket_msg)
+        
         separator = "-------------------------------------------------------------"
         diag_lines.append(separator)
     grand_total_original_target = sum(_project_adjusted_target(p) for p in projects)
