@@ -1,0 +1,344 @@
+Allocation Diagnostics
+======================
+
+# 📊 Research Expenditure Allocation - Diagnostics Report
+
+**Generated:** 2025-12-17 at 16:56:57  
+
+**Reporting Period:** 07-01-2025 to 12-31-2025  
+
+**Employees:** 8  
+
+**Projects:** 5  
+
+---
+
+## 📈 Executive Summary
+
+**Allocation Status:** ✅ **Perfect Balance**  
+
+- R&D Hours: `3165.00` / `3165.00` allocated ✅  
+
+- Non-R&D Hours: `159.00` / `159.00` allocated ✅  
+
+- **Total Cost Allocated:** `19,498,418` ISK  
+
+- **Total Target Cost:** `19,319,240` ISK  
+
+- **Overall Cost Deviation:** `+0.9%`  
+
+- **Solver Status:** `fallback_feasible`  
+
+
+---
+
+## 💰 Project Cost Analysis
+
+| Project | Target Cost | Actual Cost | Deviation | Status |
+
+|---------|-------------|-------------|-----------|--------|
+
+| **EURIDICE** | `0` ISK | `0` ISK | `+0.0%` | ✅ ✅ On Target |
+
+| **ICE-ID** | `0` ISK | `0` ISK | `+0.0%` | ✅ ✅ On Target |
+
+| **FRESH-ID** | `2,918,160` ISK | `2,945,225` ISK | `+0.9%` | ✅ ✅ On Target |
+
+| **AI-STYLIST** | `7,201,080` ISK | `7,267,867` ISK | `+0.9%` | ✅ ✅ On Target |
+
+| **TRACKWELL** | `9,200,000` ISK | `9,285,326` ISK | `+0.9%` | ✅ ✅ On Target |
+
+
+---
+
+## 👥 Per-Employee Allocation Details
+
+### Bridget Burger
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+
+
+### Goncalo Carvalho
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `1056.00` hrs | `1056.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `78.00` hrs | `78.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Total Allocated Hours** | `1134.00` hrs |  |  |  |
+
+| **Avg Hourly Rate (alloc)** | `6,250.00` ISK/hr |  |  |  |
+
+| **Allocated Cost (alloc)** | `7,087,500` ISK |  |  |  |
+
+
+
+### Mário Correia
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `743.00` hrs | `743.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Total Allocated Hours** | `743.00` hrs |  |  |  |
+
+| **Avg Hourly Rate (alloc)** | `4,453.12` ISK/hr |  |  |  |
+
+| **Allocated Cost (alloc)** | `3,308,672` ISK |  |  |  |
+
+
+
+### Marta Abad Torrent
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `638.00` hrs | `638.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Total Allocated Hours** | `638.00` hrs |  |  |  |
+
+| **Avg Hourly Rate (alloc)** | `4,453.12` ISK/hr |  |  |  |
+
+| **Allocated Cost (alloc)** | `2,841,094` ISK |  |  |  |
+
+
+
+### Agust Hlynur Holmgeirsson
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `0.00` hrs | `0.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `10.00` hrs | `10.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Total Allocated Hours** | `10.00` hrs |  |  |  |
+
+| **Avg Hourly Rate (alloc)** | `8,985.00` ISK/hr |  |  |  |
+
+| **Allocated Cost (alloc)** | `89,850` ISK |  |  |  |
+
+
+
+### Arash Sheikhlar
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `35.00` hrs | `35.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `1.00` hrs | `1.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Total Allocated Hours** | `36.00` hrs |  |  |  |
+
+| **Avg Hourly Rate (alloc)** | `6,250.00` ISK/hr |  |  |  |
+
+| **Allocated Cost (alloc)** | `225,000` ISK |  |  |  |
+
+
+
+### Jeff Thompson
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `208.00` hrs | `208.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `1.00` hrs | `1.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Total Allocated Hours** | `209.00` hrs |  |  |  |
+
+| **Avg Hourly Rate (alloc)** | `8,985.00` ISK/hr |  |  |  |
+
+| **Allocated Cost (alloc)** | `1,877,865` ISK |  |  |  |
+
+
+
+### Kristinn R. Thórisson
+
+| Category | Available | Allocated | Difference | Status |
+
+|----------|-----------|-----------|------------|--------|
+
+| **R&D** | `485.00` hrs | `485.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Non-R&D** | `69.00` hrs | `69.00` hrs | `+0.00` hrs | ✅ Balanced |
+
+| **Total Allocated Hours** | `554.00` hrs |  |  |  |
+
+| **Avg Hourly Rate (alloc)** | `7,343.75` ISK/hr |  |  |  |
+
+| **Allocated Cost (alloc)** | `4,068,438` ISK |  |  |  |
+
+
+
+---
+
+## 📊 Overall Statistics
+
+| Metric | Value |
+
+|--------|-------|
+
+| **Total R&D Hours Available** | `3,165.00` hrs |
+
+| **Total R&D Hours Allocated** | `3,165.00` hrs |
+
+| **R&D Utilization Rate** | `100.0%` |
+
+| **Total Non-R&D Hours Available** | `159.00` hrs |
+
+| **Total Non-R&D Hours Allocated** | `159.00` hrs |
+
+| **Non-R&D Utilization Rate** | `100.0%` |
+
+| **Total Hours Available** | `3,324.00` hrs |
+
+| **Total Hours Allocated** | `3,324.00` hrs |
+
+| **Overall Utilization Rate** | `100.0%` |
+
+
+---
+
+## 🤖 Automatic Analysis
+
+- ✅ **Hour Balance:** Perfect - All available hours are allocated with no discrepancies.
+
+- ✅ **Budget Status:** All projects are within 5% of target budgets.
+
+- ⚠️ **Solver Status:** `fallback_feasible` - Review solver output for details.
+
+- ✅ **Employee Allocations:** All employees have balanced hour allocations.
+
+
+---
+
+## 💡 Actionable Insights
+
+- ✅ **No Critical Issues:** Current allocation appears balanced and within acceptable parameters.
+
+
+---
+
+## 🔧 Allocation Algorithm Diagnostics
+
+
+CAPACITY ANALYSIS: Sufficient capacity. Available: `19,498,418 ISK`, Required: `19,319,240 ISK` (`99.1 %` utilization).
+
+========== FAILURE REPORT ==========
+Status  : unbounded
+Message : variables have no value
+------==
+FALLBACK: Sufficient capacity (19,498,418 available vs 19,319,240 required).
+FALLBACK: Capped project 'FRESH-ID' to hard limit `2,918,160 ISK` total (scaled by 0.991).
+FALLBACK: Capped project 'AI-STYLIST' to hard limit `7,201,080 ISK` total (scaled by 0.991).
+FALLBACK: Capped project 'TRACKWELL' to hard limit `9,200,000 ISK` total (scaled by 0.991).
+FALLBACK: Used residual-target-weighted allocation with budget constraints and topic-based distribution.
+
+### DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values)
+Overall R&D      : Total available = `3165 hrs`, Total allocated = `3165 hrs`
+Overall Non-R&D  : Total available = `159 hrs`, Total allocated = `159 hrs`
+✅ Hour balance constraints exactly satisfied
+  R&D: `0.0000 hrs` difference (within `0.01 hr` rounding tolerance)
+  NonR&D: `0.0000 hrs` difference (within `0.01 hr` rounding tolerance)
+  Max per-employee/day violations: R&D=0.0000, NonR&D=0.0000
+---------------======
+
+### DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS ---
+(Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)
+#### Project: EURIDICE
+  Grant:          `0 ISK` | Matching:          `0 ISK` | Overhead (%):       0.00 | Total Target:          `0 ISK`
+  Computed Cost (Rounded):          `0 ISK` | [Solver: 0]
+  Relative Cost Deviation (Solver): N/A
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
+-------------------------------------------------------------
+#### Project: ICE-ID
+  Grant:          `0 ISK` | Matching:          `0 ISK` | Overhead (%):       0.00 | Total Target:          `0 ISK`
+  Computed Cost (Rounded):          `0 ISK` | [Solver: 0]
+  Relative Cost Deviation (Solver): N/A
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
+-------------------------------------------------------------
+#### Project: FRESH-ID
+  Grant:    `2200000 ISK` | Matching:    `1274000 ISK` | Overhead (%):      16.00 | Total Target:    `2918160 ISK`
+  Computed Cost (Rounded):    `2957317 ISK` | [Solver: 2945225]
+  Relative Cost Deviation vs Residual Target (Solver): +`0.9 %`
+  Total R&D Hours (Rounded):      480
+  Total Non-R&D Hours (Rounded):     24
+  Topic Allocations (Rounded):
+    General Info. System / Methodology:     `80 hrs`
+    Networks / Distributed Systems:     `80 hrs`
+    System / Architecture Integration:     `80 hrs`
+    Data Processing / Data Mgmt:     `80 hrs`
+    Visualization / UX  :     `80 hrs`
+    Modeling / Simulation:     `79 hrs`
+  Salary Bracket Breakdown (Rounded):
+    `8,985.00 ISK`/hr:     `34 hrs` (   32 R&D,    2 Non-R&D) =      `301,716 ISK`
+    `7,343.75 ISK`/hr:     `85 hrs` (   74 R&D,   10 Non-R&D) =      `622,677 ISK`
+    `6,250.00 ISK`/hr:    `176 hrs` (  164 R&D,   12 Non-R&D) =    `1,097,812 ISK`
+    `4,453.12 ISK`/hr:    `210 hrs` (  210 R&D,    0 Non-R&D) =      `935,112 ISK`
+-------------------------------------------------------------
+#### Project: AI-STYLIST
+  Grant:    `6976000 ISK` | Matching:    `1700000 ISK` | Overhead (%):      17.00 | Total Target:    `7201080 ISK`
+  Computed Cost (Rounded):    `7271264 ISK` | [Solver: 7267867]
+  Relative Cost Deviation vs Residual Target (Solver): +`0.9 %`
+  Total R&D Hours (Rounded):     1180
+  Total Non-R&D Hours (Rounded):     59
+  Topic Allocations (Rounded):
+    General Info. System / Methodology:    `236 hrs`
+    System / Architecture Integration:    `236 hrs`
+    Data Processing / Data Mgmt:    `236 hrs`
+    Visualization / UX  :    `236 hrs`
+    Modeling / Simulation:    `236 hrs`
+  Salary Bracket Breakdown (Rounded):
+    `8,985.00 ISK`/hr:     `81 hrs` (   77 R&D,    4 Non-R&D) =      `731,559 ISK`
+    `7,343.75 ISK`/hr:    `206 hrs` (  180 R&D,   26 Non-R&D) =    `1,511,344 ISK`
+    `6,250.00 ISK`/hr:    `438 hrs` (  409 R&D,   29 Non-R&D) =    `2,739,500 ISK`
+    `4,453.12 ISK`/hr:    `514 hrs` (  514 R&D,    0 Non-R&D) =    `2,288,862 ISK`
+-------------------------------------------------------------
+#### Project: TRACKWELL
+  Grant:    `7700000 ISK` | Matching:    `1500000 ISK` | Overhead (%):       0.00 | Total Target:    `9200000 ISK`
+  Computed Cost (Rounded):    `9269837 ISK` | [Solver: 9285326]
+  Relative Cost Deviation vs Residual Target (Solver): +`0.9 %`
+  Total R&D Hours (Rounded):     1505
+  Total Non-R&D Hours (Rounded):     76
+  Topic Allocations (Rounded):
+    General Info. System / Methodology:    `218 hrs`
+    System / Architecture Integration:    `217 hrs`
+    Data Processing / Data Mgmt:    `215 hrs`
+    Spatial / Temporal Pattrn. Classification:    `214 hrs`
+    Visualization / UX  :    `214 hrs`
+    Multi-Agent Systems :    `214 hrs`
+    Modeling / Simulation:    `214 hrs`
+  Salary Bracket Breakdown (Rounded):
+    `8,985.00 ISK`/hr:    `104 hrs` (   99 R&D,    5 Non-R&D) =      `934,440 ISK`
+    `7,343.75 ISK`/hr:    `263 hrs` (  231 R&D,   33 Non-R&D) =    `1,934,417 ISK`
+    `6,250.00 ISK`/hr:    `556 hrs` (  518 R&D,   38 Non-R&D) =    `3,475,188 ISK`
+    `4,453.12 ISK`/hr:    `657 hrs` (  657 R&D,    0 Non-R&D) =    `2,925,792 ISK`
+-------------------------------------------------------------
+
+Grand Total Computed Cost (Rounded Allocations):     19498418
+Grand Total Target Cost:                             19319240
+Overall Relative Deviation (Sum of Solver Costs vs Sum of Original Target Costs):+`0.9 %`
+---------------=====

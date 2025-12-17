@@ -23,15 +23,16 @@ Mediates between Model and View, handling user interactions and coordinating dat
 """
 
 import json
+import os
 import re
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
 
 from PyQt5.QtWidgets import QFileDialog, QMessageBox, QProgressDialog  # pyright: ignore[reportMissingImports]
-from algorithm import run_allocation_algorithm
+from algorithm import run_allocation_algorithm, _project_adjusted_target
 from Model import ReaDataModel, EmployeeModel, ProjectModel
 from View import ReaDataView
-from config import AppConfig
+from config import AppConfig, SalaryConfig
 from validators import DateValidator, NumericValidator
 from utils import DateManager
 from logger import get_logger
@@ -98,6 +99,51 @@ class Controller:
         # Employee Salary Editing
         self.view.employee_salary_range_added.connect(self.on_employee_salary_range_added)
         self.view.employee_salary_interval_edited.connect(self.on_employee_salary_interval_edited)
+        self.view.employee_deleted.connect(self.on_employee_deleted)
+        self.view.add_single_employee_button.clicked.connect(self.add_single_employee)
+        self._recompute_budget_overview()
+
+    def _recompute_budget_overview(self):
+        """
+        Compute available spend and total targets for the active period and refresh the view.
+        
+        Args:
+            None
+        
+        Returns:
+            None
+        """
+        available_isk = None
+        target_isk = 0.0
+        seen_projects = set()
+        for proj in self.projects:
+            key = (proj.name or "").strip().lower()
+            if key in seen_projects:
+                continue
+            seen_projects.add(key)
+            target_isk += _project_adjusted_target(proj)
+        if self.date_ranges:
+            start_date, end_date = self.date_ranges[-1]
+            start_dt = DateManager.parse_date(start_date)
+            end_dt = DateManager.parse_date(end_date)
+            if start_dt and end_dt:
+                available_isk = 0.0
+                for emp in self.employees:
+                    date_keys = set(emp.research_hours.keys()) | set(emp.nonRnD_hours.keys())
+                    for date_str in date_keys:
+                        current_dt = DateManager.parse_date(date_str)
+                        if not current_dt:
+                            continue
+                        if current_dt < start_dt or current_dt > end_dt:
+                            continue
+                        hours = emp.research_hours.get(date_str, 0.0) + emp.nonRnD_hours.get(date_str, 0.0)
+                        if hours <= 0.0:
+                            continue
+                        day_info = emp.salary_levels.get(date_str, {})
+                        base_salary = day_info.get("amount", 0.0)
+                        rate = SalaryConfig.calculate_hourly_rate(base_salary)
+                        available_isk += hours * rate
+        self.view.update_budget_overview(available_isk, target_isk)
 
     @handle_exceptions(show_dialog=True)
     def on_employee_salary_range_added(self, data: Dict[str, Any]):
@@ -147,6 +193,7 @@ class Controller:
         )
         
         self.view.create_employee_overview_section(self.employees)
+        self._recompute_budget_overview()
 
     # -------------------------------------------------------------------------
     # PROJECT CREATION
@@ -166,6 +213,20 @@ class Controller:
         self.view.projects.append(new_proj)
         self.view.create_project_subsection_from_project(new_proj)
         self.logger.info("Created new project")
+        self._recompute_budget_overview()
+    
+    def _deduplicate_projects_by_name(self):
+        seen = set()
+        for proj in list(self.projects):
+            key = (proj.name or "").strip().lower()
+            if key in seen:
+                if proj in self.projects:
+                    self.projects.remove(proj)
+                if proj in self.view.projects:
+                    self.view.projects.remove(proj)
+                self.view.remove_project_tab(proj)
+            else:
+                seen.add(key)
     
     def toggle_calendar(self, checked=False):
         """
@@ -226,6 +287,7 @@ class Controller:
             "Date Range Added",
             f"Date range {start_date} to {end_date} has been added successfully"
         )
+        self._recompute_budget_overview()
     
     @handle_exceptions(show_dialog=True)
     def read_timesheets(self, checked=False):
@@ -281,6 +343,7 @@ class Controller:
         self.employees = employees
         self.view.create_employee_overview_section(self.employees)
         self.logger.info(f"Loaded {len(employees)} employees from timesheets")
+        self._recompute_budget_overview()
         
         if not employees:
             ErrorHandler.show_warning(
@@ -318,6 +381,89 @@ class Controller:
             f"- You have read permissions for the directory"
         )
         self.logger.warning(f"CSV loading failed: {error_message}")
+
+    @handle_exceptions(show_dialog=True)
+    def on_employee_deleted(self, employee):
+        """
+        Handle deletion of an employee from the list.
+        
+        Args:
+            employee: EmployeeModel to delete
+        """
+        if employee in self.employees:
+            self.employees.remove(employee)
+            self.view.create_employee_overview_section(self.employees)
+            self.logger.info(f"Deleted employee: {employee.employee_name}")
+            self._recompute_budget_overview()
+
+    @handle_exceptions(show_dialog=True)
+    def add_single_employee(self, checked=False):
+        """
+        Load a single employee from a CSV file and add to the current list.
+        
+        Args:
+            checked: Ignored (required for PyQt5 signal compatibility)
+        """
+        if not self.date_ranges:
+            ErrorHandler.show_warning(
+                self.view,
+                "No Date Range",
+                "You must specify at least one date range before loading timesheets"
+            )
+            return
+        
+        file_path, _ = QFileDialog.getOpenFileName(
+            self.view,
+            "Select Employee Timesheet CSV",
+            "",
+            "CSV Files (*.csv);;All Files (*)"
+        )
+        
+        if not file_path:
+            self.logger.info("CSV file selection cancelled")
+            return
+        
+        try:
+            new_employee = self.model.extract_employee_from_single_csv(file_path, self.date_ranges)
+            
+            if not new_employee:
+                ErrorHandler.show_warning(
+                    self.view,
+                    "No Employee Found",
+                    f"Could not extract employee data from {os.path.basename(file_path)}.\n\n"
+                    "Please check that:\n"
+                    "- The CSV file has the correct format\n"
+                    "- The date ranges match dates in the timesheet"
+                )
+                return
+            
+            existing_names = {emp.employee_name for emp in self.employees}
+            if new_employee.employee_name in existing_names:
+                ErrorHandler.show_warning(
+                    self.view,
+                    "Employee Already Exists",
+                    f"An employee named '{new_employee.employee_name}' is already in the list.\n\n"
+                    "Please delete the existing employee first if you want to replace them."
+                )
+                return
+            
+            self.employees.append(new_employee)
+            self.view.create_employee_overview_section(self.employees)
+            self.logger.info(f"Added employee: {new_employee.employee_name}")
+            ErrorHandler.show_info(
+                self.view,
+                "Employee Added",
+                f"Successfully added {new_employee.employee_name} to the employee list"
+            )
+            self._recompute_budget_overview()
+        except Exception as e:
+            ErrorHandler.show_warning(
+                self.view,
+                "Timesheet Loading Issue",
+                f"Could not load timesheet from {os.path.basename(file_path)}.\n\n"
+                f"Details: {str(e)}"
+            )
+            self.logger.warning(f"Single CSV loading failed: {str(e)}")
 
     def _parse_previous_report_costs(self, path: str) -> Dict[str, float]:
         """
@@ -426,6 +572,7 @@ class Controller:
         Args:
             checked: Ignored (required for PyQt5 signal compatibility)
         """
+        self._deduplicate_projects_by_name()
         if not self.date_ranges:
             ErrorHandler.show_warning(
                 self.view,
@@ -609,7 +756,7 @@ class Controller:
             except Exception:
                 base_grant = 0.0
                 target_min = 0.0
-            
+
             match_raw = float(proj.matching_fund_value or 0.0)
             mf_type = (proj.matching_fund_type or "").lower()
             if match_raw > 0.0:
@@ -676,13 +823,18 @@ class Controller:
         # Calculate overall statistics
         overall_rnd_avail = overall_rnd_alloc = 0.0
         overall_nonrnd_avail = overall_nonrnd_alloc = 0.0
-        total_cost_allocated = 0.0
         total_cost_target = 0.0
         project_statuses = []
         
+        period_dates = set(DateManager.generate_date_list(start_date, end_date))
+        
         for employee in self.employees:
-            overall_rnd_avail += sum(employee.research_hours.values())
-            overall_nonrnd_avail += sum(employee.nonRnD_hours.values())
+            overall_rnd_avail += sum(
+                hours for dt, hours in employee.research_hours.items() if dt in period_dates
+            )
+            overall_nonrnd_avail += sum(
+                hours for dt, hours in employee.nonRnD_hours.items() if dt in period_dates
+            )
 
         for emp_name, date_dict in allocations.items():
             for date_str, project_dict in date_dict.items():
@@ -692,13 +844,7 @@ class Controller:
                     overall_rnd_alloc += rnd_hours
                     overall_nonrnd_alloc += nonrnd_hours
                     
-                    # Find employee for salary calculation
-                    emp_obj = next((e for e in self.employees if e.employee_name == emp_name), None)
-                    if emp_obj:
-                        sal_info = emp_obj.salary_levels.get(date_str, {})
-                        base_salary = float(sal_info.get("amount", 0.0))
-                        hourly_rate = (base_salary / 160.0) * 1.25 if base_salary > 0 else 0.0
-                        total_cost_allocated += (rnd_hours + nonrnd_hours) * hourly_rate
+                    # Cost accumulation is taken from final_costs to keep consistency across logs
         
         initial_costs_used = getattr(self, '_initial_costs_used', {})
         for proj in self.projects:
@@ -744,6 +890,8 @@ class Controller:
                 "status": status
             })
         
+        total_cost_allocated = sum(final_costs.values())
+        
         # Overall allocation status
         rnd_balanced = abs(overall_rnd_avail - overall_rnd_alloc) < 0.01
         nonrnd_balanced = abs(overall_nonrnd_avail - overall_nonrnd_alloc) < 0.01
@@ -782,18 +930,34 @@ class Controller:
         employee_issues = []
         for employee in self.employees:
             emp_name = employee.employee_name
-            available_rnd = sum(employee.research_hours.values())
+            available_rnd = 0.0
             allocated_rnd = 0.0
-            available_nonrnd = sum(employee.nonRnD_hours.get(d, 0.0) for d in employee.research_hours)
+            available_nonrnd = 0.0
             allocated_nonrnd = 0.0
+            total_alloc_cost = 0.0
+            total_alloc_hours = 0.0
+            total_period_hours = 0.0
 
             for date_str, available in employee.research_hours.items():
+                if date_str not in period_dates:
+                    continue
+                available_rnd += available
+                available_nonrnd += employee.nonRnD_hours.get(date_str, 0.0)
+                total_period_hours += available + employee.nonRnD_hours.get(date_str, 0.0)
+
                 day_alloc_rnd = 0.0
                 day_alloc_nonrnd = 0.0
                 if emp_name in allocations and date_str in allocations[emp_name]:
                     for proj_info in allocations[emp_name][date_str].values():
                         day_alloc_rnd += sum(proj_info.get("topics", {}).values())
                         day_alloc_nonrnd += proj_info.get("nonRnD", 0.0)
+                day_total_hours = day_alloc_rnd + day_alloc_nonrnd
+                if day_total_hours > 0.0:
+                    sal_info = employee.salary_levels.get(date_str, {})
+                    base_salary = float(sal_info.get("amount", 0.0))
+                    hourly_rate = SalaryConfig.calculate_hourly_rate(base_salary)
+                    total_alloc_cost += day_total_hours * hourly_rate
+                    total_alloc_hours += day_total_hours
                 allocated_rnd += day_alloc_rnd
                 allocated_nonrnd += day_alloc_nonrnd
 
@@ -818,6 +982,11 @@ class Controller:
             
             diagnostics.append(f"| **R&D** | `{available_rnd:.2f}` hrs | `{allocated_rnd:.2f}` hrs | `{rnd_diff:+.2f}` hrs | {rnd_status} |\n")
             diagnostics.append(f"| **Non-R&D** | `{available_nonrnd:.2f}` hrs | `{allocated_nonrnd:.2f}` hrs | `{nonrnd_diff:+.2f}` hrs | {nonrnd_status} |\n")
+            if total_alloc_hours > 0.0:
+                avg_rate = total_alloc_cost / total_alloc_hours
+                diagnostics.append(f"| **Total Allocated Hours** | `{total_alloc_hours:.2f}` hrs |  |  |  |\n")
+                diagnostics.append(f"| **Avg Hourly Rate (alloc)** | `{avg_rate:,.2f}` ISK/hr |  |  |  |\n")
+                diagnostics.append(f"| **Allocated Cost (alloc)** | `{total_alloc_cost:,.0f}` ISK |  |  |  |\n")
             diagnostics.append("\n")
         
         diagnostics.append("---\n")
@@ -899,6 +1068,19 @@ class Controller:
             else:
                 analysis_points.append(f"⚠️ **Cost Deviation:** Overall cost is `{abs(cost_deviation_pct):.1f}%` {'over' if cost_deviation_pct > 0 else 'under'} target. Review project requirements and capacity.")
         
+        period_label = ""
+        if self.date_ranges:
+            if len(self.date_ranges) == 1:
+                period_label = f"{self.date_ranges[0][0]} to {self.date_ranges[0][1]}"
+            else:
+                period_label = "; ".join([f"{dr[0]} to {dr[1]}" for dr in self.date_ranges])
+            period_label = f"[Period: {period_label}] "
+        for point in analysis_points:
+            log_msg = f"{period_label}{point}" if period_label else point
+            if point.startswith("⚠️") or point.startswith("🔴"):
+                self.logger.warning(log_msg)
+            else:
+                self.logger.info(log_msg)
         for point in analysis_points:
             diagnostics.append(f"- {point}\n")
         
@@ -947,6 +1129,12 @@ class Controller:
         if not insights:
             insights.append("✅ **No Critical Issues:** Current allocation appears balanced and within acceptable parameters.")
         
+        for insight in insights:
+            log_msg = f"{period_label}{insight}" if period_label else insight
+            if insight.startswith("⚠️") or insight.startswith("🔴"):
+                self.logger.warning(log_msg)
+            else:
+                self.logger.info(log_msg)
         for insight in insights:
             diagnostics.append(f"- {insight}\n")
         
@@ -1030,7 +1218,8 @@ class Controller:
                     sal = (float(emp.salary_levels.get(date_str, {}).get("amount", 0.0)) / 160.0) * 1.25
                     total_direct_cost += (rnd_hours + nonrnd_hours) * sal
 
-            computed_cost = total_direct_cost
+            actual_cost = final_costs.get(proj_name, 0.0)
+            computed_cost = actual_cost
 
             base_grant = float(proj.grant_contractual or 0.0)
             match_raw = float(proj.matching_fund_value or 0.0)
@@ -1213,10 +1402,12 @@ class Controller:
                 self.projects.append(proj)
                 self.view.projects.append(proj)
                 self.view.create_project_subsection_from_project(proj)
+            self._deduplicate_projects_by_name()
 
             self.view.create_employee_overview_section(self.employees)
             print(f"[INFO] Loaded {len(self.employees)} employees, {len(self.projects)} projects.")
             print("[INFO] State restoration complete.")
+            self._recompute_budget_overview()
 
         except Exception as e:
             print(f"[ERROR] Failed to load state from {filename}: {e}")
@@ -1224,6 +1415,13 @@ class Controller:
     def on_project_saved(self, project_obj, data):
         """
         Updates a project's fields when saved.
+        
+        Args:
+            project_obj: ProjectModel being saved
+            data: Dict of project fields
+        
+        Returns:
+            None
         """
         try:
             project_obj.grant_min = float(data["grant_min"]) if data["grant_min"] else 0
@@ -1263,6 +1461,27 @@ class Controller:
         project_obj.research_topics = data["research_topics"]
 
         print(f"[INFO] Project '{project_obj.name}' fields have been updated.")
+        
+        target_name = (project_obj.name or "").strip().lower()
+        def _dedup_project_list(seq):
+            seen = False
+            for proj in list(seq):
+                key = (proj.name or "").strip().lower()
+                if target_name and key == target_name:
+                    if proj is project_obj:
+                        if seen:
+                            seq.remove(proj)
+                    else:
+                        seq.remove(proj)
+                        self.view.remove_project_tab(proj)
+                    seen = True or seen
+                elif not target_name and proj is project_obj:
+                    if seen:
+                        seq.remove(proj)
+                    seen = True or seen
+        _dedup_project_list(self.projects)
+        _dedup_project_list(self.view.projects)
+        self._recompute_budget_overview()
 
     def on_project_deleted(self, project_obj):
         """
@@ -1274,6 +1493,7 @@ class Controller:
             self.view.projects.remove(project_obj)
         self.view.remove_project_tab(project_obj)
         print(f"[INFO] Project '{project_obj.name}' removed.")
+        self._recompute_budget_overview()
 
     def on_employee_salary_interval_edited(self, employee, old_start, old_end, new_start, new_end, new_level, new_amount):
         """
@@ -1306,3 +1526,4 @@ class Controller:
 
         print(f"[INFO] Edited salary for {employee.employee_name}: Changed interval {old_start}–{old_end} to {new_start}–{new_end} with level '{new_level}' and amount {new_amount_val}.")
         self.view.create_employee_overview_section(self.employees)
+        self._recompute_budget_overview()

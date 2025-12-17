@@ -22,6 +22,8 @@ class ReaDataView(QMainWindow):
     employee_salary_range_added = pyqtSignal(dict)
     project_saved = pyqtSignal(object, dict)
     project_deleted = pyqtSignal(object)
+    employee_deleted = pyqtSignal(object)
+    employee_add_single = pyqtSignal()
 
     # Emitted when the user edits an existing salary interval.
     employee_salary_interval_edited = pyqtSignal(
@@ -189,6 +191,18 @@ class ReaDataView(QMainWindow):
         self.directory_label.setAlignment(Qt.AlignCenter)
         self.main_tab_layout.addWidget(self.directory_label)
 
+        self.budget_overview_container = QWidget()
+        budget_overview_layout = QHBoxLayout(self.budget_overview_container)
+        budget_overview_layout.setAlignment(Qt.AlignCenter)
+        budget_overview_layout.setContentsMargins(0, 0, 0, 0)
+        self.available_budget_label = QLabel("Available Spend (ISK): --")
+        self.available_budget_label.setStyleSheet("font-size: 16px; font-weight: 600;")
+        self.target_budget_label = QLabel("Total Targets (ISK): --")
+        self.target_budget_label.setStyleSheet("font-size: 16px; font-weight: 600;")
+        budget_overview_layout.addWidget(self.available_budget_label)
+        budget_overview_layout.addWidget(self.target_budget_label)
+        self.main_tab_layout.addWidget(self.budget_overview_container)
+
         # ---------------- Project Controls ---------------- #
         add_project_container = QWidget()
         add_project_layout = QHBoxLayout(add_project_container)
@@ -234,14 +248,24 @@ class ReaDataView(QMainWindow):
         # ---------------- Employees Tab ---------------- #
         self.employees_tab = QWidget()
         self.tab_widget.addTab(self.employees_tab, "Employees")
-        self.employees_tab_layout_container = QVBoxLayout(self.employees_tab) # Layout for the tab itself
+        self.employees_tab_layout_container = QVBoxLayout(self.employees_tab)
+
+        add_employee_container = QWidget()
+        add_employee_layout = QHBoxLayout(add_employee_container)
+        add_employee_layout.setAlignment(Qt.AlignCenter)
+        add_employee_layout.setContentsMargins(0, 0, 0, 0)
+        self.add_single_employee_button = QPushButton("Add Employee from CSV")
+        self.add_single_employee_button.setToolTip("Load a single employee timesheet from a CSV file and add it to the current list")
+        self.add_single_employee_button.setEnabled(True)
+        add_employee_layout.addWidget(self.add_single_employee_button)
+        self.employees_tab_layout_container.addWidget(add_employee_container)
 
         self.employees_scroll_area = QScrollArea()
         self.employees_scroll_area.setWidgetResizable(True)
         self.employees_scroll_area_widget = QWidget()
         self.employees_scroll_area.setWidget(self.employees_scroll_area_widget)
-        self.employees_tab_layout_container.addWidget(self.employees_scroll_area) # Add scroll area
-        self.employees_layout = QVBoxLayout(self.employees_scroll_area_widget) # Layout for content
+        self.employees_tab_layout_container.addWidget(self.employees_scroll_area)
+        self.employees_layout = QVBoxLayout(self.employees_scroll_area_widget)
 
         # ---------------- Diagnostics Tab ---------------- #
         self.diagnostics_tab = QWidget()
@@ -249,6 +273,7 @@ class ReaDataView(QMainWindow):
         self.diagnostics_layout = QVBoxLayout(self.diagnostics_tab)
         self.diagnostics_output = QTextEdit()
         self.diagnostics_output.setReadOnly(True)
+        self.diagnostics_output.setStyleSheet("font-size: 13px;")
         self.diagnostics_layout.addWidget(self.diagnostics_output)
 
     # --- [ DIAGNOSTICS UI - Markdown Rendering ] ---
@@ -509,6 +534,22 @@ class ReaDataView(QMainWindow):
         self.diagnostics_output.setHtml(formatted_html)
         self.tab_widget.setCurrentWidget(self.diagnostics_tab)
 
+    def update_budget_overview(self, available_isk, target_isk):
+        """
+        Update the budget overview labels with current totals.
+        
+        Args:
+            available_isk (float or None): Total available spend based on hours and salary rates for the active period.
+            target_isk (float): Sum of project targets after matching funds and overhead adjustments.
+        
+        Returns:
+            None
+        """
+        avail_text = "Set date range" if available_isk is None else f"{available_isk:,.0f} ISK"
+        target_text = f"{target_isk:,.0f} ISK"
+        self.available_budget_label.setText(f"Available Spend (ISK): {avail_text}")
+        self.target_budget_label.setText(f"Total Targets (ISK): {target_text}")
+
     # --- [ EMPLOYEE OVERVIEW UI - unchanged ] ---
     def create_employee_overview_section(self, employees):
         """
@@ -557,32 +598,46 @@ class ReaDataView(QMainWindow):
         layout = QVBoxLayout(container)
         layout.setSpacing(8) # Add some spacing
 
-        # -- Employee Name (read-only)
-        name_label = QLabel(f"<b>{employee.employee_name}</b>") # Make name bold
-        layout.addWidget(name_label)
+        # -- Employee Name and Delete Button
+        name_delete_layout = QHBoxLayout()
+        name_label = QLabel(f"<b>{employee.employee_name}</b>")
+        name_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        name_delete_layout.addWidget(name_label)
+        name_delete_layout.addStretch()
+        delete_button = QPushButton("Delete")
+        delete_button.setFixedWidth(60)
+        delete_button.setToolTip(f"Remove {employee.employee_name} from the employee list")
+        delete_button.clicked.connect(lambda checked=False, emp=employee: self.employee_deleted.emit(emp))
+        name_delete_layout.addWidget(delete_button)
+        layout.addLayout(name_delete_layout)
 
         # -- Show total research, meeting, non-R&D hours as read-only labels
         hours_layout = QHBoxLayout()
         total_rh = sum(employee.research_hours.values())
         rh_label = QLabel(f"Research: {total_rh:.2f}h")
+        rh_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         hours_layout.addWidget(rh_label)
 
         total_mh = sum(employee.meeting_hours.values())
         mh_label = QLabel(f"Meeting: {total_mh:.2f}h")
+        mh_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         hours_layout.addWidget(mh_label)
 
         total_nonrnd = sum(employee.nonRnD_hours.values())
         nonrnd_label = QLabel(f"Non-R&D: {total_nonrnd:.2f}h")
+        nonrnd_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         hours_layout.addWidget(nonrnd_label)
         layout.addLayout(hours_layout)
 
         # --- Display current salary intervals ---
         salary_label = QLabel("Current Salary Levels:")
+        salary_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
         layout.addWidget(salary_label)
 
         intervals = employee.get_salary_intervals()
         if not intervals:
             no_salary_label = QLabel("<i>No salary intervals defined.</i>")
+            no_salary_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
             layout.addWidget(no_salary_label)
         else:
             for (old_start, old_end, old_level, old_amount) in intervals:
@@ -591,6 +646,7 @@ class ReaDataView(QMainWindow):
                 interval_info_label = QLabel(
                     f"[{old_start} → {old_end}] <b>{old_level}</b>: ISK{old_amount:,.2f}" # Format amount
                 )
+                interval_info_label.setTextInteractionFlags(Qt.TextSelectableByMouse)
                 interval_info_label.setToolTip(f"Salary: {old_level} (ISK{old_amount}) from {old_start} to {old_end}")
                 hbox.addWidget(interval_info_label, 1) # Give label more space
 

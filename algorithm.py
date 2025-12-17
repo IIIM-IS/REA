@@ -776,19 +776,35 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                     if topic_name in topics_to_use:
                         topic_weights[p_idx, t_idx] = weight_per_topic
             else:
+                allowed_len = max(len(allowed_topics_set), 1)
                 for t_idx, topic_name in enumerate(all_topics):
                     if topic_name in allowed_topics_set:
-                        topic_weights[p_idx, t_idx] = 1.0 / max(len(allowed_topics_set), 1)
+                        topic_weights[p_idx, t_idx] = 1.0 / allowed_len
+
+        locked_costs_array = np.zeros(num_projects, dtype=float)
+        for p_idx, proj in enumerate(projects):
+            pname = proj.name if proj.name else f"Project_{p_idx}"
+            for emp in locked_employee_list:
+                if locked_allocations.get(emp.employee_name) == pname:
+                    for d_str in date_list:
+                        day_info = emp.salary_levels.get(d_str, {})
+                        base_salary = _f(day_info.get("amount", 0.0), 0.0)
+                        hourly_rate = SalaryConfig.calculate_hourly_rate(base_salary) if base_salary > 0 else 0.0
+                        r_hours = _f(emp.research_hours.get(d_str, 0.0), 0.0)
+                        nr_hours = _f(emp.nonRnD_hours.get(d_str, 0.0), 0.0)
+                        locked_costs_array[p_idx] += (r_hours + nr_hours) * hourly_rate
 
         project_weights = np.zeros(num_projects, dtype=float)
-        positive_residual = residual > 1e-9
-        if np.sum(positive_residual) > 0:
-            project_weights[positive_residual] = residual[positive_residual] / np.sum(residual[positive_residual])
+        residual_after_locked = np.maximum(residual - locked_costs_array, 0.0)
+        weighted_residual = residual_after_locked
+        positive_weight = weighted_residual > 1e-9
+        if np.sum(positive_weight) > 0:
+            project_weights[positive_weight] = weighted_residual[positive_weight] / np.sum(weighted_residual[positive_weight])
             use_residual = True
         else:
             use_residual = True
 
-        total_available_cost = free_cost_cap
+        total_available_cost = free_cost_cap + locked_cost_cap
         total_target_cost = np.sum(residual)
         
         if total_target_cost > 1e-9 and total_available_cost > 1e-9:
@@ -826,46 +842,18 @@ def run_allocation_algorithm(employees_arg, projects_arg, start_date, end_date, 
                         hourly_rate = salary_matrix[i, j]
                         current_costs[p_idx] += (r_hours + n_hours) * hourly_rate
             
-            locked_costs_array = np.zeros(num_projects, dtype=float)
-            for p_idx, proj in enumerate(projects):
-                pname = proj.name if proj.name else f"Project_{p_idx}"
-                for emp in locked_employee_list:
-                    if locked_allocations.get(emp.employee_name) == pname:
-                        for d_str in date_list:
-                            day_info = emp.salary_levels.get(d_str, {})
-                            base_salary = _f(day_info.get("amount", 0.0), 0.0)
-                            hourly_rate = SalaryConfig.calculate_hourly_rate(base_salary) if base_salary > 0 else 0.0
-                            r_hours = _f(emp.research_hours.get(d_str, 0.0), 0.0)
-                            nr_hours = _f(emp.nonRnD_hours.get(d_str, 0.0), 0.0)
-                            locked_costs_array[p_idx] += (r_hours + nr_hours) * hourly_rate
-            
-            max_costs = np.zeros(num_projects, dtype=float)
-            for p_idx, proj in enumerate(projects):
-                pname = proj.name if proj.name else f"Project_{p_idx}"
-                total_target = total_targets[p_idx]
-                prev_cost = prev_costs_array[p_idx]
-                max_total_cost = prev_cost + total_target
-                max_costs[p_idx] = max_total_cost
-                if max_costs[p_idx] < 1e-9:
-                    max_costs[p_idx] = float('inf')
-            
             for p_idx in range(num_projects):
                 free_cost = current_costs[p_idx]
                 locked_cost = locked_costs_array[p_idx]
-                total_cost = free_cost + locked_cost
                 prev_cost = prev_costs_array[p_idx]
-                
-                cumulative_cost = prev_cost + total_cost
-                max_total = max_costs[p_idx]
-                
-                if cumulative_cost > max_total + 1e-6 and max_total < float('inf'):
-                    max_new_allocation = max_total - prev_cost - locked_cost
-                    if max_new_allocation < 0:
-                        max_new_allocation = 0
-                    scale_factor = max_new_allocation / max(free_cost, 1e-9)
+                total_target = total_targets[p_idx]
+                cap_free = max(total_target - locked_cost, 0.0)
+                if free_cost > cap_free + 1e-6:
+                    scale_factor = cap_free / max(free_cost, 1e-9)
                     if scale_factor < 1.0:
                         X_val[:, :, p_idx, :] *= scale_factor
                         Y_val[:, :, p_idx] *= scale_factor
+                        max_total = prev_cost + locked_cost + cap_free
                         diag_lines.append(f"FALLBACK: Capped project '{projects[p_idx].name if projects[p_idx].name else p_idx}' to hard limit {max_total:,.0f} ISK total (scaled by {scale_factor:.3f}).")
             
             min_allocation_pct = 0.01

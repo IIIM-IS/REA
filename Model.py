@@ -114,6 +114,51 @@ class ReaDataModel:
         self.logger.info(f"Loaded {len(employees_dict)} employees from {len(csv_files)} CSV files")
         return list(employees_dict.values())
     
+    def extract_employee_from_single_csv(self, file_path: str, date_ranges: List[Tuple[str, str]]) -> Optional['EmployeeModel']:
+        """
+        Extract employee data from a single CSV timesheet file.
+        
+        Args:
+            file_path: Full path to the CSV file
+            date_ranges: List of (start_date, end_date) tuples defining ranges to extract
+            
+        Returns:
+            EmployeeModel object with populated data, or None if extraction fails
+            
+        Raises:
+            FileOperationError: If file cannot be accessed or is invalid
+        """
+        if not os.path.exists(file_path):
+            raise FileOperationError(f"File does not exist: {file_path}")
+        
+        try:
+            df = pd.read_csv(file_path, header=None)
+            
+            validation = DataValidator.validate_csv_structure(df)
+            if not validation:
+                self.logger.warning(f"Invalid CSV structure in {os.path.basename(file_path)}: {validation.error_message}")
+                return None
+            
+            employee_name = self._extract_employee_name(df)
+            in_range_columns = self._extract_in_range_columns(df, date_ranges)
+            
+            if not in_range_columns:
+                self.logger.warning(f"No date columns in range for {os.path.basename(file_path)}")
+                return None
+            
+            daily_hours_dict = self._extract_hours_data(df, in_range_columns)
+            daily_topics_dict = self._extract_research_topics(df, in_range_columns)
+            
+            employee = EmployeeModel(employee_name)
+            self._populate_employee_data(employee, daily_hours_dict, daily_topics_dict)
+            
+            self.logger.info(f"Processed timesheet for {employee_name} from {os.path.basename(file_path)}")
+            return employee
+            
+        except Exception as e:
+            self.logger.error(f"Error processing {os.path.basename(file_path)}: {str(e)}")
+            return None
+    
     def _extract_employee_name(self, df: pd.DataFrame) -> str:
         """
         Extract employee name from CSV dataframe.

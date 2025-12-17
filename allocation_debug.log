@@ -1,127 +1,127 @@
 
 ================= DEBUG INFO: HOURS & SALARY (Free Employees) =================
-Employee 'Jeff Thompson': total hours = 391,  total cost = 3513135
-Employee 'Arash Sheikhlar': total hours = 101,  total cost = 631250
-Employee 'Kristinn R. Thórisson': total hours = 706,  total cost = 5184688
-Employee 'Goncalo Carvalho': total hours = 2236,  total cost = 13975000
-Employee 'Mário Correia': total hours = 1278,  total cost = 5691094
-Employee 'Marta Abad Torrent': total hours = 1371,  total cost = 6105234
-Employee 'Agust Hlynur Holmgeirsson': total hours = 23,  total cost = 206655
+Employee 'Goncalo Carvalho': total hours = 1134,  total cost = 7087500
+Employee 'Mário Correia': total hours = 743,  total cost = 3308672
+Employee 'Marta Abad Torrent': total hours = 638,  total cost = 2841094
+Employee 'Agust Hlynur Holmgeirsson': total hours = 10,  total cost = 89850
+Employee 'Arash Sheikhlar': total hours = 36,  total cost = 225000
+Employee 'Jeff Thompson': total hours = 209,  total cost = 1877865
+Employee 'Kristinn R. Thórisson': total hours = 554,  total cost = 4068438
 
-ALL FREE EMPLOYEES COMBINED: total R&D hours = 5750
-ALL FREE EMPLOYEES COMBINED: total NonR&D hours = 356
-ALL FREE EMPLOYEES COMBINED: total hours = 6106
-ALL FREE EMPLOYEES COMBINED:  total cost = 35307056
+ALL FREE EMPLOYEES COMBINED: total R&D hours = 3165
+ALL FREE EMPLOYEES COMBINED: total NonR&D hours = 159
+ALL FREE EMPLOYEES COMBINED: total hours = 3324
+ALL FREE EMPLOYEES COMBINED:  total cost = 19498418
 ===============================================================================
 
 
 ================= DEBUG INFO: HOURS & SALARY (Locked Employees) =================
-Employee 'Bridget Burger': total hours = 78,  total cost = 792188
+Employee 'Bridget Burger': total hours = 0,  total cost = 0
 
 ALL LOCKED EMPLOYEES COMBINED: total R&D hours = 0
-ALL LOCKED EMPLOYEES COMBINED: total NonR&D hours = 78
-ALL LOCKED EMPLOYEES COMBINED: total hours = 78,  total cost = 792188
+ALL LOCKED EMPLOYEES COMBINED: total NonR&D hours = 0
+ALL LOCKED EMPLOYEES COMBINED: total hours = 0,  total cost = 0
 ===============================================================================
 
 
 ================= DEBUG INFO: HOURS & SALARY (ALL Employees) =================
-ALL EMPLOYEES COMBINED: total R&D hours = 5750
-ALL EMPLOYEES COMBINED: total NonR&D hours = 434
-ALL EMPLOYEES COMBINED: total hours = 6184
-ALL EMPLOYEES COMBINED:  total cost = 36099243
+ALL EMPLOYEES COMBINED: total R&D hours = 3165
+ALL EMPLOYEES COMBINED: total NonR&D hours = 159
+ALL EMPLOYEES COMBINED: total hours = 3324
+ALL EMPLOYEES COMBINED:  total cost = 19498418
 ===============================================================================
 
 
 ================= DEBUG INFO: PROJECT TARGETS & LOCKED CONTRIBUTIONS =================
-Project 'EURIDICE': Target Cost = 7000000
-  Locked Employee 'Bridget Burger': total hours = 78 (R&D: 0, NonR&D: 78),  cost = 792188
-  Project 'EURIDICE' LOCKED TOTALS: hours = 78 (R&D: 0, NonR&D: 78), cost = 792188
+Project 'EURIDICE': Target Cost = 0
+  Locked Employee 'Bridget Burger': total hours = 0 (R&D: 0, NonR&D: 0),  cost = 0
+  Project 'EURIDICE' LOCKED TOTALS: hours = 0 (R&D: 0, NonR&D: 0), cost = 0
   ----------------------------------------------------------
-Project 'ICE-ID': Target Cost = 1500000
+Project 'ICE-ID': Target Cost = 0
   No employees directly locked to Project 'ICE-ID'.
   ----------------------------------------------------------
-Project 'FRESH-ID': Target Cost = 8524320
+Project 'FRESH-ID': Target Cost = 2918160
   No employees directly locked to Project 'FRESH-ID'.
   ----------------------------------------------------------
-Project 'AI-STYLIST': Target Cost = 9098800
+Project 'AI-STYLIST': Target Cost = 7201080
   No employees directly locked to Project 'AI-STYLIST'.
   ----------------------------------------------------------
-Project 'TRACKWELL': Target Cost = 14400000
+Project 'TRACKWELL': Target Cost = 9200000
   No employees directly locked to Project 'TRACKWELL'.
   ----------------------------------------------------------
 ====================================================================================
 
 
 ================= DEBUG INFO: HOURS & COSTS PER PROJECT (Employee Availability) =================
-Project 'EURIDICE': Target Cost = 7000000
+Project 'EURIDICE': Target Cost = 0
   Employee Contributions (based on their total available hours):
-    - Jeff Thompson: Total Avail. Hours = 391 (R&D: 390, NonR&D: 1), Cost of these hours = 3513135
-    - Bridget Burger (Locked to this project): Total Avail. Hours = 78 (R&D: 0, NonR&D: 78), Cost of these hours = 792188
-    - Arash Sheikhlar: Total Avail. Hours = 101 (R&D: 100, NonR&D: 1), Cost of these hours = 631250
-    - Kristinn R. Thórisson: Total Avail. Hours = 706 (R&D: 612, NonR&D: 94), Cost of these hours = 5184688
-    - Goncalo Carvalho: Total Avail. Hours = 2236 (R&D: 2080, NonR&D: 156), Cost of these hours = 13975000
-    - Mário Correia: Total Avail. Hours = 1278 (R&D: 1278, NonR&D: 0), Cost of these hours = 5691094
-    - Marta Abad Torrent: Total Avail. Hours = 1371 (R&D: 1290, NonR&D: 81), Cost of these hours = 6105234
-    - Agust Hlynur Holmgeirsson: Total Avail. Hours = 23 (R&D: 0, NonR&D: 23), Cost of these hours = 206655
+    - Bridget Burger (Locked to this project): Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Goncalo Carvalho: Total Avail. Hours = 1134 (R&D: 1056, NonR&D: 78), Cost of these hours = 7087500
+    - Mário Correia: Total Avail. Hours = 743 (R&D: 743, NonR&D: 0), Cost of these hours = 3308672
+    - Marta Abad Torrent: Total Avail. Hours = 638 (R&D: 638, NonR&D: 0), Cost of these hours = 2841094
+    - Agust Hlynur Holmgeirsson: Total Avail. Hours = 10 (R&D: 0, NonR&D: 10), Cost of these hours = 89850
+    - Arash Sheikhlar: Total Avail. Hours = 36 (R&D: 35, NonR&D: 1), Cost of these hours = 225000
+    - Jeff Thompson: Total Avail. Hours = 209 (R&D: 208, NonR&D: 1), Cost of these hours = 1877865
+    - Kristinn R. Thórisson: Total Avail. Hours = 554 (R&D: 485, NonR&D: 69), Cost of these hours = 4068438
   Overall  Pool for 'EURIDICE' (sum of all employees' total avail. hours):
-    Total Hours = 6184 (R&D: 5750, NonR&D: 434)
-    Associated Cost = 36099243
+    Total Hours = 3324 (R&D: 3165, NonR&D: 159)
+    Associated Cost = 19498418
   -----------------------------------------------------------------------------------
-Project 'ICE-ID': Target Cost = 1500000
+Project 'ICE-ID': Target Cost = 0
   Employee Contributions (based on their total available hours):
-    - Jeff Thompson: Total Avail. Hours = 391 (R&D: 390, NonR&D: 1), Cost of these hours = 3513135
-    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 78 (R&D: 0, NonR&D: 78), Cost of these hours = 792188
-    - Arash Sheikhlar: Total Avail. Hours = 101 (R&D: 100, NonR&D: 1), Cost of these hours = 631250
-    - Kristinn R. Thórisson: Total Avail. Hours = 706 (R&D: 612, NonR&D: 94), Cost of these hours = 5184688
-    - Goncalo Carvalho: Total Avail. Hours = 2236 (R&D: 2080, NonR&D: 156), Cost of these hours = 13975000
-    - Mário Correia: Total Avail. Hours = 1278 (R&D: 1278, NonR&D: 0), Cost of these hours = 5691094
-    - Marta Abad Torrent: Total Avail. Hours = 1371 (R&D: 1290, NonR&D: 81), Cost of these hours = 6105234
-    - Agust Hlynur Holmgeirsson: Total Avail. Hours = 23 (R&D: 0, NonR&D: 23), Cost of these hours = 206655
+    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Goncalo Carvalho: Total Avail. Hours = 1134 (R&D: 1056, NonR&D: 78), Cost of these hours = 7087500
+    - Mário Correia: Total Avail. Hours = 743 (R&D: 743, NonR&D: 0), Cost of these hours = 3308672
+    - Marta Abad Torrent: Total Avail. Hours = 638 (R&D: 638, NonR&D: 0), Cost of these hours = 2841094
+    - Agust Hlynur Holmgeirsson: Total Avail. Hours = 10 (R&D: 0, NonR&D: 10), Cost of these hours = 89850
+    - Arash Sheikhlar: Total Avail. Hours = 36 (R&D: 35, NonR&D: 1), Cost of these hours = 225000
+    - Jeff Thompson: Total Avail. Hours = 209 (R&D: 208, NonR&D: 1), Cost of these hours = 1877865
+    - Kristinn R. Thórisson: Total Avail. Hours = 554 (R&D: 485, NonR&D: 69), Cost of these hours = 4068438
   Overall  Pool for 'ICE-ID' (sum of all employees' total avail. hours):
-    Total Hours = 6184 (R&D: 5750, NonR&D: 434)
-    Associated Cost = 36099243
+    Total Hours = 3324 (R&D: 3165, NonR&D: 159)
+    Associated Cost = 19498418
   -----------------------------------------------------------------------------------
-Project 'FRESH-ID': Target Cost = 8524320
+Project 'FRESH-ID': Target Cost = 2918160
   Employee Contributions (based on their total available hours):
-    - Jeff Thompson: Total Avail. Hours = 391 (R&D: 390, NonR&D: 1), Cost of these hours = 3513135
-    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 78 (R&D: 0, NonR&D: 78), Cost of these hours = 792188
-    - Arash Sheikhlar: Total Avail. Hours = 101 (R&D: 100, NonR&D: 1), Cost of these hours = 631250
-    - Kristinn R. Thórisson: Total Avail. Hours = 706 (R&D: 612, NonR&D: 94), Cost of these hours = 5184688
-    - Goncalo Carvalho: Total Avail. Hours = 2236 (R&D: 2080, NonR&D: 156), Cost of these hours = 13975000
-    - Mário Correia: Total Avail. Hours = 1278 (R&D: 1278, NonR&D: 0), Cost of these hours = 5691094
-    - Marta Abad Torrent: Total Avail. Hours = 1371 (R&D: 1290, NonR&D: 81), Cost of these hours = 6105234
-    - Agust Hlynur Holmgeirsson: Total Avail. Hours = 23 (R&D: 0, NonR&D: 23), Cost of these hours = 206655
+    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Goncalo Carvalho: Total Avail. Hours = 1134 (R&D: 1056, NonR&D: 78), Cost of these hours = 7087500
+    - Mário Correia: Total Avail. Hours = 743 (R&D: 743, NonR&D: 0), Cost of these hours = 3308672
+    - Marta Abad Torrent: Total Avail. Hours = 638 (R&D: 638, NonR&D: 0), Cost of these hours = 2841094
+    - Agust Hlynur Holmgeirsson: Total Avail. Hours = 10 (R&D: 0, NonR&D: 10), Cost of these hours = 89850
+    - Arash Sheikhlar: Total Avail. Hours = 36 (R&D: 35, NonR&D: 1), Cost of these hours = 225000
+    - Jeff Thompson: Total Avail. Hours = 209 (R&D: 208, NonR&D: 1), Cost of these hours = 1877865
+    - Kristinn R. Thórisson: Total Avail. Hours = 554 (R&D: 485, NonR&D: 69), Cost of these hours = 4068438
   Overall  Pool for 'FRESH-ID' (sum of all employees' total avail. hours):
-    Total Hours = 6184 (R&D: 5750, NonR&D: 434)
-    Associated Cost = 36099243
+    Total Hours = 3324 (R&D: 3165, NonR&D: 159)
+    Associated Cost = 19498418
   -----------------------------------------------------------------------------------
-Project 'AI-STYLIST': Target Cost = 9098800
+Project 'AI-STYLIST': Target Cost = 7201080
   Employee Contributions (based on their total available hours):
-    - Jeff Thompson: Total Avail. Hours = 391 (R&D: 390, NonR&D: 1), Cost of these hours = 3513135
-    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 78 (R&D: 0, NonR&D: 78), Cost of these hours = 792188
-    - Arash Sheikhlar: Total Avail. Hours = 101 (R&D: 100, NonR&D: 1), Cost of these hours = 631250
-    - Kristinn R. Thórisson: Total Avail. Hours = 706 (R&D: 612, NonR&D: 94), Cost of these hours = 5184688
-    - Goncalo Carvalho: Total Avail. Hours = 2236 (R&D: 2080, NonR&D: 156), Cost of these hours = 13975000
-    - Mário Correia: Total Avail. Hours = 1278 (R&D: 1278, NonR&D: 0), Cost of these hours = 5691094
-    - Marta Abad Torrent: Total Avail. Hours = 1371 (R&D: 1290, NonR&D: 81), Cost of these hours = 6105234
-    - Agust Hlynur Holmgeirsson: Total Avail. Hours = 23 (R&D: 0, NonR&D: 23), Cost of these hours = 206655
+    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Goncalo Carvalho: Total Avail. Hours = 1134 (R&D: 1056, NonR&D: 78), Cost of these hours = 7087500
+    - Mário Correia: Total Avail. Hours = 743 (R&D: 743, NonR&D: 0), Cost of these hours = 3308672
+    - Marta Abad Torrent: Total Avail. Hours = 638 (R&D: 638, NonR&D: 0), Cost of these hours = 2841094
+    - Agust Hlynur Holmgeirsson: Total Avail. Hours = 10 (R&D: 0, NonR&D: 10), Cost of these hours = 89850
+    - Arash Sheikhlar: Total Avail. Hours = 36 (R&D: 35, NonR&D: 1), Cost of these hours = 225000
+    - Jeff Thompson: Total Avail. Hours = 209 (R&D: 208, NonR&D: 1), Cost of these hours = 1877865
+    - Kristinn R. Thórisson: Total Avail. Hours = 554 (R&D: 485, NonR&D: 69), Cost of these hours = 4068438
   Overall  Pool for 'AI-STYLIST' (sum of all employees' total avail. hours):
-    Total Hours = 6184 (R&D: 5750, NonR&D: 434)
-    Associated Cost = 36099243
+    Total Hours = 3324 (R&D: 3165, NonR&D: 159)
+    Associated Cost = 19498418
   -----------------------------------------------------------------------------------
-Project 'TRACKWELL': Target Cost = 14400000
+Project 'TRACKWELL': Target Cost = 9200000
   Employee Contributions (based on their total available hours):
-    - Jeff Thompson: Total Avail. Hours = 391 (R&D: 390, NonR&D: 1), Cost of these hours = 3513135
-    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 78 (R&D: 0, NonR&D: 78), Cost of these hours = 792188
-    - Arash Sheikhlar: Total Avail. Hours = 101 (R&D: 100, NonR&D: 1), Cost of these hours = 631250
-    - Kristinn R. Thórisson: Total Avail. Hours = 706 (R&D: 612, NonR&D: 94), Cost of these hours = 5184688
-    - Goncalo Carvalho: Total Avail. Hours = 2236 (R&D: 2080, NonR&D: 156), Cost of these hours = 13975000
-    - Mário Correia: Total Avail. Hours = 1278 (R&D: 1278, NonR&D: 0), Cost of these hours = 5691094
-    - Marta Abad Torrent: Total Avail. Hours = 1371 (R&D: 1290, NonR&D: 81), Cost of these hours = 6105234
-    - Agust Hlynur Holmgeirsson: Total Avail. Hours = 23 (R&D: 0, NonR&D: 23), Cost of these hours = 206655
+    - Bridget Burger (Locked to EURIDICE): Total Avail. Hours = 0 (R&D: 0, NonR&D: 0), Cost of these hours = 0
+    - Goncalo Carvalho: Total Avail. Hours = 1134 (R&D: 1056, NonR&D: 78), Cost of these hours = 7087500
+    - Mário Correia: Total Avail. Hours = 743 (R&D: 743, NonR&D: 0), Cost of these hours = 3308672
+    - Marta Abad Torrent: Total Avail. Hours = 638 (R&D: 638, NonR&D: 0), Cost of these hours = 2841094
+    - Agust Hlynur Holmgeirsson: Total Avail. Hours = 10 (R&D: 0, NonR&D: 10), Cost of these hours = 89850
+    - Arash Sheikhlar: Total Avail. Hours = 36 (R&D: 35, NonR&D: 1), Cost of these hours = 225000
+    - Jeff Thompson: Total Avail. Hours = 209 (R&D: 208, NonR&D: 1), Cost of these hours = 1877865
+    - Kristinn R. Thórisson: Total Avail. Hours = 554 (R&D: 485, NonR&D: 69), Cost of these hours = 4068438
   Overall  Pool for 'TRACKWELL' (sum of all employees' total avail. hours):
-    Total Hours = 6184 (R&D: 5750, NonR&D: 434)
-    Associated Cost = 36099243
+    Total Hours = 3324 (R&D: 3165, NonR&D: 159)
+    Associated Cost = 19498418
   -----------------------------------------------------------------------------------
 ==============================================================================================
 
@@ -129,59 +129,60 @@ Project 'TRACKWELL': Target Cost = 14400000
 ================= DEBUG INFO: PER PROJECT, PER SALARY BRACKET (Summary) =================
 Project: EURIDICE
   L5 (4,453 ISK/hr): Marta Abad Torrent, Mário Correia
-  L3 (6,250 ISK/hr): Arash Sheikhlar, Goncalo Carvalho
+  L3 (6,250 ISK/hr): Goncalo Carvalho
+  L2 (6,250 ISK/hr): Arash Sheikhlar
   L2 (7,344 ISK/hr): Kristinn R. Thórisson
   L1 (8,985 ISK/hr): Agust Hlynur Holmgeirsson, Jeff Thompson
   L0 (10,156 ISK/hr): Bridget Burger
 ---------------------------------------------------------------------------
 Project: ICE-ID
   L5 (4,453 ISK/hr): Marta Abad Torrent, Mário Correia
-  L3 (6,250 ISK/hr): Arash Sheikhlar, Goncalo Carvalho
+  L3 (6,250 ISK/hr): Goncalo Carvalho
+  L2 (6,250 ISK/hr): Arash Sheikhlar
   L2 (7,344 ISK/hr): Kristinn R. Thórisson
   L1 (8,985 ISK/hr): Agust Hlynur Holmgeirsson, Jeff Thompson
   L0 (10,156 ISK/hr): Bridget Burger
 ---------------------------------------------------------------------------
 Project: FRESH-ID
   L5 (4,453 ISK/hr): Marta Abad Torrent, Mário Correia
-  L3 (6,250 ISK/hr): Arash Sheikhlar, Goncalo Carvalho
+  L3 (6,250 ISK/hr): Goncalo Carvalho
+  L2 (6,250 ISK/hr): Arash Sheikhlar
   L2 (7,344 ISK/hr): Kristinn R. Thórisson
   L1 (8,985 ISK/hr): Agust Hlynur Holmgeirsson, Jeff Thompson
   L0 (10,156 ISK/hr): Bridget Burger
 ---------------------------------------------------------------------------
 Project: AI-STYLIST
   L5 (4,453 ISK/hr): Marta Abad Torrent, Mário Correia
-  L3 (6,250 ISK/hr): Arash Sheikhlar, Goncalo Carvalho
+  L3 (6,250 ISK/hr): Goncalo Carvalho
+  L2 (6,250 ISK/hr): Arash Sheikhlar
   L2 (7,344 ISK/hr): Kristinn R. Thórisson
   L1 (8,985 ISK/hr): Agust Hlynur Holmgeirsson, Jeff Thompson
   L0 (10,156 ISK/hr): Bridget Burger
 ---------------------------------------------------------------------------
 Project: TRACKWELL
   L5 (4,453 ISK/hr): Marta Abad Torrent, Mário Correia
-  L3 (6,250 ISK/hr): Arash Sheikhlar, Goncalo Carvalho
+  L3 (6,250 ISK/hr): Goncalo Carvalho
+  L2 (6,250 ISK/hr): Arash Sheikhlar
   L2 (7,344 ISK/hr): Kristinn R. Thórisson
   L1 (8,985 ISK/hr): Agust Hlynur Holmgeirsson, Jeff Thompson
   L0 (10,156 ISK/hr): Bridget Burger
 ---------------------------------------------------------------------------
 ========================================================================================
 
---- Average Non-Zero Target Cost (for scaling penalties): 8104624.00 ---
+--- Average Non-Zero Target Cost (for scaling penalties): 6439746.67 ---
 
 === COST-CAPACITY VS. PROJECT LOWER-BOUNDS ===
-Max cost that *could* be spent this period : 36,099,243 ISK
-    from free   employees : 35,307,056
-    from locked employees : 792,188
-  – EURIDICE     needs ≥ 7,000,000  (target=7,000,000)
-  – ICE-ID       needs ≥ 1,500,000  (target=1,500,000)
-  – FRESH-ID     needs ≥ 8,524,320  (target=8,524,320)
-  – AI-STYLIST   needs ≥ 9,098,800  (target=9,098,800)
-  – TRACKWELL    needs ≥ 14,400,000  (target=14,400,000)
+Max cost that *could* be spent this period : 19,498,418 ISK
+    from free   employees : 19,498,418
+    from locked employees : 0
+  – EURIDICE     needs ≥ 0  (target=0)
+  – ICE-ID       needs ≥ 0  (target=0)
+  – FRESH-ID     needs ≥ 2,918,160  (target=2,918,160)
+  – AI-STYLIST   needs ≥ 7,201,080  (target=7,201,080)
+  – TRACKWELL    needs ≥ 9,200,000  (target=9,200,000)
 ===========================================================
 
-⚠️  WARNING  ⚠️  Requested MINIMUM spend exceeds absolute capacity by 4,423,877 ISK (10.9% shortfall).
-   Available capacity: 36,099,243 ISK
-   Required capacity:  40,523,120 ISK
-   Capacity ratio:     89.1%
-   The optimisation will continue, but expect large slacks in the result.
+✓ Capacity check: Available 19,498,418 ISK, Required 19,319,240 ISK (99.1% utilization).
 
 Solving with OSQP … ⠁===============================================================================
                                      CVXPY                                     
@@ -193,7 +194,7 @@ Max cost that *could* be spent this period : 36,099,243 ISK
 -------------------------------------------------------------------------------
                                 Numerical solver                               
 -------------------------------------------------------------------------------
-Solving with OSQP finished in   2.39s  (status: None)
+Solving with OSQP finished in   1.33s  (status: None)
 Solving with SCS … ⠂===============================================================================
                                      CVXPY                                     
                                      v1.6.0                                    
@@ -204,7 +205,7 @@ Max cost that *could* be spent this period : 36,099,243 ISK
 -------------------------------------------------------------------------------
                                 Numerical solver                               
 -------------------------------------------------------------------------------
-Solving with SCS finished in   2.18s  (status: None)
+Solving with SCS finished in   1.03s  (status: None)
 Solving with CLARABEL … ⠄===============================================================================
                                      CVXPY                                     
                                      v1.6.0                                    
@@ -215,19 +216,18 @@ Max cost that *could* be spent this period : 36,099,243 ISK
 -------------------------------------------------------------------------------
                                 Numerical solver                               
 -------------------------------------------------------------------------------
-Solving with CLARABEL finished in   2.17s  (status: None)
-Solving with default selection … ⡀
-Default solver attempt failed: Solver 'OSQP' failed. Try another solver, or solve with verbose=True for more information.
-⚠️  Solver returned None — continuing with last iterate (slacks will show).
-ERROR: Solver status 'None', but variables have no values. Falling back to budget-constrained topic-weighted allocation.
+Solving with CLARABEL finished in   0.78s  (status: None)
+Solving with default selection … ⡀Solving with default selection finished  (status: unbounded)
+⚠️  Solver returned unbounded — continuing with last iterate (slacks will show).
+ERROR: Solver status 'unbounded', but variables have no values. Falling back to budget-constrained topic-weighted allocation.
 
 --- Enforcing Exact Hour Balance Constraints ---
 --- Continuous Solution Constraint Verification (Free Employees) ---
-Total Available R&D (Free Emps):   5750.0000
-Total Allocated R&D (After Normalization):  5750.0000
-Total Available NonR&D (Free Emps):356.0000
-Total Allocated NonR&D (After Normalization):356.0000
-Maximum per-employee/day R&D violation: 8.88e-16
+Total Available R&D (Free Emps):   3165.0000
+Total Allocated R&D (After Normalization):  3165.0000
+Total Available NonR&D (Free Emps):159.0000
+Total Allocated NonR&D (After Normalization):159.0000
+Maximum per-employee/day R&D violation: 3.55e-15
 Maximum per-employee/day NonR&D violation: 0.00e+00
 ✓ Hour balance constraints exactly satisfied (within numerical precision)
 -----------------------------------------------------------
@@ -235,124 +235,87 @@ Maximum per-employee/day NonR&D violation: 0.00e+00
 
 ================= DEBUG INFO: PER PROJECT, PER EMPLOYEE, PER SALARY BRACKET (ALLOCATED HOURS) =================
 Project: EURIDICE
-  Employee: Jeff Thompson
-    @8,985.00 ISK/hr → 67.58 h  (R&D 67.41 h, Non-R&D 0.17 h)
-  Employee: Bridget Burger
-    @10,156.25 ISK/hr → 78.00 h  (R&D 0.00 h, Non-R&D 78.00 h)
-  Employee: Arash Sheikhlar
-    @6,250.00 ISK/hr → 17.45 h  (R&D 17.28 h, Non-R&D 0.17 h)
-  Employee: Kristinn R. Thórisson
-    @7,343.75 ISK/hr → 121.97 h  (R&D 105.74 h, Non-R&D 16.23 h)
-  Employee: Goncalo Carvalho
-    @6,250.00 ISK/hr → 385.84 h  (R&D 358.80 h, Non-R&D 27.04 h)
-  Employee: Mário Correia
-    @4,453.12 ISK/hr → 221.56 h  (R&D 221.56 h, Non-R&D 0.00 h)
-  Employee: Marta Abad Torrent
-    @4,453.12 ISK/hr → 237.37 h  (R&D 223.32 h, Non-R&D 14.05 h)
-  Employee: Agust Hlynur Holmgeirsson
-    @8,985.00 ISK/hr → 4.01 h  (R&D 0.00 h, Non-R&D 4.01 h)
 Project: ICE-ID
-  Employee: Jeff Thompson
-    @8,985.00 ISK/hr → 15.64 h  (R&D 15.60 h, Non-R&D 0.04 h)
-  Employee: Arash Sheikhlar
-    @6,250.00 ISK/hr → 4.00 h  (R&D 3.96 h, Non-R&D 0.04 h)
-  Employee: Kristinn R. Thórisson
-    @7,343.75 ISK/hr → 27.83 h  (R&D 24.32 h, Non-R&D 3.51 h)
-  Employee: Goncalo Carvalho
-    @6,250.00 ISK/hr → 78.60 h  (R&D 72.88 h, Non-R&D 5.72 h)
-  Employee: Mário Correia
-    @4,453.12 ISK/hr → 49.16 h  (R&D 49.16 h, Non-R&D 0.00 h)
-  Employee: Marta Abad Torrent
-    @4,453.12 ISK/hr → 51.76 h  (R&D 48.80 h, Non-R&D 2.96 h)
-  Employee: Agust Hlynur Holmgeirsson
-    @8,985.00 ISK/hr → 0.82 h  (R&D 0.00 h, Non-R&D 0.82 h)
 Project: FRESH-ID
-  Employee: Jeff Thompson
-    @8,985.00 ISK/hr → 83.79 h  (R&D 83.58 h, Non-R&D 0.21 h)
-  Employee: Arash Sheikhlar
-    @6,250.00 ISK/hr → 21.60 h  (R&D 21.39 h, Non-R&D 0.21 h)
-  Employee: Kristinn R. Thórisson
-    @7,343.75 ISK/hr → 150.57 h  (R&D 130.83 h, Non-R&D 19.74 h)
   Employee: Goncalo Carvalho
-    @6,250.00 ISK/hr → 469.56 h  (R&D 436.80 h, Non-R&D 32.76 h)
+    @6,250.00 ISK/hr → 170.14 h  (R&D 158.44 h, Non-R&D 11.70 h)
   Employee: Mário Correia
-    @4,453.12 ISK/hr → 271.20 h  (R&D 271.20 h, Non-R&D 0.00 h)
+    @4,453.12 ISK/hr → 113.01 h  (R&D 113.01 h, Non-R&D 0.00 h)
   Employee: Marta Abad Torrent
-    @4,453.12 ISK/hr → 290.89 h  (R&D 273.88 h, Non-R&D 17.01 h)
+    @4,453.12 ISK/hr → 96.98 h  (R&D 96.98 h, Non-R&D 0.00 h)
   Employee: Agust Hlynur Holmgeirsson
-    @8,985.00 ISK/hr → 4.83 h  (R&D 0.00 h, Non-R&D 4.83 h)
+    @8,985.00 ISK/hr → 1.50 h  (R&D 0.00 h, Non-R&D 1.50 h)
+  Employee: Arash Sheikhlar
+    @6,250.00 ISK/hr → 5.51 h  (R&D 5.36 h, Non-R&D 0.15 h)
+  Employee: Jeff Thompson
+    @8,985.00 ISK/hr → 32.08 h  (R&D 31.93 h, Non-R&D 0.15 h)
+  Employee: Kristinn R. Thórisson
+    @7,343.75 ISK/hr → 84.79 h  (R&D 74.40 h, Non-R&D 10.39 h)
 Project: AI-STYLIST
-  Employee: Jeff Thompson
-    @8,985.00 ISK/hr → 86.84 h  (R&D 86.62 h, Non-R&D 0.22 h)
-  Employee: Arash Sheikhlar
-    @6,250.00 ISK/hr → 22.46 h  (R&D 22.24 h, Non-R&D 0.22 h)
-  Employee: Kristinn R. Thórisson
-    @7,343.75 ISK/hr → 157.24 h  (R&D 136.30 h, Non-R&D 20.94 h)
   Employee: Goncalo Carvalho
-    @6,250.00 ISK/hr → 502.84 h  (R&D 468.00 h, Non-R&D 34.84 h)
+    @6,250.00 ISK/hr → 425.02 h  (R&D 395.90 h, Non-R&D 29.12 h)
   Employee: Mário Correia
-    @4,453.12 ISK/hr → 285.09 h  (R&D 285.09 h, Non-R&D 0.00 h)
+    @4,453.12 ISK/hr → 276.36 h  (R&D 276.36 h, Non-R&D 0.00 h)
   Employee: Marta Abad Torrent
-    @4,453.12 ISK/hr → 305.92 h  (R&D 287.76 h, Non-R&D 18.16 h)
+    @4,453.12 ISK/hr → 237.63 h  (R&D 237.63 h, Non-R&D 0.00 h)
   Employee: Agust Hlynur Holmgeirsson
-    @8,985.00 ISK/hr → 5.17 h  (R&D 0.00 h, Non-R&D 5.17 h)
+    @8,985.00 ISK/hr → 3.75 h  (R&D 0.00 h, Non-R&D 3.75 h)
+  Employee: Arash Sheikhlar
+    @6,250.00 ISK/hr → 13.30 h  (R&D 12.93 h, Non-R&D 0.37 h)
+  Employee: Jeff Thompson
+    @8,985.00 ISK/hr → 77.67 h  (R&D 77.30 h, Non-R&D 0.37 h)
+  Employee: Kristinn R. Thórisson
+    @7,343.75 ISK/hr → 205.80 h  (R&D 180.09 h, Non-R&D 25.71 h)
 Project: TRACKWELL
-  Employee: Jeff Thompson
-    @8,985.00 ISK/hr → 137.15 h  (R&D 136.79 h, Non-R&D 0.36 h)
-  Employee: Arash Sheikhlar
-    @6,250.00 ISK/hr → 35.49 h  (R&D 35.13 h, Non-R&D 0.36 h)
-  Employee: Kristinn R. Thórisson
-    @7,343.75 ISK/hr → 248.39 h  (R&D 214.81 h, Non-R&D 33.58 h)
   Employee: Goncalo Carvalho
-    @6,250.00 ISK/hr → 799.16 h  (R&D 743.52 h, Non-R&D 55.64 h)
+    @6,250.00 ISK/hr → 538.84 h  (R&D 501.66 h, Non-R&D 37.18 h)
   Employee: Mário Correia
-    @4,453.12 ISK/hr → 450.99 h  (R&D 450.99 h, Non-R&D 0.00 h)
+    @4,453.12 ISK/hr → 353.63 h  (R&D 353.63 h, Non-R&D 0.00 h)
   Employee: Marta Abad Torrent
-    @4,453.12 ISK/hr → 485.06 h  (R&D 456.24 h, Non-R&D 28.82 h)
+    @4,453.12 ISK/hr → 303.39 h  (R&D 303.39 h, Non-R&D 0.00 h)
   Employee: Agust Hlynur Holmgeirsson
-    @8,985.00 ISK/hr → 8.17 h  (R&D 0.00 h, Non-R&D 8.17 h)
+    @8,985.00 ISK/hr → 4.75 h  (R&D 0.00 h, Non-R&D 4.75 h)
+  Employee: Arash Sheikhlar
+    @6,250.00 ISK/hr → 17.19 h  (R&D 16.71 h, Non-R&D 0.48 h)
+  Employee: Jeff Thompson
+    @8,985.00 ISK/hr → 99.25 h  (R&D 98.77 h, Non-R&D 0.48 h)
+  Employee: Kristinn R. Thórisson
+    @7,343.75 ISK/hr → 263.41 h  (R&D 230.51 h, Non-R&D 32.90 h)
 ----------------------------------------------------------------
 ================================================================
 
 
 ================= DEBUG INFO: PER PROJECT, PER SALARY BRACKET (COST BREAKDOWN) =================
 Project: EURIDICE
-  10,156.25 ISK/hr:     78 hrs (    0 R&D,   78 Non-R&D) =      792,188 ISK
-  8,985.00 ISK/hr:     72 hrs (   67 R&D,    4 Non-R&D) =      643,236 ISK
-  7,343.75 ISK/hr:    122 hrs (  106 R&D,   16 Non-R&D) =      895,717 ISK
-  6,250.00 ISK/hr:    403 hrs (  376 R&D,   27 Non-R&D) =    2,520,562 ISK
-  4,453.12 ISK/hr:    459 hrs (  445 R&D,   14 Non-R&D) =    2,043,673 ISK
+  No allocations
 ---------------------------------------------------------------------------
 Project: ICE-ID
-  8,985.00 ISK/hr:     16 hrs (   16 R&D,    1 Non-R&D) =      147,893 ISK
-  7,343.75 ISK/hr:     28 hrs (   24 R&D,    4 Non-R&D) =      204,377 ISK
-  6,250.00 ISK/hr:     83 hrs (   77 R&D,    6 Non-R&D) =      516,250 ISK
-  4,453.12 ISK/hr:    101 hrs (   98 R&D,    3 Non-R&D) =      449,409 ISK
+  No allocations
 ---------------------------------------------------------------------------
 Project: FRESH-ID
-  8,985.00 ISK/hr:     89 hrs (   84 R&D,    5 Non-R&D) =      796,251 ISK
-  7,343.75 ISK/hr:    151 hrs (  131 R&D,   20 Non-R&D) =    1,105,748 ISK
-  6,250.00 ISK/hr:    491 hrs (  458 R&D,   33 Non-R&D) =    3,069,750 ISK
-  4,453.12 ISK/hr:    562 hrs (  545 R&D,   17 Non-R&D) =    2,503,057 ISK
+  8,985.00 ISK/hr:     34 hrs (   32 R&D,    2 Non-R&D) =      301,716 ISK
+  7,343.75 ISK/hr:     85 hrs (   74 R&D,   10 Non-R&D) =      622,677 ISK
+  6,250.00 ISK/hr:    176 hrs (  164 R&D,   12 Non-R&D) =    1,097,812 ISK
+  4,453.12 ISK/hr:    210 hrs (  210 R&D,    0 Non-R&D) =      935,112 ISK
 ---------------------------------------------------------------------------
 Project: AI-STYLIST
-  8,985.00 ISK/hr:     92 hrs (   87 R&D,    5 Non-R&D) =      826,710 ISK
-  7,343.75 ISK/hr:    157 hrs (  136 R&D,   21 Non-R&D) =    1,154,731 ISK
-  6,250.00 ISK/hr:    525 hrs (  490 R&D,   35 Non-R&D) =    3,283,125 ISK
-  4,453.12 ISK/hr:    591 hrs (  573 R&D,   18 Non-R&D) =    2,631,841 ISK
+  8,985.00 ISK/hr:     81 hrs (   77 R&D,    4 Non-R&D) =      731,559 ISK
+  7,343.75 ISK/hr:    206 hrs (  180 R&D,   26 Non-R&D) =    1,511,344 ISK
+  6,250.00 ISK/hr:    438 hrs (  409 R&D,   29 Non-R&D) =    2,739,500 ISK
+  4,453.12 ISK/hr:    514 hrs (  514 R&D,    0 Non-R&D) =    2,288,862 ISK
 ---------------------------------------------------------------------------
 Project: TRACKWELL
-  8,985.00 ISK/hr:    145 hrs (  137 R&D,    9 Non-R&D) =    1,305,700 ISK
-  7,343.75 ISK/hr:    248 hrs (  215 R&D,   34 Non-R&D) =    1,824,114 ISK
-  6,250.00 ISK/hr:    835 hrs (  779 R&D,   56 Non-R&D) =    5,216,562 ISK
-  4,453.12 ISK/hr:    936 hrs (  907 R&D,   29 Non-R&D) =    4,168,348 ISK
+  8,985.00 ISK/hr:    104 hrs (   99 R&D,    5 Non-R&D) =      934,440 ISK
+  7,343.75 ISK/hr:    263 hrs (  231 R&D,   33 Non-R&D) =    1,934,417 ISK
+  6,250.00 ISK/hr:    556 hrs (  518 R&D,   38 Non-R&D) =    3,475,188 ISK
+  4,453.12 ISK/hr:    657 hrs (  657 R&D,    0 Non-R&D) =    2,925,792 ISK
 ---------------------------------------------------------------------------
 ========================================================================================
 
 
 ================= DIAGNOSTIC: OVERALL ALLOCATIONS (Rounded Values) ==================
-Overall R&D      : Total available = 5750 hrs, Total allocated = 5750 hrs
-Overall Non-R&D  : Total available = 434 hrs, Total allocated = 434 hrs
+Overall R&D      : Total available = 3165 hrs, Total allocated = 3165 hrs
+Overall Non-R&D  : Total available = 159 hrs, Total allocated = 159 hrs
 ✓ Hour balance constraints exactly satisfied
   R&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
   NonR&D: 0.0000 hrs difference (within 0.01 hr rounding tolerance)
@@ -362,100 +325,80 @@ Overall Non-R&D  : Total available = 434 hrs, Total allocated = 434 hrs
 ================= DIAGNOSTIC: PROJECT COST DETAILS & TOPIC ALLOCATIONS =================
 (Note: Rounded costs are from final rounded allocations. Solver costs are from normalized continuous solution, calculated after normalization to match actual allocations.)
 Project 'EURIDICE':
-  Grant:    3500000 ISK | Matching:    3500000 ISK | Overhead (%):       0.00 | Total Target:    7000000 ISK
-  Computed Cost (Rounded):    6895376 ISK | [Solver: 6891160]
-  Relative Cost Deviation vs Residual Target (Solver): -1.6 %
-  Total R&D Hours (Rounded):      994
-  Total Non-R&D Hours (Rounded):    140
-  Topic Allocations (Rounded):
-    General Info. System / Methodology:    332 hrs
-    Data Processing / Data Mgmt:    332 hrs
-    Training Env. / Artificial Pedagogy:    330 hrs
-  Salary Bracket Breakdown (Rounded):
-    10,156.25 ISK/hr:     78 hrs (    0 R&D,   78 Non-R&D) =      792,188 ISK
-    8,985.00 ISK/hr:     72 hrs (   67 R&D,    4 Non-R&D) =      643,236 ISK
-    7,343.75 ISK/hr:    122 hrs (  106 R&D,   16 Non-R&D) =      895,717 ISK
-    6,250.00 ISK/hr:    403 hrs (  376 R&D,   27 Non-R&D) =    2,520,562 ISK
-    4,453.12 ISK/hr:    459 hrs (  445 R&D,   14 Non-R&D) =    2,043,673 ISK
+  Grant:          0 ISK | Matching:          0 ISK | Overhead (%):       0.00 | Total Target:          0 ISK
+  Computed Cost (Rounded):          0 ISK | [Solver: 0]
+  Relative Cost Deviation (Solver): N/A
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
 -------------------------------------------------------------
 Project 'ICE-ID':
-  Grant:    1500000 ISK | Matching:          0 ISK | Overhead (%):       0.00 | Total Target:    1500000 ISK
-  Computed Cost (Rounded):    1317929 ISK | [Solver: 1306923]
-  Relative Cost Deviation vs Residual Target (Solver): -12.9 %
-  Total R&D Hours (Rounded):      215
-  Total Non-R&D Hours (Rounded):     13
-  Topic Allocations (Rounded):
-    General Info. System / Methodology:     54 hrs
-    Cogn. Architecture / Hybrid Archi:     54 hrs
-    Data Processing / Data Mgmt:     54 hrs
-    Reasoning / Planning:     54 hrs
-  Salary Bracket Breakdown (Rounded):
-    8,985.00 ISK/hr:     16 hrs (   16 R&D,    1 Non-R&D) =      147,893 ISK
-    7,343.75 ISK/hr:     28 hrs (   24 R&D,    4 Non-R&D) =      204,377 ISK
-    6,250.00 ISK/hr:     83 hrs (   77 R&D,    6 Non-R&D) =      516,250 ISK
-    4,453.12 ISK/hr:    101 hrs (   98 R&D,    3 Non-R&D) =      449,409 ISK
+  Grant:          0 ISK | Matching:          0 ISK | Overhead (%):       0.00 | Total Target:          0 ISK
+  Computed Cost (Rounded):          0 ISK | [Solver: 0]
+  Relative Cost Deviation (Solver): N/A
+  Total R&D Hours (Rounded):        0
+  Total Non-R&D Hours (Rounded):      0
 -------------------------------------------------------------
 Project 'FRESH-ID':
-  Grant:    7600000 ISK | Matching:    2548000 ISK | Overhead (%):      16.00 | Total Target:    8524320 ISK
-  Computed Cost (Rounded):    7474806 ISK | [Solver: 7427085]
-  Relative Cost Deviation vs Residual Target (Solver): -12.9 %
-  Total R&D Hours (Rounded):     1218
-  Total Non-R&D Hours (Rounded):     75
+  Grant:    2200000 ISK | Matching:    1274000 ISK | Overhead (%):      16.00 | Total Target:    2918160 ISK
+  Computed Cost (Rounded):    2957317 ISK | [Solver: 2945225]
+  Relative Cost Deviation vs Residual Target (Solver): +0.9 %
+  Total R&D Hours (Rounded):      480
+  Total Non-R&D Hours (Rounded):     24
   Topic Allocations (Rounded):
-    General Info. System / Methodology:    203 hrs
-    Networks / Distributed Systems:    203 hrs
-    System / Architecture Integration:    203 hrs
-    Data Processing / Data Mgmt:    203 hrs
-    Visualization / UX  :    203 hrs
-    Modeling / Simulation:    203 hrs
+    General Info. System / Methodology:     80 hrs
+    Networks / Distributed Systems:     80 hrs
+    System / Architecture Integration:     80 hrs
+    Data Processing / Data Mgmt:     80 hrs
+    Visualization / UX  :     80 hrs
+    Modeling / Simulation:     79 hrs
   Salary Bracket Breakdown (Rounded):
-    8,985.00 ISK/hr:     89 hrs (   84 R&D,    5 Non-R&D) =      796,251 ISK
-    7,343.75 ISK/hr:    151 hrs (  131 R&D,   20 Non-R&D) =    1,105,748 ISK
-    6,250.00 ISK/hr:    491 hrs (  458 R&D,   33 Non-R&D) =    3,069,750 ISK
-    4,453.12 ISK/hr:    562 hrs (  545 R&D,   17 Non-R&D) =    2,503,057 ISK
+    8,985.00 ISK/hr:     34 hrs (   32 R&D,    2 Non-R&D) =      301,716 ISK
+    7,343.75 ISK/hr:     85 hrs (   74 R&D,   10 Non-R&D) =      622,677 ISK
+    6,250.00 ISK/hr:    176 hrs (  164 R&D,   12 Non-R&D) =    1,097,812 ISK
+    4,453.12 ISK/hr:    210 hrs (  210 R&D,    0 Non-R&D) =      935,112 ISK
 -------------------------------------------------------------
 Project 'AI-STYLIST':
-  Grant:    8740000 ISK | Matching:    1840000 ISK | Overhead (%):      14.00 | Total Target:    9098800 ISK
-  Computed Cost (Rounded):    7896408 ISK | [Solver: 7927619]
-  Relative Cost Deviation vs Residual Target (Solver): -12.9 %
-  Total R&D Hours (Rounded):     1286
-  Total Non-R&D Hours (Rounded):     80
+  Grant:    6976000 ISK | Matching:    1700000 ISK | Overhead (%):      17.00 | Total Target:    7201080 ISK
+  Computed Cost (Rounded):    7271264 ISK | [Solver: 7267867]
+  Relative Cost Deviation vs Residual Target (Solver): +0.9 %
+  Total R&D Hours (Rounded):     1180
+  Total Non-R&D Hours (Rounded):     59
   Topic Allocations (Rounded):
-    General Info. System / Methodology:    258 hrs
-    System / Architecture Integration:    257 hrs
-    Data Processing / Data Mgmt:    257 hrs
-    Visualization / UX  :    257 hrs
-    Modeling / Simulation:    257 hrs
+    General Info. System / Methodology:    236 hrs
+    System / Architecture Integration:    236 hrs
+    Data Processing / Data Mgmt:    236 hrs
+    Visualization / UX  :    236 hrs
+    Modeling / Simulation:    236 hrs
   Salary Bracket Breakdown (Rounded):
-    8,985.00 ISK/hr:     92 hrs (   87 R&D,    5 Non-R&D) =      826,710 ISK
-    7,343.75 ISK/hr:    157 hrs (  136 R&D,   21 Non-R&D) =    1,154,731 ISK
-    6,250.00 ISK/hr:    525 hrs (  490 R&D,   35 Non-R&D) =    3,283,125 ISK
-    4,453.12 ISK/hr:    591 hrs (  573 R&D,   18 Non-R&D) =    2,631,841 ISK
+    8,985.00 ISK/hr:     81 hrs (   77 R&D,    4 Non-R&D) =      731,559 ISK
+    7,343.75 ISK/hr:    206 hrs (  180 R&D,   26 Non-R&D) =    1,511,344 ISK
+    6,250.00 ISK/hr:    438 hrs (  409 R&D,   29 Non-R&D) =    2,739,500 ISK
+    4,453.12 ISK/hr:    514 hrs (  514 R&D,    0 Non-R&D) =    2,288,862 ISK
 -------------------------------------------------------------
 Project 'TRACKWELL':
-  Grant:   12000000 ISK | Matching:    2400000 ISK | Overhead (%):       0.00 | Total Target:   14400000 ISK
-  Computed Cost (Rounded):   12514724 ISK | [Solver: 12546457]
-  Relative Cost Deviation vs Residual Target (Solver): -12.9 %
-  Total R&D Hours (Rounded):     2037
-  Total Non-R&D Hours (Rounded):    127
+  Grant:    7700000 ISK | Matching:    1500000 ISK | Overhead (%):       0.00 | Total Target:    9200000 ISK
+  Computed Cost (Rounded):    9269837 ISK | [Solver: 9285326]
+  Relative Cost Deviation vs Residual Target (Solver): +0.9 %
+  Total R&D Hours (Rounded):     1505
+  Total Non-R&D Hours (Rounded):     76
   Topic Allocations (Rounded):
-    General Info. System / Methodology:    293 hrs
-    System / Architecture Integration:    291 hrs
-    Data Processing / Data Mgmt:    291 hrs
-    Spatial / Temporal Pattrn. Classification:    291 hrs
-    Visualization / UX  :    291 hrs
-    Multi-Agent Systems :    291 hrs
-    Modeling / Simulation:    288 hrs
+    General Info. System / Methodology:    218 hrs
+    System / Architecture Integration:    217 hrs
+    Data Processing / Data Mgmt:    215 hrs
+    Spatial / Temporal Pattrn. Classification:    214 hrs
+    Visualization / UX  :    214 hrs
+    Multi-Agent Systems :    214 hrs
+    Modeling / Simulation:    214 hrs
   Salary Bracket Breakdown (Rounded):
-    8,985.00 ISK/hr:    145 hrs (  137 R&D,    9 Non-R&D) =    1,305,700 ISK
-    7,343.75 ISK/hr:    248 hrs (  215 R&D,   34 Non-R&D) =    1,824,114 ISK
-    6,250.00 ISK/hr:    835 hrs (  779 R&D,   56 Non-R&D) =    5,216,562 ISK
-    4,453.12 ISK/hr:    936 hrs (  907 R&D,   29 Non-R&D) =    4,168,348 ISK
+    8,985.00 ISK/hr:    104 hrs (   99 R&D,    5 Non-R&D) =      934,440 ISK
+    7,343.75 ISK/hr:    263 hrs (  231 R&D,   33 Non-R&D) =    1,934,417 ISK
+    6,250.00 ISK/hr:    556 hrs (  518 R&D,   38 Non-R&D) =    3,475,188 ISK
+    4,453.12 ISK/hr:    657 hrs (  657 R&D,    0 Non-R&D) =    2,925,792 ISK
 -------------------------------------------------------------
 
-Grand Total Computed Cost (Rounded Allocations):     36099243
-Grand Total Target Cost:                             40523120
-Overall Relative Deviation (Sum of Solver Costs vs Sum of Original Target Costs):-10.9 %
+Grand Total Computed Cost (Rounded Allocations):     19498418
+Grand Total Target Cost:                             19319240
+Overall Relative Deviation (Sum of Solver Costs vs Sum of Original Target Costs):+0.9 %
 ==========================================================================================
 
 (No matching-fund rules defined.)
